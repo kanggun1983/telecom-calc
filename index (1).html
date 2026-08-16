@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- 위약금 계산기 전용 PWA 설정 (명함 앱과 충돌 방지) -->
+  <link rel="manifest" href="telecom-manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="통신사위약금계산기">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>통신 3사 인터넷·TV 3년 약정 위약금 & 실청구 계산기</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 22px;
+      width: 22px;
+      border-radius: 50%;
+      background: #e11d48;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen py-6 px-3 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto space-y-5">
+    
+    <!-- Header -->
+    <header class="text-center space-y-1">
+      <div class="inline-flex items-center gap-1.5 bg-slate-200 text-slate-700 px-3 py-1 rounded-full text-xs font-bold">
+        <span>SKT/SKB · KT · LG U+ 현행 및 구(舊) 결합 공식 전산 & 정밀 일할계산 연동</span>
+      </div>
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900">통신 3사 3년 약정 위약금 & 실청구 계산기</h1>
+      <p class="text-xs sm:text-sm text-slate-500">3년 약정 공식 위약금 및 해지 당월 요금까지 1일 단위 정밀 일할계산을 지원합니다.</p>
+    </header>
+
+    <!-- Carrier Switcher -->
+    <div class="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-3 gap-2">
+      <button type="button" class="carrier-top-btn py-3 text-xs sm:text-sm md:text-base font-extrabold rounded-xl transition border border-orange-500 bg-orange-50 text-orange-600 shadow-sm" data-carrier="SK">
+        SK
+      </button>
+      <button type="button" class="carrier-top-btn py-3 text-xs sm:text-sm md:text-base font-extrabold rounded-xl transition border border-transparent text-slate-500 hover:bg-slate-50" data-carrier="KT">
+        KT
+      </button>
+      <button type="button" class="carrier-top-btn py-3 text-xs sm:text-sm md:text-base font-extrabold rounded-xl transition border border-transparent text-slate-500 hover:bg-slate-50" data-carrier="LG">
+        LGU+
+      </button>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Input Column (6 Cols) -->
+      <section class="lg:col-span-6 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+        
+        <!-- Termination Mode Selector -->
+        <div class="bg-gradient-to-r from-rose-50 to-amber-50 p-3.5 rounded-xl border border-rose-200 space-y-2">
+          <label class="block text-xs font-black text-rose-950">🚨 해지 유형 선택 (3년 약정 위약금 산출)</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="modeFullBtn" class="cancel-mode-btn py-2.5 px-3 rounded-lg text-xs sm:text-sm font-extrabold transition bg-rose-600 text-white shadow-sm flex items-center justify-center gap-1.5" data-mode="full">
+              <span>전체 해지 (인터넷+TV)</span>
+            </button>
+            <button type="button" id="modeTvBtn" class="cancel-mode-btn py-2.5 px-3 rounded-lg text-xs sm:text-sm font-extrabold transition bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-1.5" data-mode="tv">
+              <span>TV만 해지 (인터넷 유지)</span>
+            </button>
+          </div>
+          <p id="cancelModeDesc" class="text-[11px] text-rose-700 font-medium pt-0.5">※ 인터넷과 TV를 모두 해지할 때 발생하는 3년 약정 총 위약금을 계산합니다.</p>
+        </div>
+
+        <!-- 1. Internet Section -->
+        <div class="space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+          <label class="block text-xs font-bold text-slate-700">🌐 1. 인터넷 상품 선택 (3년 약정 기준)</label>
+          
+          <div id="internetTabs" class="flex flex-wrap gap-1 bg-slate-200 p-1 rounded-lg text-xs font-semibold">
+            <!-- Populated via JS -->
+          </div>
+
+          <div>
+            <select id="internetPlan" class="w-full text-xs sm:text-sm rounded-lg border border-slate-300 p-2.5 bg-white font-medium focus:ring-2 focus:ring-rose-500 outline-none">
+              <!-- Dynamically Populated -->
+            </select>
+          </div>
+
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-[11px] font-semibold text-slate-500">WiFi 공유기 선택 (3년 약정)</label>
+              <span id="wifiBadge" class="text-[10px] text-blue-600 font-bold bg-blue-50 px-1.5 py-0.5 rounded">전산 요금 연동</span>
+            </div>
+            <select id="wifiOption" class="w-full text-xs sm:text-sm rounded-lg border border-slate-300 p-2 bg-white font-medium focus:ring-2 focus:ring-rose-500 outline-none">
+              <!-- Dynamically Populated -->
+            </select>
+          </div>
+        </div>
+
+        <!-- 2. TV & STB Section -->
+        <div class="space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+          <label id="tvSectionTitle" class="block text-xs font-bold text-slate-700">📺 2. IPTV & 셋톱박스 선택 (3년 약정 기준)</label>
+          
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 mb-1">TV 요금제 (3년 약정)</label>
+            <select id="tvPlan" class="w-full text-xs sm:text-sm rounded-lg border border-slate-300 p-2.5 bg-white font-medium focus:ring-2 focus:ring-rose-500 outline-none">
+              <!-- Dynamically Populated -->
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 mb-1">셋톱박스 기종 (3년 약정)</label>
+            <select id="stbOption" class="w-full text-xs sm:text-sm rounded-lg border border-slate-300 p-2 bg-white font-medium focus:ring-2 focus:ring-rose-500 outline-none">
+              <!-- Dynamically Populated -->
+            </select>
+          </div>
+        </div>
+
+        <!-- 3. Wireless Bundle Selection -->
+        <div class="space-y-2 bg-blue-50/80 p-3.5 rounded-xl border border-blue-200">
+          <div class="flex justify-between items-center">
+            <label id="bundleSectionTitle" class="text-xs font-extrabold text-blue-950">📱 3. 결합할인 선택 (현행 결합 / 구 결합)</label>
+            <span class="text-[10px] text-blue-700 font-bold bg-blue-100 px-1.5 py-0.5 rounded">전산 할인선택</span>
+          </div>
+          <select id="wirelessBundleSelect" class="w-full text-xs sm:text-sm rounded-lg border border-blue-300 p-2.5 bg-white font-bold text-blue-900 focus:ring-2 focus:ring-blue-500 outline-none">
+            <!-- Dynamically Populated with optgroups based on carrier -->
+          </select>
+          <p id="bundleDescText" class="text-[11px] text-blue-600 mt-1 font-medium"></p>
+        </div>
+
+        <!-- 4. Gift & Duration (Months vs Daily Prorated Toggle) -->
+        <div class="space-y-3 pt-1">
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-xs font-bold text-slate-700">가입 사은품 (현금/상품권)</label>
+              <span id="giftValText" class="text-xs font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">45만 원</span>
+            </div>
+            <input id="gift" type="range" min="0" max="800000" step="10000" value="450000" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+            <span class="text-[11px] text-amber-600 block mt-0.5">※ 3년 약정 기준: 개통 후 365일(1년) 이내 해지 시 100% 전액 환수</span>
+          </div>
+
+          <!-- Usage Duration Calculation Method Switch -->
+          <div class="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200 space-y-3">
+            <div class="flex justify-between items-center">
+              <label class="text-xs font-extrabold text-slate-800">사용 기간 입력 방식</label>
+              <div class="inline-flex rounded-lg bg-amber-200/70 p-0.5 text-[11px] font-bold">
+                <button type="button" id="calcModeMonthBtn" class="calc-type-btn px-2.5 py-1 rounded-md bg-white text-amber-900 shadow-sm transition">간편 개월 수</button>
+                <button type="button" id="calcModeDateBtn" class="calc-type-btn px-2.5 py-1 rounded-md text-amber-800 hover:text-amber-950 transition">정밀 일할계산 (날짜선택)</button>
+              </div>
+            </div>
+
+            <!-- 1) Month Slider View -->
+            <div id="monthSliderView" class="space-y-1">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-[11px] font-bold text-slate-600">사용 개월 수</span>
+                <span id="monthValText" class="text-sm font-black text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-md">13개월 차 (약 395일)</span>
+              </div>
+              <input id="months" type="range" min="1" max="36" step="1" value="13" class="w-full h-2.5 bg-amber-200 rounded-lg appearance-none cursor-pointer">
+              <div class="flex justify-between text-[10px] text-slate-500 font-semibold mt-1">
+                <span>1개월</span>
+                <span>12개월(사은품 소멸)</span>
+                <span>18개월(위약금 최고점)</span>
+                <span>36개월(약정 만료 0원)</span>
+              </div>
+            </div>
+
+            <!-- 2) Date Picker View (Daily Proration) -->
+            <div id="datePickerView" class="hidden space-y-2 pt-1 border-t border-amber-200/80">
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-600 mb-1">📅 개통일자</label>
+                  <input id="startDateInput" type="date" class="w-full text-xs font-semibold p-2 bg-white border border-amber-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-600 mb-1">📅 해지(예정)일자</label>
+                  <input id="endDateInput" type="date" class="w-full text-xs font-semibold p-2 bg-white border border-amber-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500">
+                </div>
+              </div>
+              <div class="bg-amber-100/90 p-2 rounded-lg text-xs font-bold text-amber-950 flex justify-between items-center">
+                <span>정산 총 사용일수:</span>
+                <span id="exactDaysText" class="text-sm text-rose-600 font-black">0일 (0개월 0일)</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Results Column (6 Cols) -->
+      <section class="lg:col-span-6 space-y-4">
+        
+        <!-- Summary Card -->
+        <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-5 rounded-2xl text-white shadow-md space-y-4 border border-slate-700">
+          
+          <div class="space-y-1.5 pb-3 border-b border-slate-700/80">
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-slate-400">3년 약정 정상 총액 (소계)</span>
+              <span id="baseMonthlyBill" class="text-slate-300 font-semibold">0원</span>
+            </div>
+            
+            <div class="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700 text-xs space-y-1 my-2">
+              <div class="font-bold text-emerald-400 flex justify-between">
+                <span>🔍 적용된 3년 약정 결합할인 내역</span>
+                <span id="bundleMonthlyDiscount">-0원/월</span>
+              </div>
+              <div class="text-[11px] text-slate-300 space-y-0.5 pt-1 border-t border-slate-700">
+                <div class="flex justify-between">
+                  <span class="text-slate-400">· TV 결합할인:</span>
+                  <span id="discTvText" class="font-semibold text-slate-200">0원</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">· 인터넷 결합할인 (유선):</span>
+                  <span id="discIntWireText" class="font-semibold text-slate-200">0원</span>
+                </div>
+                <div class="flex justify-between text-emerald-300 font-bold">
+                  <span>· 모바일(유무선) 추가할인:</span>
+                  <span id="discMobileText">0원</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Active Monthly Bill -->
+            <div class="flex justify-between items-baseline pt-1">
+              <div>
+                <span class="text-[11px] text-slate-400 block">3년 약정 최종 월 납부액</span>
+                <span id="totalMonthlyBill" class="text-3xl font-black text-emerald-400">0</span>
+                <span class="text-xs text-slate-300">원/월</span>
+              </div>
+              <div class="text-right">
+                <span id="penaltyTitleLabel" class="text-[11px] text-rose-300 font-bold block">3년 약정 해지 총 위약금 (전체)</span>
+                <span id="totalPenalty" class="text-2xl sm:text-3xl font-black text-amber-400">0</span>
+                <span class="text-xs text-slate-300">원</span>
+              </div>
+            </div>
+
+            <!-- Prorated Bill on Termination Month -->
+            <div class="bg-slate-800/90 p-2 rounded-lg border border-slate-700 flex justify-between items-center text-xs mt-1">
+              <span class="text-slate-300">📅 해지 당월 일할 통신요금:</span>
+              <span class="text-emerald-300 font-bold"><span id="proratedMonthBill">0</span>원</span>
+            </div>
+
+            <!-- After Termination Monthly Bill (For TV Only Mode) -->
+            <div id="afterCancelBox" class="hidden mt-2 pt-2 border-t border-slate-700/80 bg-rose-950/40 p-2.5 rounded-lg border border-rose-800/60">
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-rose-200 font-bold">👉 TV 해지 후 인터넷 단독 월 납부액:</span>
+                <span class="text-sm font-black text-amber-300"><span id="afterMonthlyBill">0</span>원/월</span>
+              </div>
+              <p class="text-[10px] text-slate-400 mt-0.5">※ TV 결합할인이 소멸되고 인터넷 단독/무선 결합 3년 약정 요금으로 변경됩니다.</p>
+            </div>
+          </div>
+
+          <!-- Penalty Breakdown List -->
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700">
+              <span id="planDiscLabel1" class="text-slate-400 block text-[10px]">인터넷 기본할인 반환금</span>
+              <span id="planDiscount1" class="font-bold text-slate-100">0원</span>
+            </div>
+            <div class="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700">
+              <span id="planDiscLabel2" class="text-slate-400 block text-[10px]">TV 기본할인 반환금</span>
+              <span id="planDiscount2" class="font-bold text-slate-100">0원</span>
+            </div>
+            <div class="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700">
+              <span id="bundleDiscLabel1" class="text-slate-400 block text-[10px]">인터넷 결합할인 반환금</span>
+              <span id="bundleDiscount1" class="font-bold text-rose-300">0원</span>
+            </div>
+            <div class="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700">
+              <span id="bundleDiscLabel2" class="text-slate-400 block text-[10px]">TV 결합할인 반환금</span>
+              <span id="bundleDiscount2" class="font-bold text-rose-300">0원</span>
+            </div>
+            <div class="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700">
+              <span id="equipDiscLabel" class="text-slate-400 block text-[10px]">장비(공유기/셋톱) 반환금 (일할)</span>
+              <span id="equipDiscount" class="font-bold text-slate-100">0원</span>
+            </div>
+            <div class="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700">
+              <span id="giftClawback" class="text-slate-400 block text-[10px]">사은품 환수금</span>
+              <span id="giftClawbackVal" class="font-extrabold text-amber-300">0원</span>
+            </div>
+            <div class="bg-slate-800/90 p-2 rounded-lg border border-slate-700 col-span-2 text-center">
+              <span id="giftStatusText" class="text-[11px] text-emerald-400 font-semibold">13개월 차 (사은품 환수 의무 소멸)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart Card -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-2">
+          <div class="flex justify-between items-center">
+            <h3 id="chartTitleText" class="font-bold text-xs sm:text-sm text-slate-800">1~36개월 3년 약정 위약금 추이 (전체 해지)</h3>
+            <span class="text-[11px] font-semibold text-slate-500">선택: <strong id="chartCurrentMonth" class="text-rose-600">13개월</strong></span>
+          </div>
+          <div class="relative h-48 w-full">
+            <canvas id="penaltyChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Copy Action Button -->
+        <button id="copyBtn" type="button" class="w-full py-3.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition shadow-sm">
+          <span>📋 고객 발송용 3년 약정 상세 견적서 복사</span>
+        </button>
+
+      </section>
+    </div>
+
+  </div>
+
+  <script>
+    // 3-Carrier Exact Database (Modern & Legacy Grandfathered Bundles)
+    const CARRIER_DATA = {
+      SK: {
+        name: 'SK telecom / SKB',
+        color: '#ea580c',
+        thresholdDays: 240, // 8개월 (240일) 기준
+        baseDenominatorDays: 855, // (1095 - 240) = 855일
+        thresholdMonths: 8,
+        baseDenominator: 28,
+        btnActive: 'border-orange-500 bg-orange-50 text-orange-600 shadow-sm',
+        tvTitle: '📺 Btv & 셋톱박스 선택 (3년 약정)',
+        bundleTitle: '📱 SK 결합할인 선택 (3년 약정)',
+        bundles: [
+          { id: 'sk_wire_only', group: 'current', name: '무선결합 미적용 (요즘우리집결합)', wireDisc: { 100: 2200, 500: 5500, 1000: 5500, 2500: 5500, 5000: 5500 }, mobileDisc: 0, desc: '인터넷(최대 -5,500원) + TV(-2,200원) 유선 결합할인 적용', default: true },
+          { id: 'sk_family', group: 'current', name: '요즘 가족 결합 (유무선 결합)', wireDisc: { 100: 0, 500: 0, 1000: 0, 2500: 0, 5000: 0 }, mobileDiscSpeed: { 100: 4400, 500: 12100, 1000: 13200, 2500: 13200, 5000: 13200 }, desc: '인터넷 요금 할인 (100M: 4.4천원 / 500M: 1.21만원 / 1G: 1.32만원)' },
+          { id: 'sk_on_30', group: 'current', name: 'T끼리 온가족할인 (30년 이상 / 50%)', isRate: true, rate: 0.5, isPenaltyWaived: true, desc: '3년 약정 기준가의 50% 감면 (★결합할인 위약금 전액 면제)' },
+          { id: 'sk_on_20', group: 'current', name: 'T끼리 온가족할인 (20~30년 / 30%)', isRate: true, rate: 0.3, isPenaltyWaived: true, desc: '3년 약정 기준가의 30% 감면 (★결합할인 위약금 전액 면제)' },
+          { id: 'sk_on_10', group: 'current', name: 'T끼리 온가족할인 (10~20년 / 10%)', isRate: true, rate: 0.1, isPenaltyWaived: true, desc: '3년 약정 기준가의 10% 감면 (★결합할인 위약금 전액 면제)' },
+          { id: 'sk_legacy_plan', group: 'legacy', name: '[구] 온가족플랜 (2회선 이상)', wireDisc: { 100: 5500, 500: 11110, 1000: 11110, 2500: 11110, 5000: 11110 }, mobileDisc: 0, desc: '인터넷 요금 정액 감면 (100M: -5,500원 / 500M·1G: -11,110원)' },
+          { id: 'sk_legacy_free', group: 'legacy', name: '[구] 온가족프리 (1~4회선)', wireDisc: { 100: 3300, 500: 4400, 1000: 5500, 2500: 5500, 5000: 5500 }, mobileDisc: 3300, desc: '인터넷 할인(-3,300~5,500원) + 모바일 회선당 할인' },
+          { id: 'sk_legacy_single', group: 'legacy', name: '[구] 한가족할인 (모바일 1회선)', wireDisc: { 100: 8800, 500: 13200, 1000: 13200, 2500: 13200, 5000: 13200 }, mobileDisc: 0, desc: '인터넷 요금 할인 (100M: -8,800원 / 500M: -13,200원)' },
+          { id: 'sk_legacy_allfree', group: 'legacy', name: '[구] 온가족무료 (3회선 인터넷 무료)', wireDisc: { 100: 22000, 500: 22000, 1000: 22000, 2500: 22000, 5000: 22000 }, mobileDisc: 0, desc: '100M 인터넷 기본료 전액 감면 (-22,000원/월)' }
+        ],
+        tabs: [
+          { id: 'wifi', name: 'WIFI 결합형' },
+          { id: 'basic', name: '기본 인터넷' }
+        ],
+        internet: {
+          wifi: [
+            { id: 'sk_w500m', name: '기가라이트인터넷 와이파이 (500M)', price: 34100, noContract: 48400, speed: 500, default: true },
+            { id: 'sk_w100m', name: '광랜인터넷 와이파이 (100M)', price: 23100, noContract: 41800, speed: 100 },
+            { id: 'sk_w1g', name: '기가인터넷 와이파이 (1G)', price: 39600, noContract: 57200, speed: 1000 },
+            { id: 'sk_x2.5g', name: '기가프리미엄 X2.5', price: 44000, noContract: 66000, speed: 2500 },
+            { id: 'sk_x5g', name: '기가프리미엄 X5', price: 55000, noContract: 77000, speed: 5000 }
+          ],
+          basic: [
+            { id: 'sk_500m', name: '기가라이트 500M', price: 33000, noContract: 46200, speed: 500, default: true },
+            { id: 'sk_100m', name: '광랜인터넷 100M', price: 22000, noContract: 39600, speed: 100 },
+            { id: 'sk_1g', name: '기가인터넷 1G', price: 38500, noContract: 55000, speed: 1000 }
+          ]
+        },
+        wifiHw: {
+          wifi: [
+            { id: 'band_giga', name: 'band Giga WiFi (기본포함)', price: 0, noContract: 0, default: true },
+            { id: 'wifi7', name: 'Giga WiFi 7 (업그레이드)', price: 1100, noContract: 7700 },
+            { id: 'none', name: '공유기 미적용', price: 0, noContract: 0 }
+          ],
+          basic: [
+            { id: 'band_giga', name: 'band Giga WiFi', price: 1100, noContract: 4400, default: true },
+            { id: 'wifi7', name: 'Giga WiFi 7', price: 3300, noContract: 7700 },
+            { id: 'none', name: '공유기 미적용', price: 0, noContract: 0 }
+          ]
+        },
+        tv: [
+          { id: 'std', name: 'Btv 스탠다드 (235ch)', price: 15400, discountPrice: 13200, noContract: 23100, discount: 2200, default: true },
+          { id: 'eco', name: 'Btv 이코노미 (183ch)', price: 12100, discountPrice: 9900, noContract: 19800, discount: 2200 },
+          { id: 'all', name: 'Btv ALL (257ch)', price: 18700, discountPrice: 16500, noContract: 26400, discount: 2200 },
+          { id: 'all_plus', name: 'B tv All + (257ch)', price: 24200, discountPrice: 22000, noContract: 31900, discount: 2200 },
+          { id: 'none', name: 'Btv 미적용', price: 0, discountPrice: 0, noContract: 0, discount: 0 }
+        ],
+        stb: [
+          { id: 'smart3', name: '스마트3 셋톱', price: 4400, noContract: 8800, default: true },
+          { id: 'smart3_mini', name: 'Smart 3 mini', price: 4400, noContract: 8800 },
+          { id: 'ai5', name: 'AI 5 셋톱', price: 7700, noContract: 12100 },
+          { id: 'ai4_vision', name: 'AI 4 Vision', price: 8800, noContract: 13200 },
+          { id: 'none', name: '셋톱 미적용', price: 0, noContract: 0 }
+        ]
+      },
+      KT: {
+        name: 'KT olleh',
+        color: '#dc2626',
+        thresholdDays: 180, // 6개월 (180일) 기준
+        baseDenominatorDays: 915, // (1095 - 180) = 915일
+        thresholdMonths: 6,
+        baseDenominator: 30,
+        btnActive: 'border-red-500 bg-red-50 text-red-600 shadow-sm',
+        tvTitle: '📺 지니TV & 기가지니 셋톱 선택 (3년 약정)',
+        bundleTitle: '📱 KT 결합할인 선택 (3년 약정)',
+        bundles: [
+          { id: 'kt_wire_only', group: 'current', name: '무선결합 미적용 (인터넷+TV 유선결합)', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 0, desc: '인터넷 -5,500원 + TV 결합할인 적용', default: true },
+          { id: 'kt_total', group: 'current', name: '총액 결합할인 (모바일 결합)', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDiscSpeed: { 100: 3300, 500: 5500, 1000: 5500, 2500: 5500 }, desc: '인터넷 총 8.8천~1.1만원 할인 (유선 -5,500 + 모바일기여분)' },
+          { id: 'kt_single', group: 'current', name: '프리미엄 싱글결합 (모바일 25% 전용)', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 0, desc: '인터넷 유선 -5,500원 (모바일 청구서에서 월 25% 추가할인)' },
+          { id: 'kt_family_50', group: 'current', name: '패밀리 결합 (모회선 50% 할인)', isRate: true, rate: 0.5, isPenaltyWaived: true, desc: '3년 약정 기준가의 50% 감면 (★결합할인 위약금 면제)' },
+          { id: 'kt_legacy_olleh', group: 'legacy', name: '[구] 인터넷 뭉치면올레 (2회선 이상)', wireDisc: { 100: 22000, 500: 27500, 1000: 27500, 2500: 27500 }, mobileDisc: 0, desc: '100M 인터넷 무료(-22,000원) / 500M(-27,500원 할인)' },
+          { id: 'kt_legacy_lte', group: 'legacy', name: '[구] LTE 뭉치면올레', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 5500, desc: '인터넷 -5,500원 + 모바일 요금제별 할인' },
+          { id: 'kt_legacy_fam_wire', group: 'legacy', name: '[구] 우리가족무선결합 (모바일할인 전용)', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 0, desc: '인터넷 유선결합 -5,500원 (모바일 청구서에서 정액할인)' }
+        ],
+        tabs: [
+          { id: 'kt_giga_wi', name: '기가 Wi 결합' },
+          { id: 'kt_safe_pkg', name: '안심인터넷 패키지' },
+          { id: 'kt_basic', name: '기본 인터넷' }
+        ],
+        internet: {
+          kt_giga_wi: [
+            { id: 'kt_basic_wi', name: '인터넷 베이직 와이파이 (500M)', price: 34100, noContract: 48400, speed: 500, default: true },
+            { id: 'kt_slim_wi', name: '인터넷 슬림 와이파이 (100M)', price: 23100, noContract: 41800, speed: 100 },
+            { id: 'kt_ess_wi', name: '인터넷 에센스 와이파이 (1G)', price: 38500, noContract: 57200, speed: 1000 },
+            { id: 'kt_prem_wi', name: '인터넷 프리미엄 와이파이 (2.5G)', price: 44000, noContract: 66000, speed: 2500 }
+          ],
+          kt_safe_pkg: [
+            { id: 'kt_basic_s', name: '인터넷 베이직팩S (500M)', price: 34650, noContract: 49500, speed: 500, default: true },
+            { id: 'kt_slim_s', name: '인터넷 슬림팩S (100M)', price: 23650, noContract: 42900, speed: 100 },
+            { id: 'kt_ess_s', name: '인터넷 에센스팩S (1G)', price: 40150, noContract: 60500, speed: 1000 }
+          ],
+          kt_basic: [
+            { id: 'kt_b_basic', name: '인터넷 베이직 (500M)', price: 33000, noContract: 46200, speed: 500, default: true },
+            { id: 'kt_b_slim', name: '인터넷 슬림 (100M)', price: 22000, noContract: 39600, speed: 100 },
+            { id: 'kt_b_ess', name: '인터넷 에센스 (1G)', price: 38500, noContract: 55000, speed: 1000 }
+          ]
+        },
+        wifiHw: {
+          kt_giga_wi: [
+            { id: 'kt_ax', name: '기가 와이파이 홈 ax (기본포함)', price: 0, noContract: 0, default: true },
+            { id: 'kt_wifi7d', name: 'KT WiFi 7D (업그레이드)', price: 1100, noContract: 6600 },
+            { id: 'none', name: '공유기 미적용', price: 0, noContract: 0 }
+          ],
+          kt_safe_pkg: [
+            { id: 'kt_ax', name: '기가 와이파이 홈 ax (기본포함)', price: 0, noContract: 0, default: true },
+            { id: 'kt_wifi7d', name: 'KT WiFi 7D (업그레이드)', price: 1100, noContract: 6600 },
+            { id: 'none', name: '공유기 미적용', price: 0, noContract: 0 }
+          ],
+          kt_basic: [
+            { id: 'kt_ax', name: '기가 와이파이 홈 ax', price: 2200, noContract: 4400, default: true },
+            { id: 'kt_wifi7d', name: 'KT WiFi 7D', price: 3850, noContract: 6600 },
+            { id: 'none', name: '공유기 미적용', price: 0, noContract: 0 }
+          ]
+        },
+        tv: [
+          { id: 'kt_disney_all_g', name: '지니 TV 디즈니+ 모든G (255ch/디즈니+)', price: 28100, discountPrice: 21500, noContract: 36630, discount: 6600 },
+          { id: 'kt_all_g', name: '지니 TV 모든G (255ch/25만편VOD)', price: 23540, discountPrice: 19800, noContract: 28930, discount: 3740 },
+          { id: 'kt_ess', name: '지니 TV 에센스 (268ch)', price: 20240, discountPrice: 16500, noContract: 25300, discount: 3740 },
+          { id: 'kt_lite', name: '지니 TV 라이트 (242ch)', price: 15840, discountPrice: 13200, noContract: 19800, discount: 2640, default: true },
+          { id: 'kt_basic', name: '지니 TV 베이직 (238ch)', price: 14740, discountPrice: 12100, noContract: 18150, discount: 2640 },
+          { id: 'none', name: '지니TV 미적용', price: 0, discountPrice: 0, noContract: 0, discount: 0 }
+        ],
+        stb: [
+          { id: 'kt_g4', name: '기가지니4 셋톱', price: 6600, noContract: 11000, default: true },
+          { id: 'kt_g3', name: '기가지니3 셋톱', price: 4400, noContract: 8800 },
+          { id: 'kt_ga', name: '기가지니A 셋톱', price: 3300, noContract: 6600 },
+          { id: 'kt_soundbar', name: '지니TV 사운드바', price: 8800, noContract: 13200 },
+          { id: 'none', name: '셋톱 미적용', price: 0, noContract: 0 }
+        ]
+      },
+      LG: {
+        name: 'LG U+',
+        color: '#e11d48',
+        thresholdDays: 240,
+        baseDenominatorDays: 855,
+        thresholdMonths: 8,
+        baseDenominator: 28,
+        btnActive: 'border-rose-500 bg-rose-50 text-rose-600 shadow-sm',
+        tvTitle: '📺 U+tv & 셋톱박스 선택 (3년 약정)',
+        bundleTitle: '📱 LG 결합할인 선택 (3년 약정)',
+        bundles: [
+          { id: 'lg_wire_only', group: 'current', name: '무선결합 미적용 (인터넷+TV 유선결합)', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 0, desc: '인터넷 -5,500원 + TV -2,200원 유선결합 할인 적용', default: true },
+          { id: 'lg_cham', group: 'current', name: '참 쉬운 가족결합 (유무선 결합)', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDiscSpeed: { 100: 5500, 500: 9900, 1000: 13200, 2500: 13200 }, desc: '인터넷 총 1.1만~1.87만원 할인 (유선 -5,500 + 속도별 모바일 추가할인)' },
+          { id: 'lg_together', group: 'current', name: 'U+투게더 결합', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDiscSpeed: { 100: 11000, 500: 11000, 1000: 11000, 2500: 11000 }, desc: '인터넷 11,000원 추가할인' },
+          { id: 'lg_legacy_home', group: 'legacy', name: '[구] 한방에Home (한방에홈 1/2)', wireDisc: { 100: 8800, 500: 11000, 1000: 11000, 2500: 11000 }, mobileDisc: 0, desc: '인터넷 정액 감면 (100M: -8,800원 / 500M·1G: -11,000원)' },
+          { id: 'lg_legacy_love', group: 'legacy', name: '[구] 가족무한사랑 (유무선 결합)', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 5500, desc: '인터넷 -5,500원 + 모바일 총액구간별 할인' },
+          { id: 'lg_legacy_yo', group: 'legacy', name: '[구] 한방에yo (한방에YO)', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 0, desc: '인터넷 기본할인 유지 (모바일 청구서에서 회선당 할인)' }
+        ],
+        tabs: [
+          { id: 'lg_safe', name: '프리미엄 안심' },
+          { id: 'lg_smart_giga', name: '스마트기가' },
+          { id: 'lg_basic', name: '기본 인터넷' }
+        ],
+        internet: {
+          lg_safe: [
+            { id: 'lg_safe_500', name: '프리미엄 안심 500M', price: 37400, noContract: 52800, speed: 500, default: true },
+            { id: 'lg_safe_100', name: '프리미엄 안심 100M', price: 25300, noContract: 42900, speed: 100 },
+            { id: 'lg_safe_1g', name: '프리미엄 안심 1기가', price: 42900, noContract: 59400, speed: 1000 }
+          ],
+          lg_smart_giga: [
+            { id: 'lg_smart_500', name: '스마트기가 최대 500M', price: 35200, noContract: 50600, speed: 500, default: true },
+            { id: 'lg_smart_1g', name: '스마트기가 최대 1G', price: 40700, noContract: 57200, speed: 1000 }
+          ],
+          lg_basic: [
+            { id: 'lg_b_500', name: '기가슬림안심 500M', price: 33000, noContract: 46200, speed: 500, default: true },
+            { id: 'lg_b_100', name: '광랜안심 100M', price: 22000, noContract: 39600, speed: 100 },
+            { id: 'lg_b_1g', name: '기가안심 1G', price: 38500, noContract: 55000, speed: 1000 }
+          ]
+        },
+        wifiHw: {
+          default: [
+            { id: 'lg_wifi6_2', name: '기가 WiFi6 기본제공 (무료)', price: 0, noContract: 0, default: true },
+            { id: 'lg_wifi6_spk', name: '기가 WiFi6 + 홈스피커', price: 1100, noContract: 6600 },
+            { id: 'none', name: '공유기 미적용', price: 0, noContract: 0 }
+          ]
+        },
+        tv: [
+          { id: 'lg_prem', name: '프리미엄 TV (257ch)', price: 18700, discountPrice: 16500, noContract: 28600, discount: 2200, default: true },
+          { id: 'lg_adv', name: '고급형 TV (235ch)', price: 17600, discountPrice: 15400, noContract: 26400, discount: 2200 },
+          { id: 'lg_basic', name: '기본형 TV (222ch)', price: 16500, discountPrice: 14300, noContract: 24200, discount: 2200 },
+          { id: 'lg_eco', name: '실속형 TV (216ch)', price: 15400, discountPrice: 13200, noContract: 23100, discount: 2200 },
+          { id: 'none', name: 'U+tv 미적용', price: 0, discountPrice: 0, noContract: 0, discount: 0 }
+        ],
+        stb: [
+          { id: 'lg_uhd4', name: '4K UHD4 셋톱', price: 4400, noContract: 8800, default: true },
+          { id: 'lg_snd2', name: 'U+ TV 사운드바2', price: 8800, noContract: 13200 },
+          { id: 'none', name: '셋톱 미적용', price: 0, noContract: 0 }
+        ]
+      }
+    };
+
+    // State Variables
+    let currentCarrier = 'SK';
+    let currentTab = 'wifi';
+    let currentBundleId = 'sk_wire_only';
+    let cancelMode = 'full'; // 'full' | 'tv'
+    let durationCalcType = 'month'; // 'month' | 'date'
+    let penaltyChartInstance = null;
+
+    // Default dates setup (Today & 13 months ago)
+    const todayObj = new Date();
+    const thirteenMonthsAgo = new Date();
+    thirteenMonthsAgo.setMonth(todayObj.getMonth() - 13);
+
+    const formatDateStr = (d) => d.toISOString().split('T')[0];
+
+    // DOM Elements
+    const carrierBtns = document.querySelectorAll('.carrier-top-btn');
+    const cancelModeBtns = document.querySelectorAll('.cancel-mode-btn');
+    const cancelModeDesc = document.getElementById('cancelModeDesc');
+    const penaltyTitleLabel = document.getElementById('penaltyTitleLabel');
+    const planDiscLabel1 = document.getElementById('planDiscLabel1');
+    const planDiscLabel2 = document.getElementById('planDiscLabel2');
+    const bundleDiscLabel1 = document.getElementById('bundleDiscLabel1');
+    const bundleDiscLabel2 = document.getElementById('bundleDiscLabel2');
+    const equipDiscLabel = document.getElementById('equipDiscLabel');
+    const chartTitleText = document.getElementById('chartTitleText');
+    const afterCancelBox = document.getElementById('afterCancelBox');
+    const afterMonthlyBillEl = document.getElementById('afterMonthlyBill');
+    const proratedMonthBillEl = document.getElementById('proratedMonthBill');
+
+    const calcModeMonthBtn = document.getElementById('calcModeMonthBtn');
+    const calcModeDateBtn = document.getElementById('calcModeDateBtn');
+    const monthSliderView = document.getElementById('monthSliderView');
+    const datePickerView = document.getElementById('datePickerView');
+    const startDateInput = document.getElementById('startDateInput');
+    const endDateInput = document.getElementById('endDateInput');
+    const exactDaysText = document.getElementById('exactDaysText');
+
+    const internetTabs = document.getElementById('internetTabs');
+    const internetPlanSelect = document.getElementById('internetPlan');
+    const wifiOptionSelect = document.getElementById('wifiOption');
+    const tvPlanSelect = document.getElementById('tvPlan');
+    const stbOptionSelect = document.getElementById('stbOption');
+    const tvSectionTitle = document.getElementById('tvSectionTitle');
+    const bundleSectionTitle = document.getElementById('bundleSectionTitle');
+    const wirelessBundleSelect = document.getElementById('wirelessBundleSelect');
+    const bundleDescText = document.getElementById('bundleDescText');
+    const giftInput = document.getElementById('gift');
+    const giftValText = document.getElementById('giftValText');
+    const monthsInput = document.getElementById('months');
+    const monthValText = document.getElementById('monthValText');
+    
+    const baseMonthlyBillEl = document.getElementById('baseMonthlyBill');
+    const bundleMonthlyDiscountEl = document.getElementById('bundleMonthlyDiscount');
+    const discTvText = document.getElementById('discTvText');
+    const discIntWireText = document.getElementById('discIntWireText');
+    const discMobileText = document.getElementById('discMobileText');
+    const totalMonthlyBillEl = document.getElementById('totalMonthlyBill');
+    const totalPenaltyEl = document.getElementById('totalPenalty');
+    const planDiscount1El = document.getElementById('planDiscount1');
+    const planDiscount2El = document.getElementById('planDiscount2');
+    const bundleDiscount1El = document.getElementById('bundleDiscount1');
+    const bundleDiscount2El = document.getElementById('bundleDiscount2');
+    const equipDiscountEl = document.getElementById('equipDiscount');
+    const giftClawbackVal = document.getElementById('giftClawbackVal');
+    const giftStatusTextEl = document.getElementById('giftStatusText');
+    const chartCurrentMonth = document.getElementById('chartCurrentMonth');
+    const copyBtn = document.getElementById('copyBtn');
+
+    // Init Date Inputs
+    startDateInput.value = formatDateStr(thirteenMonthsAgo);
+    endDateInput.value = formatDateStr(todayObj);
+
+    // Duration Mode Switcher
+    calcModeMonthBtn.addEventListener('click', () => {
+      durationCalcType = 'month';
+      calcModeMonthBtn.className = 'calc-type-btn px-2.5 py-1 rounded-md bg-white text-amber-900 shadow-sm transition';
+      calcModeDateBtn.className = 'calc-type-btn px-2.5 py-1 rounded-md text-amber-800 hover:text-amber-950 transition';
+      monthSliderView.classList.remove('hidden');
+      datePickerView.classList.add('hidden');
+      calculateAndRender();
+    });
+
+    calcModeDateBtn.addEventListener('click', () => {
+      durationCalcType = 'date';
+      calcModeDateBtn.className = 'calc-type-btn px-2.5 py-1 rounded-md bg-white text-amber-900 shadow-sm transition';
+      calcModeMonthBtn.className = 'calc-type-btn px-2.5 py-1 rounded-md text-amber-800 hover:text-amber-950 transition';
+      datePickerView.classList.remove('hidden');
+      monthSliderView.classList.add('hidden');
+      calculateAndRender();
+    });
+
+    [startDateInput, endDateInput].forEach(inp => {
+      inp.addEventListener('change', calculateAndRender);
+    });
+
+    // Cancel Mode Switcher
+    cancelModeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        cancelMode = btn.getAttribute('data-mode');
+        cancelModeBtns.forEach(b => {
+          if (b.getAttribute('data-mode') === cancelMode) {
+            b.className = 'cancel-mode-btn py-2.5 px-3 rounded-lg text-xs sm:text-sm font-extrabold transition bg-rose-600 text-white shadow-sm flex items-center justify-center gap-1.5';
+          } else {
+            b.className = 'cancel-mode-btn py-2.5 px-3 rounded-lg text-xs sm:text-sm font-extrabold transition bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-1.5';
+          }
+        });
+
+        if (cancelMode === 'tv') {
+          cancelModeDesc.innerText = '※ 인터넷 3년 약정은 유지하고 TV와 셋톱박스만 단독 해지할 때의 위약금 및 변경 요금을 계산합니다.';
+          penaltyTitleLabel.innerText = '3년 약정 TV 단독 해지 위약금';
+          planDiscLabel1.innerText = '인터넷 기본할인 반환금';
+          planDiscLabel2.innerText = 'TV 기본할인 반환금';
+          bundleDiscLabel1.innerText = '인터넷 결합할인 반환금';
+          bundleDiscLabel2.innerText = 'TV 결합할인 반환금';
+          equipDiscLabel.innerText = '셋톱박스 임대료 반환금 (일할)';
+          chartTitleText.innerText = '1~36개월 3년 약정 위약금 추이 (TV만 해지)';
+          afterCancelBox.classList.remove('hidden');
+        } else {
+          cancelModeDesc.innerText = '※ 인터넷과 TV를 모두 해지할 때 발생하는 3년 약정 총 위약금을 계산합니다.';
+          penaltyTitleLabel.innerText = '3년 약정 해지 총 위약금 (전체)';
+          planDiscLabel1.innerText = '인터넷 기본할인 반환금';
+          planDiscLabel2.innerText = 'TV 기본할인 반환금';
+          bundleDiscLabel1.innerText = '인터넷 결합할인 반환금';
+          bundleDiscLabel2.innerText = 'TV 결합할인 반환금';
+          equipDiscLabel.innerText = '장비(공유기/셋톱) 반환금 (일할)';
+          chartTitleText.innerText = '1~36개월 3년 약정 위약금 추이 (전체 해지)';
+          afterCancelBox.classList.add('hidden');
+        }
+
+        calculateAndRender();
+      });
+    });
+
+    // Carrier Switching Handler
+    function setCarrier(carrierKey) {
+      currentCarrier = carrierKey;
+      const c = CARRIER_DATA[carrierKey];
+      currentTab = c.tabs[0].id;
+      currentBundleId = c.bundles.find(b => b.default)?.id || c.bundles[0].id;
+
+      carrierBtns.forEach(btn => {
+        const cKey = btn.getAttribute('data-carrier');
+        if (cKey === carrierKey) {
+          btn.className = `carrier-top-btn py-3 text-xs sm:text-sm md:text-base font-extrabold rounded-xl transition border ${c.btnActive}`;
+        } else {
+          btn.className = 'carrier-top-btn py-3 text-xs sm:text-sm md:text-base font-extrabold rounded-xl transition border border-transparent text-slate-500 hover:bg-slate-50';
+        }
+      });
+
+      tvSectionTitle.innerText = c.tvTitle;
+      bundleSectionTitle.innerText = c.bundleTitle;
+
+      renderSubTabs();
+      populateStaticOptions();
+      populateWirelessBundles();
+      renderInternetOptions();
+    }
+
+    carrierBtns.forEach(btn => {
+      btn.addEventListener('click', () => setCarrier(btn.getAttribute('data-carrier')));
+    });
+
+    // Populate Wireless Bundles
+    function populateWirelessBundles() {
+      const c = CARRIER_DATA[currentCarrier];
+      wirelessBundleSelect.innerHTML = '';
+
+      const currentGroup = document.createElement('optgroup');
+      currentGroup.label = '✨ 현행 결합상품 (신규/변경 가능)';
+
+      const legacyGroup = document.createElement('optgroup');
+      legacyGroup.label = '⏳ 구 결합상품 (기존 유지·해지 전용)';
+
+      c.bundles.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b.id;
+        opt.textContent = b.name;
+        if (b.id === currentBundleId) opt.selected = true;
+
+        if (b.group === 'legacy') {
+          legacyGroup.appendChild(opt);
+        } else {
+          currentGroup.appendChild(opt);
+        }
+      });
+
+      wirelessBundleSelect.appendChild(currentGroup);
+      if (legacyGroup.children.length > 0) {
+        wirelessBundleSelect.appendChild(legacyGroup);
+      }
+
+      updateBundleDesc();
+    }
+
+    function updateBundleDesc() {
+      const c = CARRIER_DATA[currentCarrier];
+      const selected = c.bundles.find(b => b.id === wirelessBundleSelect.value) || c.bundles[0];
+      bundleDescText.innerText = `💡 ${selected.desc}`;
+    }
+
+    wirelessBundleSelect.addEventListener('change', (e) => {
+      currentBundleId = e.target.value;
+      updateBundleDesc();
+      calculateAndRender();
+    });
+
+    // Render Sub-tabs
+    function renderSubTabs() {
+      internetTabs.innerHTML = '';
+      const tabs = CARRIER_DATA[currentCarrier].tabs;
+      
+      tabs.forEach(tab => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = tab.name;
+        btn.className = (tab.id === currentTab) 
+          ? 'flex-1 min-w-[70px] py-1.5 px-2 rounded-md bg-white text-slate-900 shadow-sm transition text-center font-bold' 
+          : 'flex-1 min-w-[70px] py-1.5 px-2 rounded-md text-slate-600 hover:text-slate-900 transition text-center';
+        btn.addEventListener('click', () => {
+          currentTab = tab.id;
+          renderSubTabs();
+          populateWifiOptions();
+          renderInternetOptions();
+        });
+        internetTabs.appendChild(btn);
+      });
+    }
+
+    // Populate WiFi Dropdown
+    function populateWifiOptions() {
+      const c = CARRIER_DATA[currentCarrier];
+      let wifiList = [];
+
+      if (currentCarrier === 'KT') {
+        wifiList = c.wifiHw[currentTab] || c.wifiHw['kt_basic'];
+      } else if (currentCarrier === 'SK') {
+        wifiList = c.wifiHw[currentTab] || c.wifiHw['basic'];
+      } else {
+        wifiList = c.wifiHw.default;
+      }
+
+      wifiOptionSelect.innerHTML = '';
+      wifiList.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.id;
+        opt.textContent = `${item.name} (${item.price > 0 ? '+' + item.price.toLocaleString() + '원' : '0원'})`;
+        if (item.default) opt.selected = true;
+        wifiOptionSelect.appendChild(opt);
+      });
+    }
+
+    // Populate Static Dropdowns
+    function populateStaticOptions() {
+      const c = CARRIER_DATA[currentCarrier];
+      populateWifiOptions();
+
+      // TV
+      tvPlanSelect.innerHTML = '';
+      c.tv.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.id;
+        if (item.price > 0) {
+          opt.textContent = `${item.name} (단독 ${item.price.toLocaleString()}원 / 결합 ${(item.price - item.discount).toLocaleString()}원)`;
+        } else {
+          opt.textContent = item.name;
+        }
+        if (item.default) opt.selected = true;
+        tvPlanSelect.appendChild(opt);
+      });
+
+      // STB
+      stbOptionSelect.innerHTML = '';
+      c.stb.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.id;
+        if (item.price > 0) {
+          opt.textContent = `${item.name} (+${item.price.toLocaleString()}원)`;
+        } else {
+          opt.textContent = item.name;
+        }
+        if (item.default) opt.selected = true;
+        stbOptionSelect.appendChild(opt);
+      });
+    }
+
+    // Populate Internet Plans
+    function renderInternetOptions() {
+      internetPlanSelect.innerHTML = '';
+      const list = CARRIER_DATA[currentCarrier].internet[currentTab] || [];
+      list.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.id;
+        opt.textContent = `${item.name} (${item.price.toLocaleString()}원)`;
+        if (item.default) opt.selected = true;
+        internetPlanSelect.appendChild(opt);
+      });
+      calculateAndRender();
+    }
+
+    [internetPlanSelect, wifiOptionSelect, tvPlanSelect, stbOptionSelect].forEach(el => {
+      el.addEventListener('change', calculateAndRender);
+    });
+
+    giftInput.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      giftValText.innerText = (val / 10000).toLocaleString() + '만 원';
+      calculateAndRender();
+    });
+
+    monthsInput.addEventListener('input', (e) => {
+      calculateAndRender();
+    });
+
+    function getSelectedObjects() {
+      const c = CARRIER_DATA[currentCarrier];
+      const intList = c.internet[currentTab] || [];
+      const intObj = intList.find(x => x.id === internetPlanSelect.value) || intList[0] || { name: '미적용', price: 0, noContract: 0, speed: 500 };
+      
+      let wifiList = [];
+      if (currentCarrier === 'KT') wifiList = c.wifiHw[currentTab] || c.wifiHw['kt_basic'];
+      else if (currentCarrier === 'SK') wifiList = c.wifiHw[currentTab] || c.wifiHw['basic'];
+      else wifiList = c.wifiHw.default;
+
+      const wifiObj = wifiList.find(x => x.id === wifiOptionSelect.value) || wifiList[0] || { name: '미적용', price: 0, noContract: 0 };
+      const tvObj = c.tv.find(x => x.id === tvPlanSelect.value) || c.tv[0];
+      const stbObj = c.stb.find(x => x.id === stbOptionSelect.value) || c.stb[0];
+      const bundleObj = c.bundles.find(b => b.id === wirelessBundleSelect.value) || c.bundles[0];
+      
+      return { intObj, wifiObj, tvObj, stbObj, bundleObj };
+    }
+
+    // Exact Daily-Prorated 3-Year Standard Penalty Calculation
+    function calculateDailyOfficialPenalty(monthlyDiscount, days, carrierKey) {
+      if (days <= 0 || monthlyDiscount <= 0 || days >= 1095) return 0;
+      
+      const c = CARRIER_DATA[carrierKey];
+      const thresholdDays = c.thresholdDays; // SK/LG: 240일, KT: 180일
+      const denomDays = c.baseDenominatorDays; // SK/LG: 855일, KT: 915일
+      
+      const dailyDiscount = monthlyDiscount / 30.4167; // 정확한 1일 환산 할인액
+      const totalAccumulated = dailyDiscount * days;
+
+      if (days <= thresholdDays) {
+        return totalAccumulated;
+      } else {
+        const remainingDays = Math.max(0, 1095 - days);
+        return totalAccumulated * (remainingDays / denomDays);
+      }
+    }
+
+    function calculateAndRender() {
+      const { intObj, wifiObj, tvObj, stbObj, bundleObj } = getSelectedObjects();
+      const gift = parseInt(giftInput.value, 10);
+
+      // 1. Determine Exact Duration in Days & Floating Months
+      let currentDays = 0;
+      let floatingMonths = 0;
+      let terminationDayInMonth = 15; // 기본 당월 경과일
+
+      if (durationCalcType === 'date') {
+        const sDate = new Date(startDateInput.value);
+        const eDate = new Date(endDateInput.value);
+        const diffTime = eDate - sDate;
+        currentDays = Math.max(1, Math.min(1095, Math.floor(diffTime / (1000 * 60 * 60 * 24))));
+        
+        floatingMonths = (currentDays / 30.4167);
+        const mFloor = Math.floor(floatingMonths);
+        const dRem = Math.floor(currentDays - (mFloor * 30.4167));
+        exactDaysText.innerText = `${currentDays}일 (${mFloor}개월 ${Math.max(0, dRem)}일)`;
+        chartCurrentMonth.innerText = `${(floatingMonths).toFixed(1)}개월 (${currentDays}일)`;
+
+        // 해지일의 당월 일할 계산 일수
+        terminationDayInMonth = eDate.getDate();
+      } else {
+        const mVal = parseInt(monthsInput.value, 10);
+        floatingMonths = mVal;
+        currentDays = Math.round(mVal * 30.4167);
+        monthValText.innerText = `${mVal}개월 차 (약 ${currentDays}일)`;
+        chartCurrentMonth.innerText = `${mVal}개월`;
+        terminationDayInMonth = 15; // 중간 기준
+      }
+
+      // 2. Regular 3-Year Baseline Sum
+      const regularSubtotal = intObj.price + wifiObj.price + tvObj.price + stbObj.price;
+
+      // 3. Determine Monthly Discounts
+      let tvDiscAmount = (tvObj.price > 0 && intObj.price > 0) ? (tvObj.discount || 0) : 0;
+      let wireIntDiscAmount = 0;
+      let mobileDiscAmount = 0;
+
+      if (bundleObj.isRate && bundleObj.rate) {
+        mobileDiscAmount = Math.round(intObj.price * bundleObj.rate);
+      } else {
+        if (bundleObj.wireDisc) {
+          wireIntDiscAmount = bundleObj.wireDisc[intObj.speed] || bundleObj.wireDisc[500] || 0;
+        }
+        if (bundleObj.mobileDiscSpeed) {
+          mobileDiscAmount = bundleObj.mobileDiscSpeed[intObj.speed] || bundleObj.mobileDiscSpeed[500] || 0;
+        } else if (bundleObj.mobileDisc) {
+          mobileDiscAmount = bundleObj.mobileDisc;
+        }
+      }
+
+      const totalMonthlyDiscount = tvDiscAmount + wireIntDiscAmount + mobileDiscAmount;
+      const finalMonthly = Math.max(0, regularSubtotal - totalMonthlyDiscount);
+
+      // 해지 당월 일할 통신요금 계산 (당월 30일 기준 일할)
+      const proratedMonthlyBill = Math.round((finalMonthly / 30) * Math.min(30, terminationDayInMonth));
+      proratedMonthBillEl.innerText = proratedMonthlyBill.toLocaleString();
+
+      baseMonthlyBillEl.innerText = `${regularSubtotal.toLocaleString()}원`;
+      bundleMonthlyDiscountEl.innerText = totalMonthlyDiscount > 0 ? `-${totalMonthlyDiscount.toLocaleString()}원/월` : '0원';
+      discTvText.innerText = tvDiscAmount > 0 ? `-${tvDiscAmount.toLocaleString()}원` : '0원';
+      discIntWireText.innerText = wireIntDiscAmount > 0 ? `-${wireIntDiscAmount.toLocaleString()}원` : '0원';
+      discMobileText.innerText = mobileDiscAmount > 0 ? `-${mobileDiscAmount.toLocaleString()}원` : '0원';
+      totalMonthlyBillEl.innerText = finalMonthly.toLocaleString();
+
+      // 4. Daily-Prorated Penalty Calculations with Split Internet/TV Values
+      let monthlyInternetPlanDiscount = Math.max(0, intObj.noContract - intObj.price);
+      let monthlyTvPlanDiscount = Math.max(0, tvObj.noContract - tvObj.price);
+
+      let monthlyInternetBundlePenalty = bundleObj.isPenaltyWaived ? 0 : (wireIntDiscAmount + mobileDiscAmount);
+      let monthlyTvBundlePenalty = bundleObj.isPenaltyWaived ? 0 : tvDiscAmount;
+
+      if (cancelMode === 'tv') {
+        monthlyInternetPlanDiscount = 0;
+        monthlyInternetBundlePenalty = 0;
+        monthlyTvPlanDiscount = Math.max(0, tvObj.noContract - tvObj.price);
+        monthlyTvBundlePenalty = tvDiscAmount;
+      }
+
+      let monthlyEquipDiscount = (cancelMode === 'tv') 
+        ? Math.max(0, stbObj.noContract - stbObj.price) 
+        : Math.max(0, wifiObj.noContract - wifiObj.price) + Math.max(0, stbObj.noContract - stbObj.price);
+
+      const internetPlanPenalty = Math.round(calculateDailyOfficialPenalty(monthlyInternetPlanDiscount, currentDays, currentCarrier));
+      const tvPlanPenalty = Math.round(calculateDailyOfficialPenalty(monthlyTvPlanDiscount, currentDays, currentCarrier));
+      const internetBundlePenalty = Math.round(calculateDailyOfficialPenalty(monthlyInternetBundlePenalty, currentDays, currentCarrier));
+      const tvBundlePenalty = Math.round(calculateDailyOfficialPenalty(monthlyTvBundlePenalty, currentDays, currentCarrier));
+      const equipPenalty = Math.round(calculateDailyOfficialPenalty(monthlyEquipDiscount, currentDays, currentCarrier));
+
+      // 사은품 환수 (365일 / 1년 이내 100%)
+      const giftPenalty = currentDays <= 365 ? gift : 0;
+      const totalPenalty = Math.max(0, internetPlanPenalty + tvPlanPenalty + internetBundlePenalty + tvBundlePenalty + equipPenalty + giftPenalty);
+
+      totalPenaltyEl.innerText = totalPenalty.toLocaleString();
+      planDiscount1El.innerText = `${internetPlanPenalty.toLocaleString()}원`;
+      planDiscount2El.innerText = `${tvPlanPenalty.toLocaleString()}원`;
+      bundleDiscount1El.innerText = `${internetBundlePenalty.toLocaleString()}원`;
+      bundleDiscount2El.innerText = `${tvBundlePenalty.toLocaleString()}원`;
+      equipDiscountEl.innerText = `${equipPenalty.toLocaleString()}원`;
+      giftClawbackVal.innerText = `${giftPenalty.toLocaleString()}원`;
+
+      if (currentDays <= 365) {
+        giftStatusTextEl.innerText = `${currentDays}일 차 (365일 이내 해지 시 사은품 100% 환수 대상)`;
+        giftStatusTextEl.className = 'text-[11px] text-rose-400 font-semibold';
+      } else {
+        giftStatusTextEl.innerText = `${currentDays}일 차 (1년 경과로 사은품 환수 의무 소멸)`;
+        giftStatusTextEl.className = 'text-[11px] text-emerald-400 font-semibold';
+      }
+
+      // If TV only mode, show after-cancel monthly bill
+      if (cancelMode === 'tv') {
+        const afterIntSubtotal = intObj.price + wifiObj.price;
+        const afterMonthly = Math.max(0, afterIntSubtotal - mobileDiscAmount);
+        afterMonthlyBillEl.innerText = afterMonthly.toLocaleString();
+      }
+
+      // 5. Render Chart Data (1~36 Months)
+      const labels = [];
+      const dataPoints = [];
+      const pointColors = [];
+      const pointRadii = [];
+
+      for (let i = 1; i <= 36; i++) {
+        labels.push(`${i}M`);
+        const d = Math.round(i * 30.4167);
+        
+        let mIntPlan = cancelMode === 'tv' ? 0 : Math.max(0, intObj.noContract - intObj.price);
+        let mTvPlan = Math.max(0, tvObj.noContract - tvObj.price);
+        let mIntBund = bundleObj.isPenaltyWaived || cancelMode === 'tv' ? 0 : (wireIntDiscAmount + mobileDiscAmount);
+        let mTvBund = bundleObj.isPenaltyWaived ? 0 : tvDiscAmount;
+        let mEquip = (cancelMode === 'tv') ? Math.max(0, stbObj.noContract - stbObj.price) : Math.max(0, wifiObj.noContract - wifiObj.price) + Math.max(0, stbObj.noContract - stbObj.price);
+
+        const p1 = calculateDailyOfficialPenalty(mIntPlan, d, currentCarrier);
+        const p2 = calculateDailyOfficialPenalty(mTvPlan, d, currentCarrier);
+        const p3 = calculateDailyOfficialPenalty(mIntBund, d, currentCarrier);
+        const p4 = calculateDailyOfficialPenalty(mTvBund, d, currentCarrier);
+        const p5 = calculateDailyOfficialPenalty(mEquip, d, currentCarrier);
+        const pGift = (d <= 365) ? gift : 0;
+        const pTotal = Math.max(0, Math.round(p1 + p2 + p3 + p4 + p5 + pGift));
+
+        dataPoints.push(pTotal);
+
+        if (Math.round(floatingMonths) === i) {
+          pointColors.push('#ef4444');
+          pointRadii.push(6);
+        } else if (i === 18) {
+          pointColors.push('#f59e0b');
+          pointRadii.push(4);
+        } else {
+          pointColors.push(CARRIER_DATA[currentCarrier].color);
+          pointRadii.push(2);
+        }
+      }
+
+      renderChart(labels, dataPoints, pointColors, pointRadii);
+    }
+
+    function renderChart(labels, data, pointColors, pointRadii) {
+      const ctx = document.getElementById('penaltyChart').getContext('2d');
+      if (penaltyChartInstance) penaltyChartInstance.destroy();
+
+      const brandColor = CARRIER_DATA[currentCarrier].color;
+
+      penaltyChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: (cancelMode === 'tv') ? '3년 약정 TV 해지 위약금 (원)' : '3년 약정 전체 해지 위약금 (원)',
+            data: data,
+            borderColor: (cancelMode === 'tv') ? '#e11d48' : brandColor,
+            backgroundColor: (cancelMode === 'tv') ? '#e11d4815' : `${brandColor}15`,
+            borderWidth: 2.5,
+            fill: true,
+            tension: 0.3,
+            pointBackgroundColor: pointColors,
+            pointBorderColor: pointColors,
+            pointRadius: pointRadii
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) { return `${ctx.parsed.y.toLocaleString()} 원`; }
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { maxTicksLimit: 12, font: { size: 10 } } },
+            y: {
+              ticks: {
+                callback: function(val) { return (val / 10000) + '만'; },
+                font: { size: 10 }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Copy Summary Button
+    copyBtn.addEventListener('click', () => {
+      const { intObj, wifiObj, tvObj, stbObj, bundleObj } = getSelectedObjects();
+      const totalPenalty = totalPenaltyEl.innerText;
+      const finalMonthly = totalMonthlyBillEl.innerText;
+      const baseMonthly = baseMonthlyBillEl.innerText;
+      const bundleMonthly = bundleMonthlyDiscountEl.innerText;
+      const planDisc1 = planDiscount1El.innerText;
+      const planDisc2 = planDiscount2El.innerText;
+      const bundleDisc1 = bundleDiscount1El.innerText;
+      const bundleDisc2 = bundleDiscount2El.innerText;
+      const equipDisc = equipDiscountEl.innerText;
+      const gift = giftValText.innerText;
+      const giftClaw = giftClawbackVal.innerText;
+      const carrierName = CARRIER_DATA[currentCarrier].name;
+      const afterMonthly = afterMonthlyBillEl.innerText;
+      const proratedBill = proratedMonthBillEl.innerText;
+
+      let durationText = '';
+      if (durationCalcType === 'date') {
+        durationText = `${startDateInput.value} ~ ${endDateInput.value} (${exactDaysText.innerText})`;
+      } else {
+        durationText = `${monthsInput.value}개월 차 (약 ${Math.round(monthsInput.value * 30.4167)}일)`;
+      }
+
+      let summaryText = '';
+
+      if (cancelMode === 'tv') {
+        summaryText = `[${carrierName} 3년 약정 TV 단독 해지 위약금 및 요금 안내서]
+■ 현재 결합 유형: ${bundleObj.name} (3년 약정)
+■ 유지 상품: ${intObj.name} + ${wifiObj.name}
+■ 해지 상품: ${tvObj.name} + ${stbObj.name}
+--------------------------------------
+■ 현재 3년 약정 실납부액: ${finalMonthly}원/월
+👉 TV 해지 후 인터넷 변경요금: ${afterMonthly}원/월 (VAT 포함)
+--------------------------------------
+■ 정산 사용 기간: ${durationText}
+■ TV 단독 해지 예상 위약금(일할): ${totalPenalty}원
+ [세부 위약금 내역]
+  - 인터넷 기본할인 반환금: ${planDisc1}
+  - TV 기본할인 반환금: ${planDisc2}
+  - 인터넷 결합할인 반환금: ${bundleDisc1}
+  - TV 결합할인 반환금: ${bundleDisc2}
+  - 셋톱박스 임대료 반환금: ${equipDisc}
+  - 사은품 환수금: ${giftClaw}
+■ 해지 당월 일할 통신요금: 약 ${proratedBill}원
+--------------------------------------
+[해지 시 필독 유의사항]
+1. 임대 장비 미반납금 (변상금): 셋톱박스, 리모컨, 전원 어댑터 미반납 시 15~25만 원 상당의 기기 원가가 일시 청구됩니다. (회수 기사 방문 시 정상 반납하면 0원 처리)
+2. 해지 당월 일할 요금: 해지 시점까지 사용한 이번 달 통신 요금이 별도 합산 청구됩니다.
+※ 통신사 실제 해지 정산 시 일할 계산 및 회선 상태에 따라 소폭 변동될 수 있습니다.`;
+      } else {
+        summaryText = `[${carrierName} 3년 약정 인터넷·TV 전체 해지 위약금 산출서]
+■ 결합 유형: ${bundleObj.name} (3년 약정)
+■ 가입 상품 내역 (3년 약정 기준)
+ - 인터넷: ${intObj.name} (${intObj.price.toLocaleString()}원)
+ - WiFi 공유기: ${wifiObj.name} (${wifiObj.price.toLocaleString()}원)
+ - IPTV: ${tvObj.name} (${tvObj.price.toLocaleString()}원)
+ - 셋톱박스: ${stbObj.name} (${stbObj.price.toLocaleString()}원)
+--------------------------------------
+■ 3년 약정 정상총액: ${baseMonthly}
+■ 3년 약정 결합할인: ${bundleMonthly}
+■ 최종 실납부액: ${finalMonthly}원/월 (VAT 포함/전산일치)
+■ 가입 수령 사은품: ${gift}
+--------------------------------------
+■ 정산 사용 기간: ${durationText}
+■ 3년 약정 총 예상 위약금(일할): ${totalPenalty}원
+ [세부 위약금 내역]
+  - 인터넷 기본할인 반환금: ${planDisc1}
+  - TV 기본할인 반환금: ${planDisc2}
+  - 인터넷 결합할인 반환금: ${bundleDisc1}
+  - TV 결합할인 반환금: ${bundleDisc2}
+  - 장비 임대료 반환금: ${equipDisc}
+  - 사은품 환수금: ${giftClaw}
+■ 해지 당월 일할 통신요금: 약 ${proratedBill}원
+--------------------------------------
+[해지 시 필독 유의사항]
+1. 임대 장비 미반납금 (변상금): 모뎀, 셋톱박스, 공유기, 리모컨을 반납하지 않으면 15~25만 원 상당의 기기 원가가 일시불 청구됩니다. (회수 기사 방문 시 정상 반납하면 0원 처리)
+2. 해지 당월 일할 요금: 해지 시점까지 사용한 이번 달 통신 요금이 별도 합산 청구됩니다.
+※ 통신사 실제 해지 정산 시 일할 계산 및 회선 상태에 따라 소폭 변동될 수 있습니다.`;
+      }
+
+      navigator.clipboard.writeText(summaryText).then(() => {
+        alert('정밀 일할 견적서가 클립보드에 복사되었습니다! 카카오톡이나 문자메시지에 바로 붙여넣기 하실 수 있습니다.');
+      }).catch(() => {
+        prompt('아래 내용을 복사하세요:', summaryText);
+      });
+    });
+
+    // Initial Setup
+    setCarrier('SK');
+  </script>
+</body>
+</html>
