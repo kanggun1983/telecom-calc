@@ -355,11 +355,15 @@
           wifi: [
             { id: 'band_giga', name: 'band Giga WiFi (기본포함)', price: 0, noContract: 0, default: true },
             { id: 'wifi7', name: 'Giga WiFi 7 (업그레이드)', price: 1100, noContract: 7700 },
+            { id: 'sk_old_giga_free', name: '[구] 기가 와이파이 (기본포함)', price: 0, noContract: 0 },
             { id: 'none', name: '공유기 미적용', price: 0, noContract: 0 }
           ],
           basic: [
             { id: 'band_giga', name: 'band Giga WiFi', price: 1100, noContract: 4400, default: true },
             { id: 'wifi7', name: 'Giga WiFi 7', price: 3300, noContract: 7700 },
+            { id: 'sk_old_wifi', name: '[구] 일반 와이파이 (100M)', price: 1100, noContract: 3300 },
+            { id: 'sk_old_giga', name: '[구] 기가 와이파이 (Giga)', price: 2200, noContract: 5500 },
+            { id: 'sk_old_prem', name: '[구] 기가 와이파이 프리미엄', price: 5500, noContract: 13200 },
             { id: 'none', name: '공유기 미적용', price: 0, noContract: 0 }
           ]
         },
@@ -415,9 +419,25 @@
           ]
         },
         wifiHw: {
-          kt_giga_wi: [{ id: 'kt_ax', name: '기가 와이파이 홈 ax (기본포함)', price: 0, noContract: 0, default: true }, { id: 'none', name: '미적용', price: 0, noContract: 0 }],
-          kt_safe_pkg: [{ id: 'kt_ax', name: '기가 와이파이 홈 ax (기본포함)', price: 0, noContract: 0, default: true }, { id: 'none', name: '미적용', price: 0, noContract: 0 }],
-          kt_basic: [{ id: 'kt_ax', name: '기가 와이파이 홈 ax', price: 2200, noContract: 4400, default: true }, { id: 'none', name: '미적용', price: 0, noContract: 0 }]
+          kt_giga_wi: [
+            { id: 'kt_ax', name: '기가 와이파이 홈 ax (기본포함)', price: 0, noContract: 0, default: true },
+            { id: 'kt_wifi7d', name: 'KT WiFi 7D (업그레이드)', price: 1100, noContract: 6600 },
+            { id: 'kt_old_giga_free', name: '[구] 기가 와이파이 홈 (기본포함)', price: 0, noContract: 0 },
+            { id: 'none', name: '공유기 미적용', price: 0, noContract: 0 }
+          ],
+          kt_safe_pkg: [
+            { id: 'kt_ax', name: '기가 와이파이 홈 ax (기본포함)', price: 0, noContract: 0, default: true },
+            { id: 'kt_wifi7d', name: 'KT WiFi 7D (업그레이드)', price: 1100, noContract: 6600 },
+            { id: 'none', name: '공유기 미적용', price: 0, noContract: 0 }
+          ],
+          kt_basic: [
+            { id: 'kt_ax', name: '기가 와이파이 홈 ax', price: 2200, noContract: 4400, default: true },
+            { id: 'kt_wifi7d', name: 'KT WiFi 7D', price: 3850, noContract: 6600 },
+            { id: 'kt_old_wifi', name: '[구] 홈 와이파이 (100M)', price: 1100, noContract: 3300 },
+            { id: 'kt_old_giga', name: '[구] 기가 와이파이 홈', price: 3300, noContract: 5500 },
+            { id: 'kt_old_prem', name: '[구] 기가 와이파이 프리미엄', price: 5500, noContract: 11000 },
+            { id: 'none', name: '공유기 미적용', price: 0, noContract: 0 }
+          ]
         },
         tv: [
           { id: 'kt_disney_all_g', name: '지니 TV 디즈니+ 모든G (255ch/디즈니+)', price: 28100, discountPrice: 21500, noContract: 36630, discount: 6600 },
@@ -468,7 +488,15 @@
           ]
         },
         wifiHw: {
-          default: [{ id: 'lg_wifi6_2', name: '기가 WiFi6 기본제공 (무료)', price: 0, noContract: 0, default: true }, { id: 'lg_wifi6_spk', name: '기가 WiFi6 + 홈스피커', price: 1100, noContract: 6600 }, { id: 'none', name: '공유기 미적용', price: 0, noContract: 0 }]
+          default: [
+            { id: 'lg_wifi6_2', name: '기가 WiFi6 기본제공 (무료)', price: 0, noContract: 0, default: true }, 
+            { id: 'lg_wifi6_spk', name: '기가 WiFi6 + 홈스피커', price: 1100, noContract: 6600 },
+            { id: 'lg_old_giga_free', name: '[구] 기가 와이파이 (무료)', price: 0, noContract: 0 },
+            { id: 'lg_old_wifi', name: '[구] 일반 와이파이 (100M)', price: 1100, noContract: 4400 },
+            { id: 'lg_old_giga', name: '[구] 기가 와이파이 (유료)', price: 2200, noContract: 5500 },
+            { id: 'lg_old_prem', name: '[구] 기가 와이파이 프리미엄', price: 3300, noContract: 9900 },
+            { id: 'none', name: '공유기 미적용', price: 0, noContract: 0 }
+          ]
         },
         tv: [
           { id: 'lg_prem', name: '프리미엄 TV (257ch)', price: 18700, discountPrice: 16500, noContract: 28600, discount: 2200, default: true },
