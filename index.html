@@ -86,7 +86,7 @@
               <span>위약금3 (계단)</span>
             </button>
           </div>
-          <p id="penaltyTypeDesc" class="text-[11px] text-indigo-700 font-medium pt-0.5">※ 2023년 하반기 이후 개편된 '위약금5 (18개월 부근 최고점 후 하락)' 방식이 적용됩니다.</p>
+          <p id="penaltyTypeDesc" class="text-[11px] text-indigo-700 font-bold pt-0.5">※ 위약금5: 23년 하반기 (KT 9.8 / SK 9.27 / LG 11.1) 이후 가입·재약정</p>
         </div>
 
         <!-- 1. Internet Section -->
@@ -284,7 +284,7 @@
         </div>
 
         <button id="copyBtn" type="button" class="w-full py-3.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition shadow-sm">
-          <span>📋 고객 발송용 상세 견적서 복사 (     담당)</span>
+          <span>📋 고객 발송용 상세 견적서 복사</span>
         </button>
 
       </section>
@@ -529,11 +529,11 @@
         });
 
         if (penaltyType === '5') {
-          document.getElementById('penaltyTypeDesc').innerText = "※ 2023년 하반기 이후 개편된 '위약금5 (18개월 부근 최고점 후 하락)' 방식이 적용됩니다.";
+          document.getElementById('penaltyTypeDesc').innerText = "※ 위약금5: 23년 하반기 (KT 9.8 / SK 9.27 / LG 11.1) 이후 가입·재약정";
         } else if (penaltyType === '4') {
-          document.getElementById('penaltyTypeDesc').innerText = "※ 2023년 하반기 이전 가입자용 '위약금4 (24개월 최고점 후 하락)' 방식이 적용됩니다.";
+          document.getElementById('penaltyTypeDesc').innerText = "※ 위약금4: 2018년 ~ 23년 하반기 개편일 이전 가입·재약정 (24개월 최고점)";
         } else {
-          document.getElementById('penaltyTypeDesc').innerText = "※ 2018년 이전 가입 후 약정이 지난 '위약금3 (계단식 누적)' 방식이 적용됩니다.";
+          document.getElementById('penaltyTypeDesc').innerText = "※ 위약금3: 2018년 이전 가입 후 한 번도 재약정을 하지 않은 고객 (계단식 누적)";
         }
         calculateAndRender();
       });
@@ -825,6 +825,7 @@
       });
     }
 
+    // 🚨 빈칸(담당자, 연락처) 템플릿 세팅 완료 🚨
     document.getElementById('copyBtn').addEventListener('click', () => {
       const { intObj, wifiObj, tvObj, stbObj, bundleObj } = getSelectedObjects();
       const totalPenalty = document.getElementById('totalPenalty').innerText;
@@ -855,7 +856,7 @@
 
       if (cancelMode === 'tv') {
         summaryText = `[폰값연구소] ${carrierName} 3년 약정 TV 단독 해지 정산서
-담당: 고두현 (010-3633-7110)
+담당: [이름] ([연락처])
 ■ 적용 산정식: ${pModeText}
 ■ 현재 결합 유형: ${bundleObj.name} (3년 약정)
 ■ 유지 상품: ${intObj.name} + ${wifiObj.name}
@@ -881,7 +882,7 @@
 ※ 통신사 실제 해지 정산 시 일할 계산 및 회선 상태에 따라 소폭 변동될 수 있습니다.`;
       } else {
         summaryText = `[폰값연구소] ${carrierName} 3년 약정 인터넷·TV 해지 정산서
-담당:      (010-    -    )
+담당: [이름] ([연락처])
 ■ 적용 산정식: ${pModeText}
 ■ 결합 유형: ${bundleObj.name} (3년 약정)
 ■ 가입 상품 내역 (3년 약정 기준)
@@ -913,7 +914,7 @@
       }
 
       navigator.clipboard.writeText(summaryText).then(() => {
-        alert('정밀 일할 견적서가 클립보드에 복사되었습니다! 카카오톡이나 문자메시지에 바로 붙여넣기 하실 수 있습니다.');
+        alert('정밀 일할 견적서가 클립보드에 복사되었습니다! 담당자 이름과 연락처를 입력 후 카카오톡/문자로 발송해 주세요.');
       }).catch(() => {
         prompt('아래 내용을 복사하세요:', summaryText);
       });
