@@ -1157,5 +1157,18 @@
     // Initial Setup
     setCarrier('SK');
   </script>
+
+  <!-- PWA 서비스 워커 등록 (앱 설치용) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/telecom-calc/sw.js', { 
+          scope: '/telecom-calc/' 
+        })
+        .then(reg => console.log('Service Worker 등록 완료:', reg.scope))
+        .catch(err => console.log('Service Worker 등록 실패:', err));
+      });
+    }
+  </script>
 </body>
 </html>
