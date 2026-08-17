@@ -36,7 +36,7 @@
         <span>SKT/SKB · KT · LG U+ 공식 전산 연동</span>
       </div>
       <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900">통신 3사 3년 약정 위약금 & 실청구 계산기</h1>
-      <p class="text-xs sm:text-sm text-slate-500">위약금4(산모양) 및 위약금3(계단식) 일할계산을 모두 지원합니다.</p>
+      <p class="text-xs sm:text-sm text-slate-500">위약금 5, 4, 3세대 일할계산을 모두 지원합니다.</p>
     </header>
 
     <!-- Carrier Switcher -->
@@ -72,18 +72,21 @@
           <p id="cancelModeDesc" class="text-[11px] text-rose-700 font-medium pt-0.5">※ 인터넷과 TV를 모두 해지할 때 발생하는 총 위약금을 계산합니다.</p>
         </div>
 
-        <!-- 위약금 3/4 선택 토글 (새로 추가됨) -->
+        <!-- 위약금 5/4/3 선택 토글 -->
         <div class="bg-indigo-50/60 p-3.5 rounded-xl border border-indigo-200 space-y-2 mt-2">
           <label class="block text-xs font-black text-indigo-950">📜 위약금 적용 방식 (가입 연도 기준)</label>
-          <div class="grid grid-cols-2 gap-2">
-            <button type="button" class="penalty-type-btn py-2.5 px-3 rounded-lg text-xs sm:text-sm font-extrabold transition bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1.5" data-type="4">
-              <span>최신 산모양 (위약금4)</span>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" class="penalty-type-btn py-2.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-extrabold transition bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1" data-type="5">
+              <span>위약금5 (최신)</span>
             </button>
-            <button type="button" class="penalty-type-btn py-2.5 px-3 rounded-lg text-xs sm:text-sm font-extrabold transition bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-1.5" data-type="3">
-              <span>구형 계단식 (위약금3)</span>
+            <button type="button" class="penalty-type-btn py-2.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-extrabold transition bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-1" data-type="4">
+              <span>위약금4 (구형)</span>
+            </button>
+            <button type="button" class="penalty-type-btn py-2.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-extrabold transition bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-1" data-type="3">
+              <span>위약금3 (계단)</span>
             </button>
           </div>
-          <p id="penaltyTypeDesc" class="text-[11px] text-indigo-700 font-medium pt-0.5">※ 2018년 이후 가입/재약정 고객은 일정 기간 후 하락하는 '위약금4'가 적용됩니다.</p>
+          <p id="penaltyTypeDesc" class="text-[11px] text-indigo-700 font-medium pt-0.5">※ 2023년 하반기 이후 개편된 '위약금5 (18개월 부근 최고점 후 하락)' 방식이 적용됩니다.</p>
         </div>
 
         <!-- 1. Internet Section -->
@@ -281,7 +284,7 @@
         </div>
 
         <button id="copyBtn" type="button" class="w-full py-3.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition shadow-sm">
-          <span>📋 고객 발송용 상세 견적서 복사 (강태훈 담당)</span>
+          <span>📋 고객 발송용 상세 견적서 복사 (     담당)</span>
         </button>
 
       </section>
@@ -290,7 +293,7 @@
   </div>
 
   <script>
-    // 3-Carrier Exact Database (Modern & Legacy Grandfathered Bundles)
+    // 3-Carrier Exact Database
     const CARRIER_DATA = {
       SK: {
         name: 'SK telecom / SKB',
@@ -494,7 +497,7 @@
     let currentBundleId = 'sk_wire_only';
     let cancelMode = 'full'; // 'full' | 'tv'
     let durationCalcType = 'month'; // 'month' | 'date'
-    let penaltyType = '4'; // 기본값: 위약금4
+    let penaltyType = '5'; // 기본값: 위약금5 (최신)
     let penaltyChartInstance = null;
 
     // Default dates setup
@@ -513,22 +516,24 @@
     startDateInput.value = formatDateStr(thirteenMonthsAgo);
     endDateInput.value = formatDateStr(todayObj);
 
-    // 위약금 모드 (3/4) 토글 이벤트
+    // 위약금 모드 (5/4/3) 토글 이벤트
     penaltyTypeBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         penaltyType = btn.getAttribute('data-type');
         penaltyTypeBtns.forEach(b => {
           if (b.getAttribute('data-type') === penaltyType) {
-            b.className = 'penalty-type-btn py-2.5 px-3 rounded-lg text-xs sm:text-sm font-extrabold transition bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1.5';
+            b.className = 'penalty-type-btn py-2.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-extrabold transition bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1';
           } else {
-            b.className = 'penalty-type-btn py-2.5 px-3 rounded-lg text-xs sm:text-sm font-extrabold transition bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-1.5';
+            b.className = 'penalty-type-btn py-2.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-extrabold transition bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-1';
           }
         });
 
-        if (penaltyType === '4') {
-          document.getElementById('penaltyTypeDesc').innerText = "※ 2018년 이후 가입/재약정 고객은 일정 기간 후 하락하는 '최신 산모양(위약금4)'이 적용됩니다.";
+        if (penaltyType === '5') {
+          document.getElementById('penaltyTypeDesc').innerText = "※ 2023년 하반기 이후 개편된 '위약금5 (18개월 부근 최고점 후 하락)' 방식이 적용됩니다.";
+        } else if (penaltyType === '4') {
+          document.getElementById('penaltyTypeDesc').innerText = "※ 2023년 하반기 이전 가입자용 '위약금4 (24개월 최고점 후 하락)' 방식이 적용됩니다.";
         } else {
-          document.getElementById('penaltyTypeDesc').innerText = "※ 2018년 이전 가입 후 한 번도 재약정 안 한 고객은 '계단식(위약금3)'이 적용되어 누적됩니다.";
+          document.getElementById('penaltyTypeDesc').innerText = "※ 2018년 이전 가입 후 약정이 지난 '위약금3 (계단식 누적)' 방식이 적용됩니다.";
         }
         calculateAndRender();
       });
@@ -658,7 +663,6 @@
       });
     });
 
-    // 도우미 함수: 선택된 객체들 가져오기 (견적서 복사 시 활용)
     function getSelectedObjects() {
       const c = CARRIER_DATA[currentCarrier];
       const intList = c.internet[currentTab] || [];
@@ -671,8 +675,10 @@
       return { intObj, wifiObj, tvObj, stbObj, bundleObj };
     }
 
-    // --- 위약금 계산 핵심 로직 (위약금4 vs 위약금3 분리) ---
-    function calculatePenalty4(monthlyDiscount, days, carrierKey) {
+    // --- 위약금 계산 핵심 로직 (위약금5, 4, 3 분리) ---
+    
+    // [최신] 위약금5 (23년 하반기 개편 산모양: 180~240일 최고점)
+    function calculatePenalty5(monthlyDiscount, days, carrierKey) {
       if (days <= 0 || monthlyDiscount <= 0 || days >= 1095) return 0;
       const c = CARRIER_DATA[carrierKey];
       const dailyDiscount = monthlyDiscount / 30.4167;
@@ -680,6 +686,17 @@
       return (days <= c.thresholdDays) ? totalAccumulated : totalAccumulated * (Math.max(0, 1095 - days) / c.baseDenominatorDays);
     }
 
+    // [구형] 위약금4 (23년 이전 산모양: 24개월 최고점)
+    function calculatePenalty4(monthlyDiscount, days) {
+      if (days <= 0 || monthlyDiscount <= 0 || days >= 1095) return 0;
+      const dailyDiscount = monthlyDiscount / 30.4167;
+      const totalAccumulated = dailyDiscount * days;
+      const thresholdDays = 730; // 24개월
+      const baseDenominatorDays = 365; // 1095 - 730
+      return (days <= thresholdDays) ? totalAccumulated : totalAccumulated * (Math.max(0, 1095 - days) / baseDenominatorDays);
+    }
+
+    // [구형] 위약금3 (계단식: 1년차 100%, 2년차 50%, 3년차 0%)
     function calculatePenalty3(monthlyDiscount, days) {
       if (days <= 0 || monthlyDiscount <= 0 || days >= 1095) return 0;
       const dailyDiscount = monthlyDiscount / 30.4167;
@@ -695,7 +712,9 @@
     }
 
     function getPenalty(mDiscount, days, carrierKey) {
-      return penaltyType === '4' ? calculatePenalty4(mDiscount, days, carrierKey) : calculatePenalty3(mDiscount, days);
+      if (penaltyType === '5') return calculatePenalty5(mDiscount, days, carrierKey);
+      if (penaltyType === '4') return calculatePenalty4(mDiscount, days);
+      return calculatePenalty3(mDiscount, days);
     }
 
     function calculateAndRender() {
@@ -783,7 +802,7 @@
 
     function renderChart(labels, data, pointColors, pointRadii, brandColor) {
       if (penaltyChartInstance) penaltyChartInstance.destroy();
-      const typeLabel = penaltyType === '4' ? '(위약금4/산모양)' : '(위약금3/계단식)';
+      const typeLabel = penaltyType === '5' ? '(위약금5/최신산모양)' : (penaltyType === '4' ? '(위약금4/구형산모양)' : '(위약금3/계단식)');
       const cancelLabel = cancelMode === 'tv' ? 'TV단독 해지' : '전체 해지';
       
       penaltyChartInstance = new Chart(document.getElementById('penaltyChart').getContext('2d'), {
@@ -792,8 +811,8 @@
           labels: labels,
           datasets: [{
             label: `3년 약정 ${cancelLabel} ${typeLabel}`,
-            data: data, borderColor: penaltyType === '4' ? brandColor : '#4f46e5',
-            backgroundColor: penaltyType === '4' ? `${brandColor}15` : '#4f46e515',
+            data: data, borderColor: penaltyType === '5' ? brandColor : '#4f46e5',
+            backgroundColor: penaltyType === '5' ? `${brandColor}15` : '#4f46e515',
             borderWidth: 2.5, fill: true, tension: 0.2,
             pointBackgroundColor: pointColors, pointBorderColor: pointColors, pointRadius: pointRadii
           }]
@@ -806,7 +825,6 @@
       });
     }
 
-    // 🚨 상세 견적서 템플릿 100% 복구 및 맞춤 설정 완료 (강태훈 담당) 🚨
     document.getElementById('copyBtn').addEventListener('click', () => {
       const { intObj, wifiObj, tvObj, stbObj, bundleObj } = getSelectedObjects();
       const totalPenalty = document.getElementById('totalPenalty').innerText;
@@ -832,12 +850,12 @@
         durationText = `${m}개월 차 (약 ${Math.round(m * 30.4167)}일)`;
       }
 
-      const pModeText = penaltyType === '4' ? '최신 산모양(위약금4)' : '구형 계단식(위약금3)';
+      const pModeText = penaltyType === '5' ? '최신 산모양(위약금5)' : (penaltyType === '4' ? '구형 산모양(위약금4)' : '구형 계단식(위약금3)');
       let summaryText = '';
 
       if (cancelMode === 'tv') {
         summaryText = `[폰값연구소] ${carrierName} 3년 약정 TV 단독 해지 정산서
-담당: 강태훈 (010-4444-3353)
+담당: 고두현 (010-3633-7110)
 ■ 적용 산정식: ${pModeText}
 ■ 현재 결합 유형: ${bundleObj.name} (3년 약정)
 ■ 유지 상품: ${intObj.name} + ${wifiObj.name}
@@ -863,7 +881,7 @@
 ※ 통신사 실제 해지 정산 시 일할 계산 및 회선 상태에 따라 소폭 변동될 수 있습니다.`;
       } else {
         summaryText = `[폰값연구소] ${carrierName} 3년 약정 인터넷·TV 해지 정산서
-담당: 강태훈 (010-4444-3353)
+담당:      (010-    -    )
 ■ 적용 산정식: ${pModeText}
 ■ 결합 유형: ${bundleObj.name} (3년 약정)
 ■ 가입 상품 내역 (3년 약정 기준)
