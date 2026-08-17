@@ -315,7 +315,6 @@
   </div>
 
   <script>
-    // 3-Carrier Exact Database
     const CARRIER_DATA = {
       SK: {
         name: 'SK telecom / SKB',
@@ -424,8 +423,7 @@
           { id: 'kt_all_g', name: '지니 TV 모든G (255ch/25만편VOD)', price: 23540, discountPrice: 19800, noContract: 28930, discount: 3740 },
           { id: 'kt_ess', name: '지니 TV 에센스 (268ch)', price: 20240, discountPrice: 16500, noContract: 25300, discount: 3740 },
           { id: 'kt_lite', name: '지니 TV 라이트 (242ch)', price: 15840, discountPrice: 13200, noContract: 19800, discount: 2640, default: true },
-          { id: 'kt_basic', name: '지니 TV 베이직 (238ch)', price: 14740, discountPrice: 12100, noContract: 18150, discount: 2640 },
-          { id: 'none', name: '지니TV 미적용', price: 0, discountPrice: 0, noContract: 0, discount: 0 }
+          { id: 'none', name: '미적용', price: 0, discountPrice: 0, noContract: 0, discount: 0 }
         ],
         stb: [
           { id: 'kt_g4', name: '기가지니4 셋톱', price: 6600, noContract: 11000, default: true },
@@ -510,6 +508,49 @@
     document.getElementById('startDateInput').value = formatDateStr(thirteenMonthsAgo);
     document.getElementById('endDateInput').value = formatDateStr(todayObj);
 
+    function updatePenaltyTypeUI() {
+      penaltyTypeBtns.forEach(b => {
+        b.className = (b.getAttribute('data-type') === penaltyType)
+          ? 'penalty-type-btn py-2.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-extrabold transition bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1'
+          : 'penalty-type-btn py-2.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-extrabold transition bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-1';
+      });
+      if (penaltyType === '5') {
+        document.getElementById('penaltyTypeDesc').innerText = "※ 위약금5: 23년 하반기 (KT 9.8 / SK 9.27 / LG 11.1) 이후 가입·재약정";
+      } else if (penaltyType === '4') {
+        document.getElementById('penaltyTypeDesc').innerText = "※ 위약금4: 2018년 ~ 23년 하반기 개편일 이전 가입·재약정 (24개월 최고점)";
+      } else {
+        document.getElementById('penaltyTypeDesc').innerText = "※ 위약금3: 2018년 이전 가입 후 한 번도 재약정을 하지 않은 고객 (계단식 누적)";
+      }
+    }
+
+    function autoSelectPenaltyType() {
+      if (durationCalcType !== 'date') return;
+      const startDate = new Date(document.getElementById('startDateInput').value);
+      if (isNaN(startDate)) return;
+
+      let reformDateStr = '';
+      if (currentCarrier === 'KT') reformDateStr = '2023-09-08';
+      else if (currentCarrier === 'SK') reformDateStr = '2023-09-27';
+      else if (currentCarrier === 'LG') reformDateStr = '2023-11-01';
+
+      const reformDate = new Date(reformDateStr);
+      const type3Date = new Date('2018-01-01');
+
+      let newType = '5';
+      if (startDate < type3Date) {
+        newType = '3';
+      } else if (startDate < reformDate) {
+        newType = '4';
+      } else {
+        newType = '5';
+      }
+
+      if (penaltyType !== newType) {
+        penaltyType = newType;
+        updatePenaltyTypeUI();
+      }
+    }
+
     tvCount1Btn.addEventListener('click', () => {
       tvCount = 1;
       tvCount1Btn.className = 'tv-count-btn px-2.5 py-1 rounded-md bg-white text-slate-900 shadow-sm transition';
@@ -529,12 +570,7 @@
     penaltyTypeBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         penaltyType = btn.getAttribute('data-type');
-        penaltyTypeBtns.forEach(b => {
-          b.className = (b.getAttribute('data-type') === penaltyType)
-            ? 'penalty-type-btn py-2.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-extrabold transition bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1'
-            : 'penalty-type-btn py-2.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-extrabold transition bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-1';
-        });
-        document.getElementById('penaltyTypeDesc').innerText = penaltyType === '5' ? "※ 위약금5: 23년 하반기 (KT 9.8 / SK 9.27 / LG 11.1) 이후 가입·재약정" : (penaltyType === '4' ? "※ 위약금4: 2018년 ~ 23년 하반기 이전 가입·재약정 (24개월 최고점)" : "※ 위약금3: 2018년 이전 가입 후 한 번도 재약정을 하지 않은 고객 (계단식 누적)");
+        updatePenaltyTypeUI();
         calculateAndRender();
       });
     });
@@ -554,6 +590,7 @@
       document.getElementById('calcModeMonthBtn').className = 'calc-type-btn px-2.5 py-1 rounded-md text-amber-800 hover:text-amber-950 transition';
       document.getElementById('datePickerView').classList.remove('hidden');
       document.getElementById('monthSliderView').classList.add('hidden');
+      autoSelectPenaltyType();
       calculateAndRender();
     });
 
@@ -566,7 +603,6 @@
             : 'cancel-mode-btn py-2.5 px-3 rounded-lg text-xs sm:text-sm font-extrabold transition bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-1.5';
         });
 
-        // 🚨 해지 유형 멘트 동적 전환 복구 완료 🚨
         if (cancelMode === 'tv') {
           document.getElementById('cancelModeDesc').innerText = '※ 인터넷 3년 약정은 유지하고 TV와 셋톱박스만 단독 해지할 때의 위약금을 계산합니다.';
           document.getElementById('penaltyTitleLabel').innerText = '3년 약정 TV 단독 해지 위약금';
@@ -598,6 +634,8 @@
 
       document.getElementById('tvSectionTitle').innerText = c.tvTitle;
       document.getElementById('bundleSectionTitle').innerText = c.bundleTitle;
+
+      if (durationCalcType === 'date') autoSelectPenaltyType();
 
       renderSubTabs();
       populateStaticOptions();
@@ -669,8 +707,9 @@
     });
 
     ['startDateInput', 'endDateInput', 'internetPlan', 'wifiOption', 'tvPlan', 'tvPlan2', 'stbOption', 'stbOption2', 'gift', 'months'].forEach(id => {
-      document.getElementById(id).addEventListener('input', () => {
+      document.getElementById(id).addEventListener('input', (e) => {
         if(id === 'gift') document.getElementById('giftValText').innerText = (document.getElementById('gift').value/10000)+'만 원';
+        if(id === 'startDateInput') autoSelectPenaltyType();
         calculateAndRender();
       });
     });
