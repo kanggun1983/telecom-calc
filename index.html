@@ -930,7 +930,11 @@
       let monthlyInternetPlanDiscount = Math.max(0, intObj.noContract - intObj.price);
       let monthlyTvPlanDiscount = Math.max(0, tvObj.noContract - tvObj.price);
 
-      let monthlyInternetBundlePenalty = bundleObj.isPenaltyWaived ? 0 : (wireIntDiscAmount + mobileDiscAmount);
+      // 🚨 수정사항 반영: 모바일 할인액(mobileDiscAmount)을 결합 위약금 계산에서 원천 제외
+      let monthlyInternetBundlePenalty = bundleObj.isPenaltyWaived ? 0 : wireIntDiscAmount;
+      if (bundleObj.hasMobilePenalty) { // 만약 향후 모바일 위약금이 존재하는 특이 구결합 추가 시를 위한 대비
+        monthlyInternetBundlePenalty += mobileDiscAmount;
+      }
       let monthlyTvBundlePenalty = bundleObj.isPenaltyWaived ? 0 : tvDiscAmount;
 
       if (cancelMode === 'tv') {
@@ -989,7 +993,11 @@
         
         let mIntPlan = cancelMode === 'tv' ? 0 : Math.max(0, intObj.noContract - intObj.price);
         let mTvPlan = Math.max(0, tvObj.noContract - tvObj.price);
-        let mIntBund = bundleObj.isPenaltyWaived || cancelMode === 'tv' ? 0 : (wireIntDiscAmount + mobileDiscAmount);
+        
+        // 🚨 수정사항 반영: 차트 렌더링 시에도 모바일 할인액 제외
+        let mIntBund = bundleObj.isPenaltyWaived || cancelMode === 'tv' ? 0 : wireIntDiscAmount;
+        if (bundleObj.hasMobilePenalty) mIntBund += mobileDiscAmount;
+        
         let mTvBund = bundleObj.isPenaltyWaived ? 0 : tvDiscAmount;
         let mEquip = (cancelMode === 'tv') ? Math.max(0, stbObj.noContract - stbObj.price) : Math.max(0, wifiObj.noContract - wifiObj.price) + Math.max(0, stbObj.noContract - stbObj.price);
 
@@ -1092,6 +1100,7 @@
 
       let summaryText = '';
 
+      // 🚨 복사 기능에도 구결합 예외사항 문구 추가 반영됨
       if (cancelMode === 'tv') {
         summaryText = `[${carrierName} 3년 약정 TV 단독 해지 위약금 및 요금 안내서]
 ■ 현재 결합 유형: ${bundleObj.name} (3년 약정)
@@ -1115,6 +1124,7 @@
 [해지 시 필독 유의사항]
 1. 임대 장비 미반납금 (변상금): 셋톱박스, 리모컨, 전원 어댑터 미반납 시 15~25만 원 상당의 기기 원가가 일시 청구됩니다. (회수 기사 방문 시 정상 반납하면 0원 처리)
 2. 해지 당월 일할 요금: 해지 시점까지 사용한 이번 달 통신 요금이 별도 합산 청구됩니다.
+※ 2018년 이전 가입 후 재약정을 하지 않은 구형 요금제/결합 고객은 계단식 위약금이 적용되어 결과가 다를 수 있습니다.
 ※ 통신사 실제 해지 정산 시 일할 계산 및 회선 상태에 따라 소폭 변동될 수 있습니다.`;
       } else {
         summaryText = `[${carrierName} 3년 약정 인터넷·TV 전체 해지 위약금 산출서]
@@ -1144,6 +1154,7 @@
 [해지 시 필독 유의사항]
 1. 임대 장비 미반납금 (변상금): 모뎀, 셋톱박스, 공유기, 리모컨을 반납하지 않으면 15~25만 원 상당의 기기 원가가 일시불 청구됩니다. (회수 기사 방문 시 정상 반납하면 0원 처리)
 2. 해지 당월 일할 요금: 해지 시점까지 사용한 이번 달 통신 요금이 별도 합산 청구됩니다.
+※ 2018년 이전 가입 후 재약정을 하지 않은 구형 요금제/결합 고객은 계단식 위약금이 적용되어 결과가 다를 수 있습니다.
 ※ 통신사 실제 해지 정산 시 일할 계산 및 회선 상태에 따라 소폭 변동될 수 있습니다.`;
       }
 
