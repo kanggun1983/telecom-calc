@@ -320,8 +320,8 @@
       SK: {
         name: 'SK telecom / SKB',
         color: '#ea580c',
-        thresholdDays: 240, 
-        baseDenominatorDays: 855, 
+        thresholdDays: 270, 
+        baseDenominatorDays: 825, 
         btnActive: 'border-orange-500 bg-orange-50 text-orange-600 shadow-sm',
         tvTitle: '📺 Btv & 셋톱박스 선택 (3년 약정)',
         bundleTitle: '📱 SK 결합할인 선택 (3년 약정)',
@@ -387,8 +387,8 @@
       KT: {
         name: 'KT olleh',
         color: '#dc2626',
-        thresholdDays: 180, 
-        baseDenominatorDays: 915, 
+        thresholdDays: 270, 
+        baseDenominatorDays: 825, 
         btnActive: 'border-red-500 bg-red-50 text-red-600 shadow-sm',
         tvTitle: '📺 지니TV & 기가지니 셋톱 선택 (3년 약정)',
         bundleTitle: '📱 KT 결합할인 선택 (3년 약정)',
@@ -462,8 +462,8 @@
       LG: {
         name: 'LG U+',
         color: '#e11d48',
-        thresholdDays: 240,
-        baseDenominatorDays: 855,
+        thresholdDays: 270,
+        baseDenominatorDays: 825,
         btnActive: 'border-rose-500 bg-rose-50 text-rose-600 shadow-sm',
         tvTitle: '📺 U+tv & 셋톱박스 선택 (3년 약정)',
         bundleTitle: '📱 LG 결합할인 선택 (3년 약정)',
@@ -810,6 +810,14 @@
       return calculatePenalty3(mDiscount, days);
     }
 
+    // 장비(셋톱박스, 와이파이) 반환금 전용 계산 함수 (직선 하락식)
+    function calculateEquipmentPenalty(monthlyDiscount, days) {
+      if (days <= 0 || monthlyDiscount <= 0 || days >= 1095) return 0;
+      const dailyDiscount = monthlyDiscount / 30.4167;
+      const totalAccumulated = dailyDiscount * days;
+      return totalAccumulated * ((1095 - days) / 1095);
+    }
+
     function calculateAndRender() {
       const { intObj, wifiObj, tvObj, stbObj, tv2Obj, stb2Obj, bundleObj } = getSelectedObjects();
       const gift = parseInt(document.getElementById('gift').value, 10);
@@ -853,7 +861,6 @@
       const totalMonthlyDiscount = tvDiscAmount + wireIntDiscAmount + mobileDiscAmount;
       const finalMonthly = Math.max(0, regularSubtotal - totalMonthlyDiscount);
 
-      // 수정된 해지 당월 일할 통신요금 계산 (해당 월의 총일수 반영)
       const proratedAmt = Math.round((finalMonthly / daysInMonth) * terminationDayInMonth);
       document.getElementById('proratedMonthBill').innerText = proratedAmt.toLocaleString();
 
@@ -869,7 +876,6 @@
       if (tvCount === 2) mTvPlan += Math.max(0, tv2Obj.noContract - tv2Obj.price);
 
       let mIntBund = (bundleObj.isPenaltyWaived || cancelMode === 'tv') ? 0 : wireIntDiscAmount;
-      // 수정된 모바일 결합 할인 반환금 합산 (CARRIER_DATA에 hasMobilePenalty: true가 적용된 요금제만)
       if (bundleObj.hasMobilePenalty) mIntBund += mobileDiscAmount;
       let mTvBund = bundleObj.isPenaltyWaived ? 0 : tvDiscAmount;
       
@@ -880,7 +886,8 @@
       const p2 = Math.round(getPenalty(mTvPlan, currentDays, currentCarrier));
       const p3 = Math.round(getPenalty(mIntBund, currentDays, currentCarrier));
       const p4 = Math.round(getPenalty(mTvBund, currentDays, currentCarrier));
-      const p5 = Math.round(getPenalty(mEquip, currentDays, currentCarrier));
+      // 장비 위약금 전용 함수 적용
+      const p5 = Math.round(calculateEquipmentPenalty(mEquip, currentDays));
       const pGift = currentDays <= 365 ? gift : 0;
       const totalPenalty = p1 + p2 + p3 + p4 + p5 + pGift;
 
@@ -906,7 +913,8 @@
         const tp2 = getPenalty(mTvPlan, d, currentCarrier);
         const tp3 = getPenalty(mIntBund, d, currentCarrier);
         const tp4 = getPenalty(mTvBund, d, currentCarrier);
-        const tp5 = getPenalty(mEquip, d, currentCarrier);
+        // 차트 렌더링에도 장비 위약금 전용 함수 적용
+        const tp5 = calculateEquipmentPenalty(mEquip, d);
         dataPoints.push(Math.round(tp1 + tp2 + tp3 + tp4 + tp5 + (d <= 365 ? gift : 0)));
 
         if (Math.round(floatingMonths) === i) { pointColors.push('#6366f1'); pointRadii.push(6); } 
