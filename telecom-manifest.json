@@ -1,14 +1,14 @@
 {
-  "name": "위약금 계산기",
-  "short_name": "계산기",
-  "start_url": "/telecom-calc/", 
-  "scope": "/telecom-calc/",      
+  "name": "통신 3사 위약금 계산기",
+  "short_name": "위약금계산기",
+  "start_url": "/telecom-calc/",
+  "scope": "/telecom-calc/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
   "icons": [
     {
-      "src": "icon-192.png", 
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     }
