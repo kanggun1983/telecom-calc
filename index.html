@@ -332,7 +332,7 @@
           { id: 'sk_on_20', group: 'current', name: 'T끼리 온가족할인 (20~30년 / 30%)', isRate: true, rate: 0.3, isPenaltyWaived: true, desc: '3년 약정 기준가의 30% 감면 (★결합할인 위약금 전액 면제)' },
           { id: 'sk_on_10', group: 'current', name: 'T끼리 온가족할인 (10~20년 / 10%)', isRate: true, rate: 0.1, isPenaltyWaived: true, desc: '3년 약정 기준가의 10% 감면 (★결합할인 위약금 전액 면제)' },
           { id: 'sk_legacy_plan', group: 'legacy', name: '[구] 온가족플랜 (2회선 이상)', wireDisc: { 100: 5500, 500: 11110, 1000: 11110, 2500: 11110, 5000: 11110 }, mobileDisc: 0, desc: '인터넷 요금 정액 감면 (100M: -5,500원 / 500M·1G: -11,110원)' },
-          { id: 'sk_legacy_free', group: 'legacy', name: '[구] 온가족프리 (1~4회선)', wireDisc: { 100: 3300, 500: 4400, 1000: 5500, 2500: 5500, 5000: 5500 }, mobileDisc: 3300, desc: '인터넷 할인(-3,300~5,500원) + 모바일 회선당 할인' },
+          { id: 'sk_legacy_free', group: 'legacy', name: '[구] 온가족프리 (1~4회선)', wireDisc: { 100: 3300, 500: 4400, 1000: 5500, 2500: 5500, 5000: 5500 }, mobileDisc: 3300, hasMobilePenalty: true, desc: '인터넷 할인(-3,300~5,500원) + 모바일 회선당 할인' },
           { id: 'sk_legacy_single', group: 'legacy', name: '[구] 한가족할인 (모바일 1회선)', wireDisc: { 100: 8800, 500: 13200, 1000: 13200, 2500: 13200, 5000: 13200 }, mobileDisc: 0, desc: '인터넷 요금 할인 (100M: -8,800원 / 500M: -13,200원)' },
           { id: 'sk_legacy_allfree', group: 'legacy', name: '[구] 온가족무료 (3회선 인터넷 무료)', wireDisc: { 100: 22000, 500: 22000, 1000: 22000, 2500: 22000, 5000: 22000 }, mobileDisc: 0, desc: '100M 인터넷 기본료 전액 감면 (-22,000원/월)' }
         ],
@@ -398,7 +398,7 @@
           { id: 'kt_single', group: 'current', name: '프리미엄 싱글결합 (모바일 25% 전용)', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 0, desc: '인터넷 유선 -5,500원 (모바일 청구서에서 월 25% 추가할인)' },
           { id: 'kt_family_50', group: 'current', name: '패밀리 결합 (모회선 50% 할인)', isRate: true, rate: 0.5, isPenaltyWaived: true, desc: '3년 약정 기준가의 50% 감면 (★결합할인 위약금 면제)' },
           { id: 'kt_legacy_olleh', group: 'legacy', name: '[구] 인터넷 뭉치면올레 (2회선 이상)', wireDisc: { 100: 22000, 500: 27500, 1000: 27500, 2500: 27500 }, mobileDisc: 0, desc: '100M 인터넷 무료(-22,000원) / 500M(-27,500원 할인)' },
-          { id: 'kt_legacy_lte', group: 'legacy', name: '[구] LTE 뭉치면올레', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 5500, desc: '인터넷 -5,500원 + 모바일 요금제별 할인' },
+          { id: 'kt_legacy_lte', group: 'legacy', name: '[구] LTE 뭉치면올레', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 5500, hasMobilePenalty: true, desc: '인터넷 -5,500원 + 모바일 요금제별 할인' },
           { id: 'kt_legacy_fam_wire', group: 'legacy', name: '[구] 우리가족무선결합 (모바일할인 전용)', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 0, desc: '인터넷 유선결합 -5,500원 (모바일 청구서에서 정액할인)' }
         ],
         tabs: [{ id: 'kt_giga_wi', name: '기가 Wi 결합' }, { id: 'kt_safe_pkg', name: '안심인터넷 패키지' }, { id: 'kt_basic', name: '기본 인터넷' }],
@@ -472,7 +472,7 @@
           { id: 'lg_cham', group: 'current', name: '참 쉬운 가족결합 (유무선 결합)', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDiscSpeed: { 100: 5500, 500: 9900, 1000: 13200, 2500: 13200 }, desc: '인터넷 총 1.1만~1.87만원 할인 (유선 -5,500 + 속도별 모바일 추가할인)' },
           { id: 'lg_together', group: 'current', name: 'U+투게더 결합', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDiscSpeed: { 100: 11000, 500: 11000, 1000: 11000, 2500: 11000 }, desc: '인터넷 11,000원 추가할인' },
           { id: 'lg_legacy_home', group: 'legacy', name: '[구] 한방에Home (한방에홈 1/2)', wireDisc: { 100: 8800, 500: 11000, 1000: 11000, 2500: 11000 }, mobileDisc: 0, desc: '인터넷 정액 감면 (100M: -8,800원 / 500M·1G: -11,000원)' },
-          { id: 'lg_legacy_love', group: 'legacy', name: '[구] 가족무한사랑 (유무선 결합)', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 5500, desc: '인터넷 -5,500원 + 모바일 총액구간별 할인' },
+          { id: 'lg_legacy_love', group: 'legacy', name: '[구] 가족무한사랑 (유무선 결합)', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 5500, hasMobilePenalty: true, desc: '인터넷 -5,500원 + 모바일 총액구간별 할인' },
           { id: 'lg_legacy_yo', group: 'legacy', name: '[구] 한방에yo (한방에YO)', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 0, desc: '인터넷 기본할인 유지 (모바일 청구서에서 회선당 할인)' }
         ],
         tabs: [{ id: 'lg_safe', name: '프리미엄 안심' }, { id: 'lg_smart_giga', name: '스마트기가' }, { id: 'lg_basic', name: '기본 인터넷' }],
@@ -743,7 +743,9 @@
     });
 
     ['startDateInput', 'endDateInput', 'internetPlan', 'wifiOption', 'tvPlan', 'tvPlan2', 'stbOption', 'stbOption2', 'gift', 'months'].forEach(id => {
-      document.getElementById(id).addEventListener('input', (e) => {
+      const el = document.getElementById(id);
+      const eventType = (el.tagName === 'SELECT' || el.type === 'date') ? 'change' : 'input';
+      el.addEventListener(eventType, (e) => {
         if(id === 'gift') document.getElementById('giftValText').innerText = (document.getElementById('gift').value/10000)+'만 원';
         if(id === 'startDateInput') autoSelectPenaltyType();
         calculateAndRender();
@@ -813,13 +815,21 @@
       const gift = parseInt(document.getElementById('gift').value, 10);
 
       let currentDays = 0, floatingMonths = 0, terminationDayInMonth = 15;
+      let daysInMonth = 30;
+
       if (durationCalcType === 'date') {
-        const diffTime = new Date(document.getElementById('endDateInput').value) - new Date(document.getElementById('startDateInput').value);
+        const startD = new Date(document.getElementById('startDateInput').value);
+        const endD = new Date(document.getElementById('endDateInput').value);
+        const diffTime = endD - startD;
         currentDays = Math.max(1, Math.min(1095, Math.floor(diffTime / 86400000)));
         floatingMonths = currentDays / 30.4167;
         document.getElementById('exactDaysText').innerText = `${currentDays}일 (${Math.floor(floatingMonths)}개월 ${Math.floor(currentDays%30.4167)}일)`;
         document.getElementById('chartCurrentMonth').innerText = `${floatingMonths.toFixed(1)}개월`;
-        terminationDayInMonth = new Date(document.getElementById('endDateInput').value).getDate();
+        
+        if (!isNaN(endD.getTime())) {
+          terminationDayInMonth = endD.getDate();
+          daysInMonth = new Date(endD.getFullYear(), endD.getMonth() + 1, 0).getDate();
+        }
       } else {
         floatingMonths = parseInt(document.getElementById('months').value, 10);
         currentDays = Math.round(floatingMonths * 30.4167);
@@ -843,7 +853,10 @@
       const totalMonthlyDiscount = tvDiscAmount + wireIntDiscAmount + mobileDiscAmount;
       const finalMonthly = Math.max(0, regularSubtotal - totalMonthlyDiscount);
 
-      document.getElementById('proratedMonthBill').innerText = Math.round((finalMonthly / 30) * Math.min(30, terminationDayInMonth)).toLocaleString();
+      // 수정된 해지 당월 일할 통신요금 계산 (해당 월의 총일수 반영)
+      const proratedAmt = Math.round((finalMonthly / daysInMonth) * terminationDayInMonth);
+      document.getElementById('proratedMonthBill').innerText = proratedAmt.toLocaleString();
+
       document.getElementById('baseMonthlyBill').innerText = `${regularSubtotal.toLocaleString()}원`;
       document.getElementById('bundleMonthlyDiscount').innerText = `-${totalMonthlyDiscount.toLocaleString()}원/월`;
       document.getElementById('discTvText').innerText = `-${tvDiscAmount.toLocaleString()}원`;
@@ -856,6 +869,7 @@
       if (tvCount === 2) mTvPlan += Math.max(0, tv2Obj.noContract - tv2Obj.price);
 
       let mIntBund = (bundleObj.isPenaltyWaived || cancelMode === 'tv') ? 0 : wireIntDiscAmount;
+      // 수정된 모바일 결합 할인 반환금 합산 (CARRIER_DATA에 hasMobilePenalty: true가 적용된 요금제만)
       if (bundleObj.hasMobilePenalty) mIntBund += mobileDiscAmount;
       let mTvBund = bundleObj.isPenaltyWaived ? 0 : tvDiscAmount;
       
