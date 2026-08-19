@@ -28,7 +28,7 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.25);
     }
     
-    /* 인쇄(PDF 저장) 시 적용되는 전용 스타일 */
+    /* 인쇄(PDF 저장) 시 적용되는 전용 스타일 - 모바일 백지 현상 원천 차단 */
     @media print {
       @page { size: A4 portrait; margin: 10mm; }
       body { background-color: #ffffff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -1751,9 +1751,9 @@ ${tvListText}
       if (tvCount === 2) {
           const tv2Obj = getSelectedObjects().tv2Obj;
           const stb2Obj = getSelectedObjects().stb2Obj;
-          tvStbText += `\n[복수] ${tv2Obj.name} (${tv2Obj.price.toLocaleString()}원) + ${stb2Obj.name} (${stb2Obj.price.toLocaleString()}원)`;
+          tvStbText += `<br>[복수] ${tv2Obj.name} (${tv2Obj.price.toLocaleString()}원) + ${stb2Obj.name} (${stb2Obj.price.toLocaleString()}원)`;
       }
-      document.getElementById('pdfTvStbNamePrice').innerText = tvStbText;
+      document.getElementById('pdfTvStbNamePrice').innerHTML = tvStbText;
       
       document.getElementById('pdfBundleName').innerText = bundleObj.name;
       
