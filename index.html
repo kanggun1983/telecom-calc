@@ -898,7 +898,7 @@
       } else if (penaltyType === '4') {
         document.getElementById('penaltyTypeDesc').innerText = "※ 위약금4: 2018년 ~ 23년 하반기 개편일 이전 가입·재약정 (24개월 최고점)";
       } else {
-        document.getElementById('penaltyTypeDesc').innerText = "※ 위약금3: 2018년 이전 가입 후 한 번도 재약정을 하지 고객 (계단식 누적)";
+        document.getElementById('penaltyTypeDesc').innerText = "※ 위약금3: 2018년 이전 가입 후 한 번도 재약정을 하지 않은 고객 (계단식 누적)";
       }
     }
 
@@ -1638,7 +1638,11 @@
       const equipDisc = document.getElementById('equipDiscount').innerText;
       const gift = document.getElementById('giftValText').innerText;
       const giftClaw = document.getElementById('giftClawbackVal').innerText;
+      
       const carrierName = CARRIER_DATA[currentCarrier].name;
+      const targetName = targetCarrier === 'manual' ? '타사' : CARRIER_DATA[targetCarrier].name;
+      const titleCarrierText = `${carrierName} ➔ 신규[${targetName}]`;
+      
       const afterMonthly = document.getElementById('afterMonthlyBill').innerText;
       const proratedBill = document.getElementById('proratedMonthBill').innerText;
 
@@ -1699,7 +1703,7 @@
         let cancelItemText = `${tvObj.name} + ${stbObj.name}`;
         if (tvCount === 2) cancelItemText += ` (복수단말 포함)`;
 
-        summaryText = `[${storeName}] ${carrierName} 3년 약정 TV 단독 해지 정산서
+        summaryText = `[${storeName}] ${titleCarrierText} 3년 약정 TV 단독 해지 정산서
 담당: ${counselorName} (${counselorPhone})${customerInfoStr}
 ■ 적용 산정식: ${pModeText}
 ■ 현재 결합 유형: ${bundleObj.name} (3년 약정)
@@ -1730,7 +1734,7 @@
           tvListText += `\n - 2번째 TV: ${tv2Obj.name} (${tv2Obj.price.toLocaleString()}원)\n - 2번째 셋톱: ${stb2Obj.name} (${stb2Obj.price.toLocaleString()}원)`;
         }
 
-        summaryText = `[${storeName}] ${carrierName} 3년 약정 인터넷·TV 해지 정산서
+        summaryText = `[${storeName}] ${titleCarrierText} 3년 약정 인터넷·TV 해지 정산서
 담당: ${counselorName} (${counselorPhone})${customerInfoStr}
 ■ 적용 산정식: ${pModeText}
 ■ 결합 유형: ${bundleObj.name} (3년 약정)
@@ -1790,7 +1794,8 @@ ${tvListText}
         document.getElementById('pdfCustomerInfo').innerText = '';
       }
       
-      document.getElementById('pdfCarrierName').innerText = CARRIER_DATA[currentCarrier].name;
+      const targetName = targetCarrier === 'manual' ? '타사' : CARRIER_DATA[targetCarrier].name;
+      document.getElementById('pdfCarrierName').innerText = `${CARRIER_DATA[currentCarrier].name} ➔ 신규[${targetName}]`;
       
       const today = new Date();
       document.getElementById('pdfDate').innerText = `${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일`;
