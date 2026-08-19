@@ -16,8 +16,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- html2pdf.js 라이브러리 (PDF 다운로드용) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   
   <style>
     input[type=range]::-webkit-slider-thumb {
@@ -29,10 +27,22 @@
       cursor: pointer;
       box-shadow: 0 2px 4px rgba(0,0,0,0.25);
     }
+    
+    /* 인쇄(PDF 저장) 시 적용되는 전용 스타일 */
+    @media print {
+      @page { size: A4 portrait; margin: 10mm; }
+      body { background-color: #ffffff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      /* 메인 계산기 화면은 인쇄 시 숨김 */
+      #app-container { display: none !important; }
+      /* 숨겨뒀던 PDF 템플릿만 인쇄 시 노출 */
+      #pdfTemplate { display: block !important; position: static; width: 100%; margin: 0; padding: 0; box-shadow: none; }
+    }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 antialiased min-h-screen py-6 px-3 sm:px-6 lg:px-8">
-  <div class="max-w-6xl mx-auto space-y-5">
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen">
+  
+  <!-- 메인 앱 컨테이너 -->
+  <div id="app-container" class="max-w-6xl mx-auto space-y-5 py-6 px-3 sm:px-6 lg:px-8">
     
     <!-- Header -->
     <header class="text-center space-y-1">
@@ -493,7 +503,7 @@
             <span>📋 텍스트 복사</span>
           </button>
           <button id="pdfBtn" type="button" class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition shadow-sm">
-            <span>📄 PDF 다운로드</span>
+            <span>📄 PDF 견적서 저장</span>
           </button>
         </div>
 
@@ -502,74 +512,97 @@
 
   </div>
 
-  <!-- PDF 렌더링용 숨김 템플릿 (모바일 백지 버그 완벽 차단을 위해 문서 최하단에 보이지 않게 삽입) -->
-  <div style="display: none;">
-    <div id="pdfTemplate" style="width: 794px; height: 1123px; padding: 40px; background-color: #ffffff; color: #0f172a; box-sizing: border-box; font-family: sans-serif; position: relative;">
+  <!-- 인쇄(PDF 저장) 시 노출될 실제 템플릿 영역 (화면에 보이지 않음, window.print() 호출 시에만 활성화 됨) -->
+  <div id="pdfTemplate" style="display: none;">
+    <div style="width: 100%; max-width: 800px; margin: 0 auto; font-family: sans-serif; color: #1e293b;">
       
-      <!-- PDF 헤더 -->
-      <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px;">
-        <h1 style="font-size: 30px; font-weight: 900; margin: 0;" id="pdfCarrierName">통신사 로고/이름</h1>
+      <div style="border-bottom: 2px solid #0f172a; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
+        <h1 style="font-size: 28px; font-weight: 900; margin: 0;" id="pdfCarrierName">[통신사]</h1>
         <div style="text-align: right;">
-          <h2 style="font-size: 18px; font-weight: bold; margin: 0 0 4px 0;">[매장명] 가입 견적서</h2>
-          <p style="font-size: 14px; color: #64748b; margin: 0;" id="pdfDate">날짜</p>
+          <h2 style="font-size: 16px; font-weight: bold; margin: 0 0 5px 0;">[매장명] 가입 및 해지 정산서</h2>
+          <p style="font-size: 12px; color: #64748b; margin: 0;" id="pdfDate">날짜</p>
         </div>
       </div>
 
-      <!-- 요금 요약 테이블 -->
-      <table style="width: 100%; border-collapse: collapse; text-align: center; margin-bottom: 24px; border: 1px solid #cbd5e1;">
-        <thead>
-          <tr style="background-color: #f1f5f9;">
-            <th style="border: 1px solid #cbd5e1; padding: 12px; font-size: 14px; font-weight: bold;">인터넷</th>
-            <th style="border: 1px solid #cbd5e1; padding: 12px; font-size: 14px; font-weight: bold;">TV / 셋톱박스</th>
-            <th style="border: 1px solid #cbd5e1; padding: 12px; font-size: 14px; font-weight: bold;">결합 유형</th>
-          </tr>
-        </thead>
+      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
+          <span style="font-weight: bold;">■ 적용 산정식:</span> <span id="pdfCalcType">-</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
+          <span style="font-weight: bold;">■ 정산 사용 기간:</span> <span id="pdfUsedPeriod">-</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px;">
+          <span style="font-weight: bold; color: #e11d48;">■ 3년 약정 총 예상 위약금(일할):</span> <span id="pdfTotalPenaltyTop" style="font-weight: 900; color: #e11d48;">-</span>
+        </div>
+      </div>
+
+      <h3 style="font-size: 15px; font-weight: bold; margin-bottom: 10px; border-left: 4px solid #0f172a; padding-left: 8px;">1. 가입 상품 및 요금 내역 (3년 약정 기준)</h3>
+      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; margin-bottom: 20px;">
         <tbody>
-          <tr>
-            <td style="border: 1px solid #cbd5e1; padding: 16px; font-size: 14px;" id="pdfIntName">-</td>
-            <td style="border: 1px solid #cbd5e1; padding: 16px; font-size: 14px;" id="pdfTvName">-</td>
-            <td style="border: 1px solid #cbd5e1; padding: 16px; font-size: 14px; color: #e11d48; font-weight: bold;" id="pdfBundleName">-</td>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <th style="padding: 10px; width: 25%; background-color: #f1f5f9;">인터넷</th>
+            <td style="padding: 10px;" id="pdfIntNamePrice">-</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <th style="padding: 10px; background-color: #f1f5f9;">WiFi 공유기</th>
+            <td style="padding: 10px;" id="pdfWifiNamePrice">-</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <th style="padding: 10px; background-color: #f1f5f9;">IPTV / 셋톱박스</th>
+            <td style="padding: 10px;" id="pdfTvStbNamePrice">-</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e2e8f0;">
+            <th style="padding: 10px; background-color: #fff1f2; color: #be123c;">결합 유형</th>
+            <td style="padding: 10px; font-weight: bold; color: #be123c;" id="pdfBundleName">-</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e2e8f0; font-weight: bold;">
+            <th style="padding: 10px; background-color: #f1f5f9;">정상 총액</th>
+            <td style="padding: 10px;" id="pdfBaseTotal">-</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #2563eb;">
+            <th style="padding: 10px; background-color: #f1f5f9;">결합 할인액</th>
+            <td style="padding: 10px;" id="pdfTotalDisc">-</td>
+          </tr>
+          <tr style="border-bottom: 2px solid #0f172a; font-weight: 900; font-size: 15px;">
+            <th style="padding: 12px; background-color: #f8fafc;">최종 실납부액</th>
+            <td style="padding: 12px; color: #e11d48;" id="pdfFinalTotal">-</td>
           </tr>
         </tbody>
       </table>
 
-      <!-- 청구 금액 상세 -->
-      <div style="display: flex; gap: 16px; margin-bottom: 24px;">
-        <div style="flex: 1; border: 1px solid #cbd5e1; padding: 16px;">
-          <h3 style="font-weight: bold; text-align: center; margin: 0 0 16px 0; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">할인 전 기본 요금</h3>
-          <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px;"><span>인터넷+와이파이</span><span id="pdfBaseInt">0원</span></div>
-          <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px;"><span>TV+셋톱박스</span><span id="pdfBaseTv">0원</span></div>
-          <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 900; margin-top: 16px; padding-top: 8px; border-top: 1px solid #e2e8f0; color: #64748b;">
-            <span>합계 금액</span><span id="pdfBaseTotal">0원</span>
-          </div>
-        </div>
-        
-        <div style="flex: 1; border: 2px solid #f43f5e; padding: 16px; background-color: #fff1f2;">
-          <h3 style="font-weight: bold; text-align: center; margin: 0 0 16px 0; padding-bottom: 8px; border-bottom: 1px solid #fecdd3; color: #be123c;">결합 할인 적용 후 (최종 청구액)</h3>
-          <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: #be123c;"><span>결합 총 할인액</span><span id="pdfTotalDisc">-0원</span></div>
-          <div style="display: flex; justify-content: space-between; font-size: 24px; font-weight: 900; margin-top: 16px; padding-top: 8px; border-top: 1px solid #fecdd3; color: #e11d48;">
-            <span>최종 월 납부액</span><span id="pdfFinalTotal">0원</span>
-          </div>
+      <h3 style="font-size: 15px; font-weight: bold; margin-bottom: 10px; border-left: 4px solid #e11d48; padding-left: 8px; color: #e11d48;">2. 해지 세부 위약금 내역</h3>
+      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; margin-bottom: 25px;">
+        <tbody>
+          <tr style="border-bottom: 1px dashed #e2e8f0;"><th style="padding: 8px; width: 50%;">인터넷 기본할인 반환금</th><td style="padding: 8px; text-align: right;" id="pdfP1">-</td></tr>
+          <tr style="border-bottom: 1px dashed #e2e8f0;"><th style="padding: 8px;">TV 기본할인 반환금</th><td style="padding: 8px; text-align: right;" id="pdfP2">-</td></tr>
+          <tr style="border-bottom: 1px dashed #e2e8f0;"><th style="padding: 8px;">인터넷 결합할인 반환금</th><td style="padding: 8px; text-align: right;" id="pdfP3">-</td></tr>
+          <tr style="border-bottom: 1px dashed #e2e8f0;"><th style="padding: 8px;">TV 결합할인 반환금</th><td style="padding: 8px; text-align: right;" id="pdfP4">-</td></tr>
+          <tr style="border-bottom: 1px dashed #e2e8f0;"><th style="padding: 8px;">장비 임대료 반환금</th><td style="padding: 8px; text-align: right;" id="pdfP5">-</td></tr>
+          <tr style="border-bottom: 1px solid #cbd5e1;"><th style="padding: 8px;">사은품 환수금</th><td style="padding: 8px; text-align: right;" id="pdfPGift">-</td></tr>
+          <tr><th style="padding: 12px; font-weight: 900; font-size: 14px;">총 예상 위약금 합계</th><td style="padding: 12px; text-align: right; font-weight: 900; font-size: 15px; color: #e11d48;" id="pdfTotalPenaltyBot">-</td></tr>
+        </tbody>
+      </table>
+
+      <h3 style="font-size: 15px; font-weight: bold; margin-bottom: 10px; border-left: 4px solid #2563eb; padding-left: 8px; color: #1d4ed8;">3. 타사 이동 비교 분석 요약</h3>
+      <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; border-radius: 8px; font-size: 13px; line-height: 1.6;">
+        <div style="margin-bottom: 6px;"><span style="font-weight: bold;">- 현재 이용 상품:</span> <span id="pdfAnalysisCurrent">-</span></div>
+        <div style="margin-bottom: 6px;"><span style="font-weight: bold;">- 타사 이동 상품:</span> <span id="pdfAnalysisTarget">-</span></div>
+        <div style="margin-bottom: 6px; padding-left: 10px; color: #475569;" id="pdfAnalysisChangeInfo"></div>
+        <div style="margin-bottom: 6px;"><span style="font-weight: bold;">- 약정 만료까지 기존 유지비용:</span> <span id="pdfAnalysisMaintain">-</span></div>
+        <div style="margin-bottom: 12px;"><span style="font-weight: bold;">- 지금 변경 시 비교비용:</span> <span id="pdfAnalysisChange">-</span></div>
+        <div style="padding-top: 10px; border-top: 1px solid #bfdbfe; font-size: 15px; font-weight: 900;">
+          <span style="color: #1e3a8a;">- 예상 손익 결과:</span> <span id="pdfAnalysisDiffResult">-</span>
         </div>
       </div>
 
-      <!-- 타사 비교 및 해지 위약금 요약 -->
-      <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; border: 1px solid #cbd5e1;">
-        <h3 style="font-weight: bold; color: #1e293b; margin: 0 0 12px 0; font-size: 18px;">💡 위약금 및 타사 이동 비교 분석</h3>
-        <div style="font-size: 14px;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span>현재 발생 위약금 총액:</span><span style="font-weight: bold; color: #e11d48;" id="pdfPenalty">0원</span></div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span>타사 이동 시 예상 사은품:</span><span style="font-weight: bold; color: #2563eb;" id="pdfNewGift">0원</span></div>
-          <div style="display: flex; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid #cbd5e1; font-weight: 900; font-size: 16px;">
-            <span>최종 분석 결과:</span><span id="pdfResultText">-</span>
-          </div>
-        </div>
+      <div style="margin-top: 30px; border-top: 2px solid #0f172a; padding-top: 15px; font-size: 11px; color: #64748b; line-height: 1.5;">
+        <p style="font-weight: bold; color: #334155; margin-bottom: 5px;">[해지 시 필독 유의사항]</p>
+        <p>1. 임대 장비 미반납금 (변상금): 모뎀, 셋톱박스, 공유기, 리모컨을 반납하지 않으면 15~25만 원 상당의 기기 원가가 일시불 청구됩니다. (정상 반납 시 0원)</p>
+        <p>2. 해지 당월 일할 요금: 해지 시점까지 사용한 이번 달 통신 요금이 별도 합산 청구됩니다.</p>
+        <p>※ 통신사 실제 해지 정산 시 일할 계산 및 회선 상태에 따라 소폭 변동될 수 있습니다.</p>
+        <p style="margin-top: 15px; font-size: 13px; font-weight: bold; text-align: center; color: #1e293b;">담당: [이름] ([연락처]) / [매장명]</p>
       </div>
 
-      <!-- 푸터 -->
-      <div style="position: absolute; bottom: 40px; left: 0; width: 100%; text-align: center; font-size: 12px; color: #94a3b8;">
-        <p style="margin: 0 0 4px 0;">* 본 견적서는 상담용 안내 자료이며, 실제 개통 시 전산 및 회선 상태에 따라 소폭 변동될 수 있습니다.</p>
-        <p style="margin: 0;">담당자 : [매장명] [이름] ([연락처])</p>
-      </div>
     </div>
   </div>
 
@@ -1620,7 +1653,7 @@
         let cancelItemText = `${tvObj.name} + ${stbObj.name}`;
         if (tvCount === 2) cancelItemText += ` (복수단말 포함)`;
 
-        summaryText = `[[매장명]] ${carrierName} 3년 약정 TV 단독 해지 정산서
+        summaryText = `[매장명] ${carrierName} 3년 약정 TV 단독 해지 정산서
 담당: [이름] ([연락처])
 ■ 적용 산정식: ${pModeText}
 ■ 현재 결합 유형: ${bundleObj.name} (3년 약정)
@@ -1651,7 +1684,7 @@
           tvListText += `\n - 2번째 TV: ${tv2Obj.name} (${tv2Obj.price.toLocaleString()}원)\n - 2번째 셋톱: ${stb2Obj.name} (${stb2Obj.price.toLocaleString()}원)`;
         }
 
-        summaryText = `[[매장명]] ${carrierName} 3년 약정 인터넷·TV 해지 정산서
+        summaryText = `[매장명] ${carrierName} 3년 약정 인터넷·TV 해지 정산서
 담당: [이름] ([연락처])
 ■ 적용 산정식: ${pModeText}
 ■ 결합 유형: ${bundleObj.name} (3년 약정)
@@ -1689,88 +1722,102 @@ ${tvListText}
       });
     });
 
-    // PDF 다운로드 버튼 동작 (모바일 스크롤 버그 및 백지 현상 완벽 차단 로직)
+    // 💡 [수정] 모바일 인쇄(기본 PDF 저장) 기능 연결
     document.getElementById('pdfBtn').addEventListener('click', function() {
-      const btn = this;
-      const originalText = btn.innerHTML;
-      btn.innerHTML = '<span>⏳ PDF 생성 중...</span>';
-      btn.classList.add('opacity-70', 'cursor-not-allowed');
-      btn.disabled = true;
+      // 1. PDF 템플릿에 데이터 채워넣기
+      const { intObj, wifiObj, tvObj, stbObj, bundleObj } = getSelectedObjects();
+      
+      document.getElementById('pdfCarrierName').innerText = CARRIER_DATA[currentCarrier].name;
+      
+      const today = new Date();
+      document.getElementById('pdfDate').innerText = `${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일`;
 
-      try {
-          const { intObj, wifiObj, tvObj, stbObj, bundleObj } = getSelectedObjects();
-          
-          // 데이터 바인딩
-          document.getElementById('pdfCarrierName').innerText = CARRIER_DATA[currentCarrier].name;
-          const today = new Date();
-          document.getElementById('pdfDate').innerText = `${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일`;
-
-          document.getElementById('pdfIntName').innerText = `${intObj.name.replace(/\s*\(.*?\)\s*/g, '').trim()} + ${wifiObj.name.replace(/\s*\(.*?\)\s*/g, '').trim()}`;
-          document.getElementById('pdfTvName').innerText = `${tvObj.name.replace(/\s*\(.*?\)\s*/g, '').trim()} + ${stbObj.name.replace(/\s*\(.*?\)\s*/g, '').trim()}`;
-          document.getElementById('pdfBundleName').innerText = bundleObj.name;
-
-          document.getElementById('pdfBaseInt').innerText = (intObj.price + wifiObj.price).toLocaleString() + '원';
-          document.getElementById('pdfBaseTv').innerText = (tvObj.price + stbObj.price).toLocaleString() + '원';
-          document.getElementById('pdfBaseTotal').innerText = document.getElementById('baseMonthlyBill').innerText;
-          
-          document.getElementById('pdfTotalDisc').innerText = document.getElementById('bundleMonthlyDiscount').innerText;
-          document.getElementById('pdfFinalTotal').innerText = document.getElementById('totalMonthlyBill').innerText + '원';
-
-          document.getElementById('pdfPenalty').innerText = document.getElementById('totalPenalty').innerText + '원';
-          document.getElementById('pdfNewGift').innerText = Number(document.getElementById('compNewGift').value).toLocaleString() + '원';
-          document.getElementById('pdfResultText').innerText = document.getElementById('compResult').innerText;
-
-          // 원본 템플릿
-          const template = document.getElementById('pdfTemplate');
-
-          // [핵심 해결책] 가상의 DOM 복제본을 만들어 강제로 렌더링시킵니다.
-          const clone = template.cloneNode(true);
-          clone.id = "pdfTemplateClone";
-          clone.style.display = "block";
-          clone.style.position = "absolute";
-          clone.style.top = "0";
-          clone.style.left = "0";
-          clone.style.zIndex = "-9999"; // 사용자 눈에 안 보이게 맨 뒤로 숨김
-          document.body.appendChild(clone);
-
-          // PDF 설정
-          const opt = {
-            margin:       0,
-            filename:     `견적서_${CARRIER_DATA[currentCarrier].name}.pdf`,
-            image:        { type: 'jpeg', quality: 1.0 },
-            html2canvas:  { 
-                scale: 2, 
-                backgroundColor: '#ffffff',
-                useCORS: true,
-                scrollY: 0, // [모바일 백지 버그 차단] 화면이 아래로 내려가 있어도 캡처 기준을 맨 위로 고정
-                scrollX: 0,
-                windowWidth: 794 // 좁은 스마트폰에서도 무조건 794px(PC 가로너비)로 렌더링
-            },
-            jsPDF:        { unit: 'px', format: [794, 1123], orientation: 'portrait' } // 딱 맞게 1장 컷
-          };
-
-          // 복제본이 렌더링될 시간 0.3초 대기 후 캡처 실행
-          setTimeout(() => {
-            html2pdf().set(opt).from(clone).save().then(() => {
-              btn.innerHTML = originalText;
-              btn.classList.remove('opacity-70', 'cursor-not-allowed');
-              btn.disabled = false;
-              document.body.removeChild(clone); // 끝나면 복제본 삭제
-            }).catch(err => {
-              btn.innerHTML = originalText;
-              btn.classList.remove('opacity-70', 'cursor-not-allowed');
-              btn.disabled = false;
-              document.body.removeChild(clone); // 끝나면 복제본 삭제
-              alert('PDF 생성 오류가 발생했습니다. 카카오톡 등 인앱 브라우저라면 기본 브라우저(크롬, 사파리)로 접속하여 이용해주세요.');
-            });
-          }, 300);
-          
-      } catch(e) {
-          btn.innerHTML = originalText;
-          btn.classList.remove('opacity-70', 'cursor-not-allowed');
-          btn.disabled = false;
-          alert('데이터 처리 중 문제가 발생했습니다.');
+      const pModeText = penaltyType === '5' ? '최신 산모양(위약금5)' : (penaltyType === '4' ? '구형 산모양(위약금4)' : '구형 계단식(위약금3)');
+      document.getElementById('pdfCalcType').innerText = pModeText;
+      
+      let durationText = '';
+      if (durationCalcType === 'date') {
+        durationText = `${document.getElementById('startDateInput').value} ~ ${document.getElementById('endDateInput').value} (${document.getElementById('exactDaysText').innerText})`;
+      } else {
+        const m = document.getElementById('months').value;
+        durationText = `${m}개월 차 (약 ${Math.round(m * 30.4167)}일)`;
       }
+      document.getElementById('pdfUsedPeriod').innerText = durationText;
+
+      document.getElementById('pdfIntNamePrice').innerText = `${intObj.name} (${intObj.price.toLocaleString()}원)`;
+      document.getElementById('pdfWifiNamePrice').innerText = `${wifiObj.name} (${wifiObj.price.toLocaleString()}원)`;
+      
+      let tvStbText = `${tvObj.name} (${tvObj.price.toLocaleString()}원) + ${stbObj.name} (${stbObj.price.toLocaleString()}원)`;
+      if (tvCount === 2) {
+          const tv2Obj = getSelectedObjects().tv2Obj;
+          const stb2Obj = getSelectedObjects().stb2Obj;
+          tvStbText += `\n[복수] ${tv2Obj.name} (${tv2Obj.price.toLocaleString()}원) + ${stb2Obj.name} (${stb2Obj.price.toLocaleString()}원)`;
+      }
+      document.getElementById('pdfTvStbNamePrice').innerText = tvStbText;
+      
+      document.getElementById('pdfBundleName').innerText = bundleObj.name;
+      
+      document.getElementById('pdfBaseTotal').innerText = document.getElementById('baseMonthlyBill').innerText;
+      document.getElementById('pdfTotalDisc').innerText = document.getElementById('bundleMonthlyDiscount').innerText;
+      document.getElementById('pdfFinalTotal').innerText = document.getElementById('totalMonthlyBill').innerText + '원';
+
+      document.getElementById('pdfP1').innerText = document.getElementById('planDiscount1').innerText;
+      document.getElementById('pdfP2').innerText = document.getElementById('planDiscount2').innerText;
+      document.getElementById('pdfP3').innerText = document.getElementById('bundleDiscount1').innerText;
+      document.getElementById('pdfP4').innerText = document.getElementById('bundleDiscount2').innerText;
+      document.getElementById('pdfP5').innerText = document.getElementById('equipDiscount').innerText;
+      document.getElementById('pdfPGift').innerText = document.getElementById('giftClawbackVal').innerText;
+      
+      document.getElementById('pdfTotalPenaltyTop').innerText = document.getElementById('totalPenalty').innerText + '원';
+      document.getElementById('pdfTotalPenaltyBot').innerText = document.getElementById('totalPenalty').innerText + '원';
+
+      // 타사 비교 데이터 바인딩
+      const tobeProduct = document.getElementById('compTargetProduct').value.trim();
+      const currentMonthlyVal = parseInt(document.getElementById('totalMonthlyBill').innerText.replace(/,/g, ''), 10);
+      
+      document.getElementById('pdfAnalysisCurrent').innerText = `[${CARRIER_DATA[currentCarrier].name}] ${intObj.name.replace(/\s*\(.*?\)\s*/g, '').trim()} + ${tvObj.name.replace(/\s*\(.*?\)\s*/g, '').trim()} / ${bundleObj.name} (월 ${currentMonthlyVal.toLocaleString()}원)`;
+      
+      let tobeText = '';
+      let changeInfoText = '';
+      if (tobeProduct) {
+        const targetMonthlyVal = parseInt(document.getElementById('compTargetMonthlyInput').value, 10) || 0;
+        tobeText = `${tobeProduct} (개통요금: 월 ${targetMonthlyVal.toLocaleString()}원)`;
+        
+        if (document.getElementById('tobeChangeToggle').checked) {
+          const periodSel = document.getElementById('tobeMaintainPeriodSelect');
+          let periodText = periodSel.options[periodSel.selectedIndex].text;
+          if (periodSel.value === 'custom') {
+              periodText = (parseInt(document.getElementById('tobeMaintainPeriodInput').value, 10) || 0) + '개월';
+          }
+          
+          let changedProdStr = '';
+          if (targetCarrier === 'manual') {
+              changedProdStr = document.getElementById('tobeChangedProductManual').value.trim() || '요금제 하향/변경';
+          } else {
+              const tIntText = document.getElementById('tobeChangeIntSelect').options[document.getElementById('tobeChangeIntSelect').selectedIndex]?.text || '';
+              const tTvText = document.getElementById('tobeChangeTvSelect').options[document.getElementById('tobeChangeTvSelect').selectedIndex]?.text || '';
+              const tBundleText = document.getElementById('tobeChangeBundleSelect').options[document.getElementById('tobeChangeBundleSelect').selectedIndex]?.text || '';
+              const cInt = tIntText.replace(/\s*\(.*?\)\s*/g, '').trim();
+              const cTv = tTvText.replace(/\s*\(.*?\)\s*/g, '').trim();
+              const tTvPart = (cTv === '미적용' || cTv.includes('미적용')) ? '인터넷 단독' : cTv;
+              changedProdStr = `[${CARRIER_DATA[targetCarrier].name}] ${cInt} + ${tTvPart} / ${tBundleText}`;
+          }
+
+          const changedFee = parseInt(document.getElementById('tobeChangedMonthlyInput').value, 10) || 0;
+          changeInfoText = `↳ [의무유지 후 변경]: ${periodText} 이후 -> ${changedProdStr} (월 ${changedFee.toLocaleString()}원 적용)`;
+        }
+      }
+      
+      document.getElementById('pdfAnalysisTarget').innerText = tobeText;
+      document.getElementById('pdfAnalysisChangeInfo').innerText = changeInfoText;
+      document.getElementById('pdfAnalysisMaintain').innerText = document.getElementById('compMaintain').innerText;
+      document.getElementById('pdfAnalysisChange').innerText = document.getElementById('compChange').innerText;
+      document.getElementById('pdfAnalysisDiffResult').innerHTML = `${document.getElementById('compDiff').innerText} <strong>(${document.getElementById('compResult').innerText})</strong>`;
+
+      // 2. 브라우저 기본 인쇄 화면(PDF 저장) 즉시 호출
+      setTimeout(() => {
+        window.print();
+      }, 100);
     });
 
     setCarrier('SK');
