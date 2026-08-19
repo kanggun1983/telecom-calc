@@ -810,12 +810,19 @@
       return calculatePenalty3(mDiscount, days);
     }
 
-    // 장비(셋톱박스, 와이파이) 반환금 전용 계산 함수 (직선 하락식)
-    function calculateEquipmentPenalty(monthlyDiscount, days) {
+    // [수정된 부분] 선택된 세대별로 장비 반환금 계산 방식을 동적으로 분기
+    function calculateEquipmentPenalty(monthlyDiscount, days, carrierKey) {
       if (days <= 0 || monthlyDiscount <= 0 || days >= 1095) return 0;
-      const dailyDiscount = monthlyDiscount / 30.4167;
-      const totalAccumulated = dailyDiscount * days;
-      return totalAccumulated * ((1095 - days) / 1095);
+      
+      if (penaltyType === '5') {
+        // 위약금5 (최신): 장비 임대료는 가입 첫 달부터 (잔여일수 / 1095) 비율로 엄격하게 직선 하락
+        const dailyDiscount = monthlyDiscount / 30.4167;
+        const totalAccumulated = dailyDiscount * days;
+        return totalAccumulated * ((1095 - days) / 1095);
+      } else {
+        // 위약금4, 3 (구형): 대표님 지적대로 과거엔 장비 반환금도 기본 요금 위약금 궤적을 100% 동일하게 따라갔음
+        return getPenalty(monthlyDiscount, days, carrierKey);
+      }
     }
 
     function calculateAndRender() {
@@ -886,8 +893,8 @@
       const p2 = Math.round(getPenalty(mTvPlan, currentDays, currentCarrier));
       const p3 = Math.round(getPenalty(mIntBund, currentDays, currentCarrier));
       const p4 = Math.round(getPenalty(mTvBund, currentDays, currentCarrier));
-      // 장비 위약금 전용 함수 적용
-      const p5 = Math.round(calculateEquipmentPenalty(mEquip, currentDays));
+      // 수정된 장비 위약금 함수 호출 (carrierKey 파라미터 추가 전달)
+      const p5 = Math.round(calculateEquipmentPenalty(mEquip, currentDays, currentCarrier));
       const pGift = currentDays <= 365 ? gift : 0;
       const totalPenalty = p1 + p2 + p3 + p4 + p5 + pGift;
 
@@ -913,8 +920,8 @@
         const tp2 = getPenalty(mTvPlan, d, currentCarrier);
         const tp3 = getPenalty(mIntBund, d, currentCarrier);
         const tp4 = getPenalty(mTvBund, d, currentCarrier);
-        // 차트 렌더링에도 장비 위약금 전용 함수 적용
-        const tp5 = calculateEquipmentPenalty(mEquip, d);
+        // 차트 렌더링 루프 내부에도 carrierKey 파라미터 추가 전달
+        const tp5 = calculateEquipmentPenalty(mEquip, d, currentCarrier);
         dataPoints.push(Math.round(tp1 + tp2 + tp3 + tp4 + tp5 + (d <= 365 ? gift : 0)));
 
         if (Math.round(floatingMonths) === i) { pointColors.push('#6366f1'); pointRadii.push(6); } 
