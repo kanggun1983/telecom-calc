@@ -398,7 +398,10 @@
                   <select id="targetInternetSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
                   <select id="targetTvSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
                 </div>
-                <select id="targetBundleSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
+                <div class="grid grid-cols-2 gap-1.5">
+                  <select id="targetStbSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
+                  <select id="targetBundleSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
+                </div>
               </div>
 
               <input type="text" id="compTargetProduct" class="w-full text-[11px] sm:text-xs font-bold text-blue-900 bg-blue-50/30 p-1.5 rounded border border-blue-200 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-blue-300" placeholder="위에서 선택하거나 직접 입력 (예: LGU+ 500M + 프리미엄 TV)">
@@ -443,7 +446,10 @@
                         <select id="tobeChangeIntSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
                         <select id="tobeChangeTvSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
                       </div>
-                      <select id="tobeChangeBundleSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
+                      <div class="grid grid-cols-2 gap-1.5">
+                        <select id="tobeChangeStbSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
+                        <select id="tobeChangeBundleSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
+                      </div>
                     </div>
                   </div>
 
@@ -1100,6 +1106,7 @@
     const targetProductDropdowns = document.getElementById('targetProductDropdowns');
     const targetIntSelect = document.getElementById('targetInternetSelect');
     const targetTvSelect = document.getElementById('targetTvSelect');
+    const targetStbSelect = document.getElementById('targetStbSelect');
     const targetBundleSelect = document.getElementById('targetBundleSelect');
     const compTargetProductInput = document.getElementById('compTargetProduct');
     const compTargetMonthlyInput = document.getElementById('compTargetMonthlyInput');
@@ -1107,6 +1114,7 @@
     // --- [변경상품 하향/변경용 변수] ---
     const tobeChangeIntSelect = document.getElementById('tobeChangeIntSelect');
     const tobeChangeTvSelect = document.getElementById('tobeChangeTvSelect');
+    const tobeChangeStbSelect = document.getElementById('tobeChangeStbSelect');
     const tobeChangeBundleSelect = document.getElementById('tobeChangeBundleSelect');
     const tobeChangedProductManual = document.getElementById('tobeChangedProductManual');
     const tobeChangedMonthlyInput = document.getElementById('tobeChangedMonthlyInput');
@@ -1133,17 +1141,18 @@
       const tvId = targetTvSelect.value;
       const targetTv = c.tv.find(x => x.id === tvId) || c.tv[0] || { price: 0, discount: 0 };
       
-      // 💡 위에 셋팅된 셋톱박스 요금을 타사 이동 시에도 그대로 적용 (자동합산)
-      const { stbObj, stb2Obj } = getSelectedObjects();
+      // 💡 타사 전용 셋톱박스 금액 연동
+      const stbId = targetStbSelect.value;
+      const targetStb = c.stb.find(x => x.id === stbId) || c.stb[0] || { price: 0 };
       
       const bundleId = targetBundleSelect.value;
       const targetBundle = c.bundles.find(x => x.id === bundleId) || c.bundles[0] || {};
 
-      let subtotal = (targetInt.price || 0) + (targetTv.price || 0) + (stbObj.price || 0);
+      let subtotal = (targetInt.price || 0) + (targetTv.price || 0) + (targetStb.price || 0);
       let tvDisc = (targetTv.price > 0 && targetInt.price > 0) ? (targetTv.discount || 0) : 0;
 
       if (tvCount === 2) {
-        subtotal += Math.round((targetTv.price || 0) * 0.5) + (stb2Obj.price || 0);
+        subtotal += Math.round((targetTv.price || 0) * 0.5) + Math.round((targetStb.price || 0) * 0.5);
         tvDisc += Math.round((targetTv.discount || 0) * 0.5);
       }
 
@@ -1181,17 +1190,18 @@
       const tvId = tobeChangeTvSelect.value;
       const targetTv = c.tv.find(x => x.id === tvId) || c.tv[0] || { price: 0, discount: 0 };
       
-      // 💡 위에 셋팅된 셋톱박스 요금을 타사 이동 하향/변경 시에도 그대로 적용 (자동합산)
-      const { stbObj, stb2Obj } = getSelectedObjects();
+      // 💡 타사 하향 전용 셋톱박스 금액 연동
+      const stbId = tobeChangeStbSelect.value;
+      const targetStb = c.stb.find(x => x.id === stbId) || c.stb[0] || { price: 0 };
       
       const bundleId = tobeChangeBundleSelect.value;
       const targetBundle = c.bundles.find(x => x.id === bundleId) || c.bundles[0] || {};
 
-      let subtotal = (targetInt.price || 0) + (targetTv.price || 0) + (stbObj.price || 0);
+      let subtotal = (targetInt.price || 0) + (targetTv.price || 0) + (targetStb.price || 0);
       let tvDisc = (targetTv.price > 0 && targetInt.price > 0) ? (targetTv.discount || 0) : 0;
 
       if (tvCount === 2) {
-        subtotal += Math.round((targetTv.price || 0) * 0.5) + (stb2Obj.price || 0);
+        subtotal += Math.round((targetTv.price || 0) * 0.5) + Math.round((targetStb.price || 0) * 0.5);
         tvDisc += Math.round((targetTv.discount || 0) * 0.5);
       }
 
@@ -1212,12 +1222,14 @@
       if (targetCarrier === 'manual') return;
       const intText = targetIntSelect.options[targetIntSelect.selectedIndex]?.text || '';
       const tvText = targetTvSelect.options[targetTvSelect.selectedIndex]?.text || '';
+      const stbText = targetStbSelect.options[targetStbSelect.selectedIndex]?.text || '';
       const bundleText = targetBundleSelect.options[targetBundleSelect.selectedIndex]?.text || '';
       
       const cleanInt = intText.replace(/\s*\(.*?\)\s*/g, '').trim();
       const cleanTv = tvText.replace(/\s*\(.*?\)\s*/g, '').trim();
+      const cleanStb = stbText.replace(/\s*\(.*?\)\s*/g, '').trim();
       
-      const tvPart = (cleanTv === '미적용' || cleanTv.includes('미적용')) ? '인터넷 단독' : cleanTv;
+      const tvPart = (cleanTv === '미적용' || cleanTv.includes('미적용')) ? '인터넷 단독' : `${cleanTv} + ${cleanStb}`;
       compTargetProductInput.value = `[${CARRIER_DATA[targetCarrier].name}] ${cleanInt} + ${tvPart} / ${bundleText}`;
 
       compTargetMonthlyInput.value = calculateTargetMonthly();
@@ -1242,6 +1254,10 @@
       targetTvSelect.innerHTML = tvHtml;
       tobeChangeTvSelect.innerHTML = tvHtml;
       
+      const stbHtml = c.stb.map(item => `<option value="${item.id}">${item.name}</option>`).join('');
+      targetStbSelect.innerHTML = stbHtml;
+      tobeChangeStbSelect.innerHTML = stbHtml;
+      
       let currentHtml = `<optgroup label="✨ 현행 결합">`;
       let legacyHtml = `<optgroup label="⏳ 구 결합">`;
       c.bundles.forEach(b => {
@@ -1260,6 +1276,13 @@
       const tvOptions = Array.from(tobeChangeTvSelect.options);
       const fallbackTv = tvOptions.find(opt => opt.text.includes('기본') || opt.text.includes('베이직') || opt.text.includes('실속'));
       if (fallbackTv) tobeChangeTvSelect.value = fallbackTv.value;
+
+      const stbOptions = Array.from(tobeChangeStbSelect.options);
+      const fallbackStb = stbOptions.find(opt => opt.value === c.stb.find(x => x.default)?.id);
+      if (fallbackStb) {
+          tobeChangeStbSelect.value = fallbackStb.value;
+          targetStbSelect.value = fallbackStb.value;
+      }
 
       updateTargetProductText();
       calculateTobeChangedMonthly();
@@ -1295,10 +1318,12 @@
 
     targetIntSelect.addEventListener('change', () => { updateTargetProductText(); calculateAndRender(); });
     targetTvSelect.addEventListener('change', () => { updateTargetProductText(); calculateAndRender(); });
+    targetStbSelect.addEventListener('change', () => { updateTargetProductText(); calculateAndRender(); });
     targetBundleSelect.addEventListener('change', () => { updateTargetProductText(); calculateAndRender(); });
 
     tobeChangeIntSelect.addEventListener('change', () => { calculateTobeChangedMonthly(); calculateAndRender(); });
     tobeChangeTvSelect.addEventListener('change', () => { calculateTobeChangedMonthly(); calculateAndRender(); });
+    tobeChangeStbSelect.addEventListener('change', () => { calculateTobeChangedMonthly(); calculateAndRender(); });
     tobeChangeBundleSelect.addEventListener('change', () => { calculateTobeChangedMonthly(); calculateAndRender(); });
 
     document.getElementById('tobeMaintainPeriodSelect').addEventListener('change', (e) => {
@@ -1331,12 +1356,6 @@
         if(id === 'tobeChangeToggle') document.getElementById('tobeChangeBox').classList.toggle('hidden', !e.target.checked);
         if(id === 'internetPlan' || id === 'tvPlan') document.getElementById('compCurrentProduct').setAttribute('data-edited', 'false');
         
-        // 💡 AS-IS 셋탑박스가 변경되면 TO-BE 요금도 업데이트 (자동합산 동기화)
-        if((id === 'stbOption' || id === 'stbOption2' || id === 'tvPlan' || id === 'tvPlan2') && targetCarrier !== 'manual') {
-            updateTargetProductText();
-            calculateTobeChangedMonthly();
-        }
-
         calculateAndRender();
       });
     });
@@ -1689,10 +1708,12 @@
           } else {
               const tIntText = document.getElementById('tobeChangeIntSelect').options[document.getElementById('tobeChangeIntSelect').selectedIndex]?.text || '';
               const tTvText = document.getElementById('tobeChangeTvSelect').options[document.getElementById('tobeChangeTvSelect').selectedIndex]?.text || '';
+              const tStbText = document.getElementById('tobeChangeStbSelect').options[document.getElementById('tobeChangeStbSelect').selectedIndex]?.text || '';
               const tBundleText = document.getElementById('tobeChangeBundleSelect').options[document.getElementById('tobeChangeBundleSelect').selectedIndex]?.text || '';
               const cInt = tIntText.replace(/\s*\(.*?\)\s*/g, '').trim();
               const cTv = tTvText.replace(/\s*\(.*?\)\s*/g, '').trim();
-              const tTvPart = (cTv === '미적용' || cTv.includes('미적용')) ? '인터넷 단독' : cTv;
+              const cStb = tStbText.replace(/\s*\(.*?\)\s*/g, '').trim();
+              const tTvPart = (cTv === '미적용' || cTv.includes('미적용')) ? '인터넷 단독' : `${cTv} + ${cStb}`;
               changedProdStr = `[${CARRIER_DATA[targetCarrier].name}] ${cInt} + ${tTvPart} / ${tBundleText}`;
           }
 
@@ -1877,10 +1898,12 @@ ${tvListText}
           } else {
               const tIntText = document.getElementById('tobeChangeIntSelect').options[document.getElementById('tobeChangeIntSelect').selectedIndex]?.text || '';
               const tTvText = document.getElementById('tobeChangeTvSelect').options[document.getElementById('tobeChangeTvSelect').selectedIndex]?.text || '';
+              const tStbText = document.getElementById('tobeChangeStbSelect').options[document.getElementById('tobeChangeStbSelect').selectedIndex]?.text || '';
               const tBundleText = document.getElementById('tobeChangeBundleSelect').options[document.getElementById('tobeChangeBundleSelect').selectedIndex]?.text || '';
               const cInt = tIntText.replace(/\s*\(.*?\)\s*/g, '').trim();
               const cTv = tTvText.replace(/\s*\(.*?\)\s*/g, '').trim();
-              const tTvPart = (cTv === '미적용' || cTv.includes('미적용')) ? '인터넷 단독' : cTv;
+              const cStb = tStbText.replace(/\s*\(.*?\)\s*/g, '').trim();
+              const tTvPart = (cTv === '미적용' || cTv.includes('미적용')) ? '인터넷 단독' : `${cTv} + ${cStb}`;
               changedProdStr = `[${CARRIER_DATA[targetCarrier].name}] ${cInt} + ${tTvPart} / ${tBundleText}`;
           }
 
