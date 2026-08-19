@@ -31,7 +31,7 @@
     }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 antialiased min-h-screen py-6 px-3 sm:px-6 lg:px-8">
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen py-6 px-3 sm:px-6 lg:px-8 overflow-x-hidden">
   <div class="max-w-6xl mx-auto space-y-5">
     
     <!-- Header -->
@@ -502,9 +502,9 @@
 
   </div>
 
-  <!-- PDF 렌더링용 템플릿 (모바일 화면 영향 방지를 위해 높이 0으로 숨겨둠) -->
-  <div id="pdfWrapper" style="display: none; height: 0; overflow: hidden;">
-    <div id="pdfTemplate" style="width: 794px; min-height: 1123px; padding: 40px; background-color: #ffffff; color: #0f172a; box-sizing: border-box; font-family: sans-serif;">
+  <!-- PDF 렌더링용 템플릿 (백지 오류 방지: 화면 바깥에 항시 렌더링, 1123px 고정으로 무조건 한 장 출력 강제) -->
+  <div id="pdfWrapper" style="position: absolute; top: 0; left: -9999px; z-index: -100;">
+    <div id="pdfTemplate" style="width: 794px; height: 1123px; padding: 40px; background-color: #ffffff; color: #0f172a; box-sizing: border-box; font-family: sans-serif; overflow: hidden;">
       
       <!-- PDF 헤더 -->
       <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px;">
@@ -1689,7 +1689,7 @@ ${tvListText}
       });
     });
 
-    // PDF 다운로드 버튼 동작 (DOM 복제 렌더링 픽스 적용)
+    // PDF 다운로드 버튼 동작
     document.getElementById('pdfBtn').addEventListener('click', function() {
       const btn = this;
       const originalText = btn.innerHTML;
@@ -1728,30 +1728,23 @@ ${tvListText}
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { 
                 scale: 2, 
-                backgroundColor: '#ffffff',
-                windowWidth: 800,
-                useCORS: true,
-                onclone: (clonedDoc) => {
-                    // 복제된 가상 DOM 안에서만 숨김 속성을 해제하여 캡처되도록 함
-                    const clonedWrapper = clonedDoc.getElementById('pdfWrapper');
-                    clonedWrapper.style.height = 'auto';
-                    clonedWrapper.style.overflow = 'visible';
-                    clonedWrapper.style.display = 'block';
-                }
+                backgroundColor: '#ffffff'
             },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
           };
 
+          // 화면 밖에서 렌더링될 시간을 약간 줌
           setTimeout(() => {
             html2pdf().set(opt).from(element).save().then(() => {
               btn.innerHTML = originalText;
               btn.classList.remove('opacity-70', 'cursor-not-allowed');
               btn.disabled = false;
+              alert('PDF 견적서가 성공적으로 다운로드되었습니다.');
             }).catch(err => {
               btn.innerHTML = originalText;
               btn.classList.remove('opacity-70', 'cursor-not-allowed');
               btn.disabled = false;
-              alert('PDF 생성 오류가 발생했습니다. 카카오톡 등 인앱 브라우저라면 기본 브라우저(크롬, 사파리)로 접속하여 이용해주세요.');
+              alert('PDF 생성 오류가 발생했습니다.');
             });
           }, 300);
           
