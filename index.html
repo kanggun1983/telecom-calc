@@ -342,7 +342,54 @@
           </div>
         </div>
 
-        <button id="copyBtn" type="button" class="w-full py-3.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition shadow-sm">
+        <!-- 📊 해지 vs 타사 변경 비교 분석 (추가된 UI) -->
+        <div class="bg-blue-50/70 p-4 sm:p-5 rounded-2xl shadow-sm border border-blue-200 space-y-3 mt-4">
+          <div class="flex justify-between items-end border-b border-blue-200 pb-3">
+            <h3 class="text-xs sm:text-sm font-black text-blue-900">📊 해지 vs 타사 변경 비교 분석</h3>
+            <div class="text-right">
+              <span class="block text-[10px] text-blue-600 font-bold mb-0.5">예상 총 해지비용</span>
+              <span id="compTotalPenalty" class="text-xl sm:text-2xl font-black text-rose-600">0원</span>
+            </div>
+          </div>
+
+          <div class="space-y-2 text-xs font-medium text-slate-600 pb-3 border-b border-blue-200">
+            <div class="flex justify-between">
+              <span>약정 할인반환금 (기본/결합)</span><span id="compDisc" class="font-bold text-slate-800">0원</span>
+            </div>
+            <div class="flex justify-between">
+              <span>설치비 / 사은품 반환</span><span id="compGift" class="font-bold text-slate-800">0원</span>
+            </div>
+            <div class="flex justify-between">
+              <span>장비 / 단말 관련 비용</span><span id="compEquip" class="font-bold text-slate-800">0원</span>
+            </div>
+          </div>
+
+          <div class="space-y-2 text-xs font-medium text-slate-600 pb-3 border-b border-blue-200">
+            <div class="flex justify-between">
+              <span>사용기간 / 남은 약정</span><span id="compPeriod" class="font-bold text-slate-800">0개월 / 36개월</span>
+            </div>
+            <div class="flex justify-between">
+              <span>약정 만료까지 유지비용</span><span id="compMaintain" class="font-bold text-slate-800">0원</span>
+            </div>
+            <div class="flex justify-between items-center pt-2 mt-1">
+              <span class="text-[11px] sm:text-xs text-blue-700 font-bold">➕ 타사 이동 신규 사은품 (예상)</span>
+              <input type="number" id="compNewGift" class="w-24 sm:w-28 text-right p-1.5 border border-blue-300 rounded text-blue-700 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm text-xs sm:text-sm" value="450000" step="10000">
+            </div>
+            <div class="flex justify-between pt-1">
+              <span>지금 변경 시 비교비용</span><span id="compChange" class="font-bold text-slate-800">0원</span>
+            </div>
+            <div class="flex justify-between">
+              <span>지금 변경의 예상 차이</span><span id="compDiff" class="font-bold text-rose-600">0원</span>
+            </div>
+          </div>
+
+          <div class="flex justify-between items-center pt-1">
+            <span class="text-sm font-bold text-slate-800">계산상 판단</span>
+            <span id="compResult" class="text-sm font-black text-rose-600">약정 유지가 유리</span>
+          </div>
+        </div>
+
+        <button id="copyBtn" type="button" class="w-full py-3.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition shadow-sm mt-4">
           <span>📋 고객 발송용 상세 견적서 복사</span>
         </button>
 
@@ -609,7 +656,7 @@
       } else if (penaltyType === '4') {
         document.getElementById('penaltyTypeDesc').innerText = "※ 위약금4: 2018년 ~ 23년 하반기 개편일 이전 가입·재약정 (24개월 최고점)";
       } else {
-        document.getElementById('penaltyTypeDesc').innerText = "※ 위약금3: 2018년 이전 가입 후 한 번도 재약정을 하지 고객 (계단식 누적)";
+        document.getElementById('penaltyTypeDesc').innerText = "※ 위약금3: 2018년 이전 가입 후 한 번도 재약정을 하지 않은 고객 (계단식 누적)";
       }
     }
 
@@ -796,8 +843,9 @@
       calculateAndRender();
     });
 
-    ['startDateInput', 'endDateInput', 'internetPlan', 'wifiOption', 'tvPlan', 'tvPlan2', 'stbOption', 'stbOption2', 'gift', 'months', 'manualModeToggle', 'manIntPlan', 'manTvPlan', 'manIntBund', 'manTvBund', 'manEquip'].forEach(id => {
+    ['startDateInput', 'endDateInput', 'internetPlan', 'wifiOption', 'tvPlan', 'tvPlan2', 'stbOption', 'stbOption2', 'gift', 'months', 'manualModeToggle', 'manIntPlan', 'manTvPlan', 'manIntBund', 'manTvBund', 'manEquip', 'compNewGift'].forEach(id => {
       const el = document.getElementById(id);
+      if (!el) return;
       const eventType = (el.tagName === 'SELECT' || el.type === 'date' || el.type === 'checkbox') ? 'change' : 'input';
       el.addEventListener(eventType, (e) => {
         if(id === 'gift') document.getElementById('giftValText').innerText = (document.getElementById('gift').value/10000)+'만 원';
@@ -991,6 +1039,46 @@
         else { pointColors.push(CARRIER_DATA[currentCarrier].color); pointRadii.push(2); }
       }
       renderChart(labels, dataPoints, pointColors, pointRadii, CARRIER_DATA[currentCarrier].color);
+
+      // --- [추가된 로직] 해지 vs 유지 비교 분석 ---
+      const compUsedM = Math.min(36, Math.round(currentDays / 30.4167));
+      const compRemainM = Math.max(0, 36 - compUsedM);
+      const compMaintainCost = compRemainM * finalMonthly;
+      const expectedNewGift = parseInt(document.getElementById('compNewGift').value) || 0;
+      
+      // 타사 이동 시 비용 (유지비용 + 해지비용 - 신규사은품)
+      const compChangeCost = compMaintainCost + totalPenalty - expectedNewGift;
+      // 예상 차이 (양수면 이득, 음수면 손실)
+      const diffCost = expectedNewGift - totalPenalty;
+
+      document.getElementById('compTotalPenalty').innerText = `${totalPenalty.toLocaleString()}원`;
+      document.getElementById('compDisc').innerText = `${(p1 + p2 + p3 + p4).toLocaleString()}원`;
+      document.getElementById('compGift').innerText = `${pGift.toLocaleString()}원`;
+      document.getElementById('compEquip').innerText = `${p5.toLocaleString()}원`;
+      
+      document.getElementById('compPeriod').innerText = `${compUsedM}개월 / ${compRemainM}개월`;
+      document.getElementById('compMaintain').innerText = `${compMaintainCost.toLocaleString()}원`;
+      document.getElementById('compChange').innerText = `${compChangeCost.toLocaleString()}원`;
+
+      const compDiffEl = document.getElementById('compDiff');
+      const compResultEl = document.getElementById('compResult');
+
+      if (diffCost > 0) {
+        compDiffEl.innerText = `+${diffCost.toLocaleString()}원 (이익)`;
+        compDiffEl.className = 'font-bold text-emerald-600';
+        compResultEl.innerText = '타사 변경(이동)이 유리';
+        compResultEl.className = 'text-sm font-black text-emerald-600';
+      } else if (diffCost < 0) {
+        compDiffEl.innerText = `${diffCost.toLocaleString()}원 (손실)`;
+        compDiffEl.className = 'font-bold text-rose-600';
+        compResultEl.innerText = '약정 유지가 유리';
+        compResultEl.className = 'text-sm font-black text-rose-600';
+      } else {
+        compDiffEl.innerText = `0원`;
+        compDiffEl.className = 'font-bold text-slate-600';
+        compResultEl.innerText = '비용 동일';
+        compResultEl.className = 'text-sm font-black text-slate-600';
+      }
     }
 
     function renderChart(labels, data, pointColors, pointRadii, brandColor) {
