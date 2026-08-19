@@ -1132,15 +1132,18 @@
 
       const tvId = targetTvSelect.value;
       const targetTv = c.tv.find(x => x.id === tvId) || c.tv[0] || { price: 0, discount: 0 };
-      const targetStb = c.stb.find(x => x.default) || c.stb[0] || { price: 0 };
+      
+      // 💡 위에 셋팅된 셋톱박스 요금을 타사 이동 시에도 그대로 적용 (자동합산)
+      const { stbObj, stb2Obj } = getSelectedObjects();
+      
       const bundleId = targetBundleSelect.value;
       const targetBundle = c.bundles.find(x => x.id === bundleId) || c.bundles[0] || {};
 
-      let subtotal = (targetInt.price || 0) + (targetTv.price || 0) + (targetStb.price || 0);
+      let subtotal = (targetInt.price || 0) + (targetTv.price || 0) + (stbObj.price || 0);
       let tvDisc = (targetTv.price > 0 && targetInt.price > 0) ? (targetTv.discount || 0) : 0;
 
       if (tvCount === 2) {
-        subtotal += Math.round((targetTv.price || 0) * 0.5) + Math.round((targetStb.price || 0) * 0.5);
+        subtotal += Math.round((targetTv.price || 0) * 0.5) + (stb2Obj.price || 0);
         tvDisc += Math.round((targetTv.discount || 0) * 0.5);
       }
 
@@ -1177,15 +1180,18 @@
 
       const tvId = tobeChangeTvSelect.value;
       const targetTv = c.tv.find(x => x.id === tvId) || c.tv[0] || { price: 0, discount: 0 };
-      const targetStb = c.stb.find(x => x.default) || c.stb[0] || { price: 0 };
+      
+      // 💡 위에 셋팅된 셋톱박스 요금을 타사 이동 하향/변경 시에도 그대로 적용 (자동합산)
+      const { stbObj, stb2Obj } = getSelectedObjects();
+      
       const bundleId = tobeChangeBundleSelect.value;
       const targetBundle = c.bundles.find(x => x.id === bundleId) || c.bundles[0] || {};
 
-      let subtotal = (targetInt.price || 0) + (targetTv.price || 0) + (targetStb.price || 0);
+      let subtotal = (targetInt.price || 0) + (targetTv.price || 0) + (stbObj.price || 0);
       let tvDisc = (targetTv.price > 0 && targetInt.price > 0) ? (targetTv.discount || 0) : 0;
 
       if (tvCount === 2) {
-        subtotal += Math.round((targetTv.price || 0) * 0.5) + Math.round((targetStb.price || 0) * 0.5);
+        subtotal += Math.round((targetTv.price || 0) * 0.5) + (stb2Obj.price || 0);
         tvDisc += Math.round((targetTv.discount || 0) * 0.5);
       }
 
@@ -1324,6 +1330,13 @@
         if(id === 'manualModeToggle') document.getElementById('manualInputBox').classList.toggle('hidden', !e.target.checked);
         if(id === 'tobeChangeToggle') document.getElementById('tobeChangeBox').classList.toggle('hidden', !e.target.checked);
         if(id === 'internetPlan' || id === 'tvPlan') document.getElementById('compCurrentProduct').setAttribute('data-edited', 'false');
+        
+        // 💡 AS-IS 셋탑박스가 변경되면 TO-BE 요금도 업데이트 (자동합산 동기화)
+        if((id === 'stbOption' || id === 'stbOption2' || id === 'tvPlan' || id === 'tvPlan2') && targetCarrier !== 'manual') {
+            updateTargetProductText();
+            calculateTobeChangedMonthly();
+        }
+
         calculateAndRender();
       });
     });
