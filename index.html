@@ -497,6 +497,31 @@
           </div>
         </div>
 
+        <!-- 📝 수기 입력: 고객 & 상담사 정보 -->
+        <div class="bg-indigo-50/50 p-4 rounded-2xl shadow-sm border border-indigo-100 space-y-3 mt-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- 상담사 정보 -->
+            <div class="space-y-1.5">
+              <label class="block text-[11px] font-extrabold text-indigo-800">🏢 매장 및 담당자 정보</label>
+              <input type="text" id="inputStoreName" value="" class="w-full text-xs font-semibold p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" placeholder="매장명 (예: 폰값연구소)">
+              <div class="flex gap-2">
+                <input type="text" id="inputCounselorName" value="" class="w-1/2 text-xs font-semibold p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" placeholder="상담사 이름">
+                <input type="text" id="inputCounselorPhone" value="" class="w-1/2 text-xs font-semibold p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" placeholder="담당자 연락처">
+              </div>
+            </div>
+
+            <!-- 고객 정보 -->
+            <div class="space-y-1.5">
+              <label class="block text-[11px] font-extrabold text-indigo-800">👤 고객 정보 (선택)</label>
+              <input type="text" id="inputCustomerName" value="" class="w-full text-xs font-semibold p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" placeholder="고객명">
+              <div class="flex gap-2">
+                <input type="text" id="inputCustomerBirth" value="" class="w-1/2 text-xs font-semibold p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" placeholder="생년월일 (예: 900101)">
+                <input type="text" id="inputCustomerPhone" value="" class="w-1/2 text-xs font-semibold p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" placeholder="고객 연락처">
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 액션 버튼 영역 -->
         <div class="grid grid-cols-2 gap-2 mt-4">
           <button id="copyBtn" type="button" class="w-full py-3.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition shadow-sm">
@@ -520,7 +545,8 @@
       <div style="border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-end;">
         <h1 style="font-size: 22px; font-weight: 900; margin: 0;" id="pdfCarrierName">[통신사]</h1>
         <div style="text-align: right;">
-          <h2 style="font-size: 14px; font-weight: bold; margin: 0 0 3px 0;">[매장명] 가입 및 해지 정산서</h2>
+          <h2 style="font-size: 14px; font-weight: bold; margin: 0 0 3px 0;" id="pdfStoreNameTitle">[매장명] 가입 및 해지 정산서</h2>
+          <p style="font-size: 11px; color: #0f172a; font-weight: bold; margin: 0 0 2px 0;" id="pdfCustomerInfo"></p>
           <p style="font-size: 11px; color: #64748b; margin: 0;" id="pdfDate">날짜</p>
         </div>
       </div>
@@ -606,7 +632,7 @@
         <p style="margin: 0 0 2px 0;">1. 임대 장비 미반납금 (변상금): 모뎀, 셋톱박스, 공유기, 리모컨을 반납하지 않으면 15~25만 원 상당의 기기 원가가 일시불 청구됩니다. (정상 반납 시 0원)</p>
         <p style="margin: 0 0 2px 0;">2. 해지 당월 일할 요금: 해지 시점까지 사용한 이번 달 통신 요금이 별도 합산 청구됩니다.</p>
         <p style="margin: 0;">※ 통신사 실제 해지 정산 시 일할 계산 및 회선 상태에 따라 소폭 변동될 수 있습니다.</p>
-        <p style="margin-top: 8px; font-size: 12px; font-weight: bold; text-align: center; color: #1e293b;">담당: [이름] ([연락처]) / [매장명]</p>
+        <p id="pdfFooterInfo" style="margin-top: 8px; font-size: 12px; font-weight: bold; text-align: center; color: #1e293b;">담당: [이름] ([연락처]) / [매장명]</p>
       </div>
 
     </div>
@@ -872,7 +898,7 @@
       } else if (penaltyType === '4') {
         document.getElementById('penaltyTypeDesc').innerText = "※ 위약금4: 2018년 ~ 23년 하반기 개편일 이전 가입·재약정 (24개월 최고점)";
       } else {
-        document.getElementById('penaltyTypeDesc').innerText = "※ 위약금3: 2018년 이전 가입 후 한 번도 재약정을 하지 않은 고객 (계단식 누적)";
+        document.getElementById('penaltyTypeDesc').innerText = "※ 위약금3: 2018년 이전 가입 후 한 번도 재약정을 하지 고객 (계단식 누적)";
       }
     }
 
@@ -1587,6 +1613,20 @@
 
     document.getElementById('copyBtn').addEventListener('click', () => {
       const { intObj, wifiObj, tvObj, stbObj, tv2Obj, stb2Obj, bundleObj } = getSelectedObjects();
+      
+      // 수기 입력 정보 가져오기
+      const storeName = document.getElementById('inputStoreName').value.trim() || '[매장명]';
+      const counselorName = document.getElementById('inputCounselorName').value.trim() || '[이름]';
+      const counselorPhone = document.getElementById('inputCounselorPhone').value.trim() || '[연락처]';
+      const customerName = document.getElementById('inputCustomerName').value.trim();
+      const customerBirth = document.getElementById('inputCustomerBirth').value.trim();
+      const customerPhone = document.getElementById('inputCustomerPhone').value.trim();
+      
+      let customerInfoStr = '';
+      if (customerName || customerPhone) {
+        customerInfoStr = `\n■ 고객 정보: ${customerName} ${customerBirth ? '('+customerBirth+')' : ''} ${customerPhone ? '/ '+customerPhone : ''}`;
+      }
+
       const totalPenalty = document.getElementById('totalPenalty').innerText;
       const finalMonthly = document.getElementById('totalMonthlyBill').innerText;
       const baseMonthly = document.getElementById('baseMonthlyBill').innerText;
@@ -1659,8 +1699,8 @@
         let cancelItemText = `${tvObj.name} + ${stbObj.name}`;
         if (tvCount === 2) cancelItemText += ` (복수단말 포함)`;
 
-        summaryText = `[매장명] ${carrierName} 3년 약정 TV 단독 해지 정산서
-담당: [이름] ([연락처])
+        summaryText = `[${storeName}] ${carrierName} 3년 약정 TV 단독 해지 정산서
+담당: ${counselorName} (${counselorPhone})${customerInfoStr}
 ■ 적용 산정식: ${pModeText}
 ■ 현재 결합 유형: ${bundleObj.name} (3년 약정)
 ■ 유지 상품: ${intObj.name} + ${wifiObj.name}
@@ -1690,8 +1730,8 @@
           tvListText += `\n - 2번째 TV: ${tv2Obj.name} (${tv2Obj.price.toLocaleString()}원)\n - 2번째 셋톱: ${stb2Obj.name} (${stb2Obj.price.toLocaleString()}원)`;
         }
 
-        summaryText = `[매장명] ${carrierName} 3년 약정 인터넷·TV 해지 정산서
-담당: [이름] ([연락처])
+        summaryText = `[${storeName}] ${carrierName} 3년 약정 인터넷·TV 해지 정산서
+담당: ${counselorName} (${counselorPhone})${customerInfoStr}
 ■ 적용 산정식: ${pModeText}
 ■ 결합 유형: ${bundleObj.name} (3년 약정)
 ■ 가입 상품 내역 (3년 약정 기준)
@@ -1732,6 +1772,23 @@ ${tvListText}
     document.getElementById('pdfBtn').addEventListener('click', function() {
       // 1. PDF 템플릿에 데이터 채워넣기
       const { intObj, wifiObj, tvObj, stbObj, bundleObj } = getSelectedObjects();
+      
+      // 수기 입력 정보 PDF 적용
+      const storeName = document.getElementById('inputStoreName').value.trim() || '[매장명]';
+      const counselorName = document.getElementById('inputCounselorName').value.trim() || '[이름]';
+      const counselorPhone = document.getElementById('inputCounselorPhone').value.trim() || '[연락처]';
+      const customerName = document.getElementById('inputCustomerName').value.trim();
+      const customerBirth = document.getElementById('inputCustomerBirth').value.trim();
+      const customerPhone = document.getElementById('inputCustomerPhone').value.trim();
+
+      document.getElementById('pdfStoreNameTitle').innerText = `${storeName} 가입 및 해지 정산서`;
+      document.getElementById('pdfFooterInfo').innerText = `담당: ${counselorName} (${counselorPhone}) / ${storeName}`;
+      
+      if (customerName || customerPhone) {
+        document.getElementById('pdfCustomerInfo').innerText = `고객: ${customerName} ${customerBirth ? '('+customerBirth+')' : ''} ${customerPhone ? '/ '+customerPhone : ''}`;
+      } else {
+        document.getElementById('pdfCustomerInfo').innerText = '';
+      }
       
       document.getElementById('pdfCarrierName').innerText = CARRIER_DATA[currentCarrier].name;
       
