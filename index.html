@@ -31,7 +31,7 @@
     }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 antialiased min-h-screen py-6 px-3 sm:px-6 lg:px-8 overflow-x-hidden">
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen py-6 px-3 sm:px-6 lg:px-8">
   <div class="max-w-6xl mx-auto space-y-5">
     
     <!-- Header -->
@@ -502,8 +502,10 @@
 
   </div>
 
-  <!-- PDF 렌더링용 템플릿 (백지 오류 방지: 화면 바깥에 항시 렌더링, 1123px 고정으로 무조건 한 장 출력 강제) -->
-  <div id="pdfWrapper" style="position: absolute; top: 0; left: -9999px; z-index: -100;">
+  <!-- PDF 렌더링용 템플릿: 모바일 백지 픽스 적용. 
+       화면의 가장 구석(-9999px)이 아니라 본문 바로 아래 보이지 않게 숨겨 브라우저가 무조건 인식하게 강제함. 
+       A4 세로 비율에 딱 맞도록 크기(794x1123)를 강제 고정하여 무조건 1장만 출력되게 함. -->
+  <div style="width: 0; height: 0; overflow: hidden; pointer-events: none;">
     <div id="pdfTemplate" style="width: 794px; height: 1123px; padding: 40px; background-color: #ffffff; color: #0f172a; box-sizing: border-box; font-family: sans-serif; overflow: hidden;">
       
       <!-- PDF 헤더 -->
@@ -1689,7 +1691,7 @@ ${tvListText}
       });
     });
 
-    // PDF 다운로드 버튼 동작
+    // PDF 다운로드 버튼 동작 (모바일 백지 오류 강제 픽스 적용)
     document.getElementById('pdfBtn').addEventListener('click', function() {
       const btn = this;
       const originalText = btn.innerHTML;
@@ -1728,25 +1730,25 @@ ${tvListText}
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { 
                 scale: 2, 
-                backgroundColor: '#ffffff'
+                backgroundColor: '#ffffff',
+                windowWidth: 794 // A4 픽셀 넓이 강제 고정하여 모바일 스케일링 무시
             },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            jsPDF:        { unit: 'px', format: [794, 1123], orientation: 'portrait' } // 딱 맞게 1장 컷
           };
 
-          // 화면 밖에서 렌더링될 시간을 약간 줌
+          // 렌더링에 시간을 충분히 주고 html2pdf 실행
           setTimeout(() => {
             html2pdf().set(opt).from(element).save().then(() => {
               btn.innerHTML = originalText;
               btn.classList.remove('opacity-70', 'cursor-not-allowed');
               btn.disabled = false;
-              alert('PDF 견적서가 성공적으로 다운로드되었습니다.');
             }).catch(err => {
               btn.innerHTML = originalText;
               btn.classList.remove('opacity-70', 'cursor-not-allowed');
               btn.disabled = false;
-              alert('PDF 생성 오류가 발생했습니다.');
+              alert('PDF 생성 오류가 발생했습니다. (카카오톡 브라우저 외 크롬/사파리를 권장합니다)');
             });
-          }, 300);
+          }, 400);
           
       } catch(e) {
           btn.innerHTML = originalText;
