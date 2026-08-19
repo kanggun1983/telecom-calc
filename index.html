@@ -342,7 +342,7 @@
           </div>
         </div>
 
-        <!-- 📊 유지 vs 타사 변경 비교 분석 (대표님 수정 멘트 유지 + 월요금 표시) -->
+        <!-- 📊 유지 vs 타사 변경 비교 분석 -->
         <div class="bg-blue-50/70 p-4 sm:p-5 rounded-2xl shadow-sm border border-blue-200 space-y-3 mt-4">
           <div class="flex justify-between items-end border-b border-blue-200 pb-3">
             <h3 class="text-xs sm:text-sm font-black text-blue-900">📊 유지 vs 타사 변경 비교 분석</h3>
@@ -393,6 +393,7 @@
               <div class="flex justify-between items-center bg-blue-50 p-1.5 rounded border border-blue-100 text-[11px]">
                 <span class="font-bold text-blue-800">👉 변경 후 예상 월 납부액:</span>
                 <div class="flex items-center gap-1">
+                  <!-- 자동 덮어쓰기 버그 수정을 위해 input 이벤트에서는 렌더링만 갱신되도록 변경 -->
                   <input type="number" id="compTargetMonthlyInput" class="w-20 text-right p-1 border border-blue-300 rounded font-black text-blue-950 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="0">
                   <span class="font-bold text-blue-900 text-xs">원/월</span>
                 </div>
@@ -975,10 +976,19 @@
 
     function populateTargetDropdowns(carrierKey) {
       const c = CARRIER_DATA[carrierKey];
-      const defaultTab = c.tabs[0].id;
-      const intList = c.internet[defaultTab] || [];
+
+      // 타사 인터넷 드롭다운 묶음 처리 유지
+      let intHtml = '';
+      c.tabs.forEach(tab => {
+        const list = c.internet[tab.id] || [];
+        if (list.length > 0) {
+          intHtml += `<optgroup label="[${tab.name}]">`;
+          intHtml += list.map(item => `<option value="${item.id}">${item.name}</option>`).join('');
+          intHtml += `</optgroup>`;
+        }
+      });
+      targetIntSelect.innerHTML = intHtml;
       
-      targetIntSelect.innerHTML = intList.map(item => `<option value="${item.id}">${item.name}</option>`).join('');
       targetTvSelect.innerHTML = c.tv.map(item => `<option value="${item.id}">${item.name}</option>`).join('');
       
       let currentHtml = `<optgroup label="✨ 현행 결합">`;
@@ -1023,6 +1033,15 @@
     ['startDateInput', 'endDateInput', 'internetPlan', 'wifiOption', 'tvPlan', 'tvPlan2', 'stbOption', 'stbOption2', 'gift', 'months', 'manualModeToggle', 'manIntPlan', 'manTvPlan', 'manIntBund', 'manTvBund', 'manEquip', 'compNewGift', 'compTargetProduct', 'compTargetMonthlyInput'].forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
+      
+      // UX 개선: 월요금 수동 입력 시에는 자동계산 덮어쓰기 방지를 위해 input 이벤트에서 렌더링만 수행
+      if (id === 'compTargetMonthlyInput') {
+        el.addEventListener('input', () => {
+          calculateAndRender();
+        });
+        return;
+      }
+
       const eventType = (el.tagName === 'SELECT' || el.type === 'date' || el.type === 'checkbox') ? 'change' : 'input';
       el.addEventListener(eventType, (e) => {
         if(id === 'gift') document.getElementById('giftValText').innerText = (document.getElementById('gift').value/10000)+'만 원';
@@ -1232,11 +1251,12 @@
       const compMaintainCost = compRemainM * finalMonthly;
       const expectedNewGift = parseInt(document.getElementById('compNewGift').value) || 0;
       
+      // UX 개선: 수동 입력값을 부드럽게 받기 위해 빈값이면 잠시 0으로 처리 (강제 덮어쓰기 방지)
       let targetMonthlyVal = parseInt(compTargetMonthlyInput.value, 10);
-      if (isNaN(targetMonthlyVal) || targetMonthlyVal <= 0) {
-        targetMonthlyVal = finalMonthly;
-        compTargetMonthlyInput.value = targetMonthlyVal;
+      if (isNaN(targetMonthlyVal)) {
+        targetMonthlyVal = 0; 
       }
+      
       const compNewMaintainCost = compRemainM * targetMonthlyVal;
 
       const compChangeCost = compNewMaintainCost + totalPenalty - expectedNewGift;
@@ -1327,13 +1347,14 @@
       let compAnalysisText = '';
       const tobeProduct = document.getElementById('compTargetProduct').value.trim();
       if (tobeProduct) {
-        const targetMonthlyVal = document.getElementById('compTargetMonthlyInput').value;
+        // 복사 시 빈값이면 0원으로 안전처리
+        const targetMonthlyVal = parseInt(document.getElementById('compTargetMonthlyInput').value, 10) || 0;
         const currentMonthlyVal = finalMonthly.toLocaleString();
         compAnalysisText = `
 --------------------------------------
 [📊 타사 이동 비교 분석 요약]
 - 현재 이용 상품: ${document.getElementById('compCurrentProduct').value} (월 ${currentMonthlyVal}원)
-- 타사 이동 상품: ${tobeProduct} (월 ${Number(targetMonthlyVal).toLocaleString()}원)
+- 타사 이동 상품: ${tobeProduct} (월 ${targetMonthlyVal.toLocaleString()}원)
 - 약정 만료까지 기존 유지비용: ${document.getElementById('compMaintain').innerText}
 - 지금 변경 시 비교비용: ${document.getElementById('compChange').innerText}
 - 예상 손익 결과: ${document.getElementById('compDiff').innerText} (${document.getElementById('compResult').innerText})`;
@@ -1352,7 +1373,7 @@
 ■ 유지 상품: ${intObj.name} + ${wifiObj.name}
 ■ 해지 상품: ${cancelItemText}
 --------------------------------------
-■ 현재 3년 약정 실납부액: ${finalMonthly}원/월
+■ 현재 3년 약정 실납부액: ${finalMonthly.toLocaleString()}원/월
 👉 TV 해지 후 인터넷 변경요금: ${afterMonthly}원/월 (VAT 포함)
 --------------------------------------
 ■ 정산 사용 기간: ${durationText}
@@ -1387,7 +1408,7 @@ ${tvListText}
 --------------------------------------
 ■ 3년 약정 정상총액: ${baseMonthly}
 ■ 3년 약정 결합할인: ${bundleMonthly}
-■ 최종 실납부액: ${finalMonthly}원/월 (VAT 포함/전산일치)
+■ 최종 실납부액: ${finalMonthly.toLocaleString()}원/월 (VAT 포함/전산일치)
 ■ 가입 수령 사은품: ${gift}
 --------------------------------------
 ■ 정산 사용 기간: ${durationText}
@@ -1415,7 +1436,7 @@ ${tvListText}
     });
 
     setCarrier('SK');
-    // 페이지 로드 시 타사(TO-BE) 드롭다운을 SK 데이터로 자동 세팅해 두기 위함
+    // 페이지 로드 시 타사(TO-BE) 드롭다운을 SK 데이터로 자동 세팅 (빈칸 방지)
     document.querySelector('.target-carrier-btn[data-target="SK"]').click();
   </script>
 </body>
