@@ -502,8 +502,8 @@
 
   </div>
 
-  <!-- PDF 렌더링용 템플릿 (모바일 백지 오류 방지 위해 z-index 숨김 처리 적용) -->
-  <div id="pdfWrapper" style="display: none; width: 794px; background-color: white;">
+  <!-- PDF 렌더링용 템플릿 (모바일 화면 영향 방지를 위해 높이 0으로 숨겨둠) -->
+  <div id="pdfWrapper" style="display: none; height: 0; overflow: hidden;">
     <div id="pdfTemplate" style="width: 794px; min-height: 1123px; padding: 40px; background-color: #ffffff; color: #0f172a; box-sizing: border-box; font-family: sans-serif;">
       
       <!-- PDF 헤더 -->
@@ -1689,62 +1689,78 @@ ${tvListText}
       });
     });
 
-    // PDF 다운로드 버튼 동작 (모바일 백지 오류 픽스 적용)
-    document.getElementById('pdfBtn').addEventListener('click', () => {
-      const { intObj, wifiObj, tvObj, stbObj, bundleObj } = getSelectedObjects();
-      
-      document.getElementById('pdfCarrierName').innerText = CARRIER_DATA[currentCarrier].name;
-      
-      const today = new Date();
-      document.getElementById('pdfDate').innerText = `${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일`;
+    // PDF 다운로드 버튼 동작 (DOM 복제 렌더링 픽스 적용)
+    document.getElementById('pdfBtn').addEventListener('click', function() {
+      const btn = this;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span>⏳ PDF 생성 중...</span>';
+      btn.classList.add('opacity-70', 'cursor-not-allowed');
+      btn.disabled = true;
 
-      document.getElementById('pdfIntName').innerText = `${intObj.name.replace(/\s*\(.*?\)\s*/g, '').trim()} + ${wifiObj.name.replace(/\s*\(.*?\)\s*/g, '').trim()}`;
-      document.getElementById('pdfTvName').innerText = `${tvObj.name.replace(/\s*\(.*?\)\s*/g, '').trim()} + ${stbObj.name.replace(/\s*\(.*?\)\s*/g, '').trim()}`;
-      document.getElementById('pdfBundleName').innerText = bundleObj.name;
+      try {
+          const { intObj, wifiObj, tvObj, stbObj, bundleObj } = getSelectedObjects();
+          
+          document.getElementById('pdfCarrierName').innerText = CARRIER_DATA[currentCarrier].name;
+          
+          const today = new Date();
+          document.getElementById('pdfDate').innerText = `${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일`;
 
-      document.getElementById('pdfBaseInt').innerText = (intObj.price + wifiObj.price).toLocaleString() + '원';
-      document.getElementById('pdfBaseTv').innerText = (tvObj.price + stbObj.price).toLocaleString() + '원';
-      document.getElementById('pdfBaseTotal').innerText = document.getElementById('baseMonthlyBill').innerText;
-      
-      document.getElementById('pdfTotalDisc').innerText = document.getElementById('bundleMonthlyDiscount').innerText;
-      document.getElementById('pdfFinalTotal').innerText = document.getElementById('totalMonthlyBill').innerText + '원';
+          document.getElementById('pdfIntName').innerText = `${intObj.name.replace(/\s*\(.*?\)\s*/g, '').trim()} + ${wifiObj.name.replace(/\s*\(.*?\)\s*/g, '').trim()}`;
+          document.getElementById('pdfTvName').innerText = `${tvObj.name.replace(/\s*\(.*?\)\s*/g, '').trim()} + ${stbObj.name.replace(/\s*\(.*?\)\s*/g, '').trim()}`;
+          document.getElementById('pdfBundleName').innerText = bundleObj.name;
 
-      document.getElementById('pdfPenalty').innerText = document.getElementById('totalPenalty').innerText + '원';
-      document.getElementById('pdfNewGift').innerText = Number(document.getElementById('compNewGift').value).toLocaleString() + '원';
-      document.getElementById('pdfResultText').innerText = document.getElementById('compResult').innerText;
+          document.getElementById('pdfBaseInt').innerText = (intObj.price + wifiObj.price).toLocaleString() + '원';
+          document.getElementById('pdfBaseTv').innerText = (tvObj.price + stbObj.price).toLocaleString() + '원';
+          document.getElementById('pdfBaseTotal').innerText = document.getElementById('baseMonthlyBill').innerText;
+          
+          document.getElementById('pdfTotalDisc').innerText = document.getElementById('bundleMonthlyDiscount').innerText;
+          document.getElementById('pdfFinalTotal').innerText = document.getElementById('totalMonthlyBill').innerText + '원';
 
-      const element = document.getElementById('pdfTemplate');
-      const wrapper = document.getElementById('pdfWrapper');
-      
-      // 모바일 브라우저 최적화: 캡처 시점에만 화면 안쪽 최하단으로 숨겨서 렌더링되게 만듦 (백지 현상 방지)
-      wrapper.style.display = 'block';
-      wrapper.style.position = 'fixed';
-      wrapper.style.top = '0';
-      wrapper.style.left = '0';
-      wrapper.style.zIndex = '-9999';
+          document.getElementById('pdfPenalty').innerText = document.getElementById('totalPenalty').innerText + '원';
+          document.getElementById('pdfNewGift').innerText = Number(document.getElementById('compNewGift').value).toLocaleString() + '원';
+          document.getElementById('pdfResultText').innerText = document.getElementById('compResult').innerText;
 
-      const opt = {
-        margin:       0,
-        filename:     `견적서_${CARRIER_DATA[currentCarrier].name}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { 
-            scale: 2, 
-            backgroundColor: '#ffffff',
-            windowWidth: 800 // 모바일 화면 비율 영향 안받도록 너비 고정
-        },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
+          const element = document.getElementById('pdfTemplate');
+          
+          const opt = {
+            margin:       0,
+            filename:     `견적서_${CARRIER_DATA[currentCarrier].name}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { 
+                scale: 2, 
+                backgroundColor: '#ffffff',
+                windowWidth: 800,
+                useCORS: true,
+                onclone: (clonedDoc) => {
+                    // 복제된 가상 DOM 안에서만 숨김 속성을 해제하여 캡처되도록 함
+                    const clonedWrapper = clonedDoc.getElementById('pdfWrapper');
+                    clonedWrapper.style.height = 'auto';
+                    clonedWrapper.style.overflow = 'visible';
+                    clonedWrapper.style.display = 'block';
+                }
+            },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          };
 
-      // 렌더링 준비 시간 0.1초 부여 후 PDF 생성
-      setTimeout(() => {
-        html2pdf().set(opt).from(element).save().then(() => {
-          wrapper.style.display = 'none';
-          alert('PDF 견적서가 성공적으로 다운로드되었습니다.');
-        }).catch(err => {
-          wrapper.style.display = 'none';
-          alert('PDF 생성 오류가 발생했습니다.');
-        });
-      }, 100);
+          setTimeout(() => {
+            html2pdf().set(opt).from(element).save().then(() => {
+              btn.innerHTML = originalText;
+              btn.classList.remove('opacity-70', 'cursor-not-allowed');
+              btn.disabled = false;
+            }).catch(err => {
+              btn.innerHTML = originalText;
+              btn.classList.remove('opacity-70', 'cursor-not-allowed');
+              btn.disabled = false;
+              alert('PDF 생성 오류가 발생했습니다. 카카오톡 등 인앱 브라우저라면 기본 브라우저(크롬, 사파리)로 접속하여 이용해주세요.');
+            });
+          }, 300);
+          
+      } catch(e) {
+          btn.innerHTML = originalText;
+          btn.classList.remove('opacity-70', 'cursor-not-allowed');
+          btn.disabled = false;
+          alert('데이터 처리 중 문제가 발생했습니다.');
+      }
     });
 
     setCarrier('SK');
