@@ -468,38 +468,56 @@
         tvTitle: '📺 U+tv & 셋톱박스 선택 (3년 약정)',
         bundleTitle: '📱 LG 결합할인 선택 (3년 약정)',
         bundles: [
-          { id: 'lg_wire_only', group: 'current', name: '무선결합 미적용 (인터넷+TV 유선결합)', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 0, desc: '인터넷 -5,500원 + TV -2,200원 유선결합 할인 적용', default: true },
-          { id: 'lg_cham', group: 'current', name: '참 쉬운 가족결합 (유무선 결합)', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDiscSpeed: { 100: 5500, 500: 9900, 1000: 13200, 2500: 13200 }, desc: '인터넷 총 1.1만~1.87만원 할인 (유선 -5,500 + 속도별 모바일 추가할인)' },
-          { id: 'lg_together', group: 'current', name: 'U+투게더 결합', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDiscSpeed: { 100: 11000, 500: 11000, 1000: 11000, 2500: 11000 }, desc: '인터넷 11,000원 추가할인' },
-          { id: 'lg_legacy_home', group: 'legacy', name: '[구] 한방에Home (한방에홈 1/2)', wireDisc: { 100: 8800, 500: 11000, 1000: 11000, 2500: 11000 }, mobileDisc: 0, desc: '인터넷 정액 감면 (100M: -8,800원 / 500M·1G: -11,000원)' },
-          { id: 'lg_legacy_love', group: 'legacy', name: '[구] 가족무한사랑 (유무선 결합)', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 5500, hasMobilePenalty: true, desc: '인터넷 -5,500원 + 모바일 총액구간별 할인' },
-          { id: 'lg_legacy_yo', group: 'legacy', name: '[구] 한방에yo (한방에YO)', wireDisc: { 100: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 0, desc: '인터넷 기본할인 유지 (모바일 청구서에서 회선당 할인)' }
+          { id: 'lg_wire_only', group: 'current', name: '무선결합 미적용 (인터넷+TV 유선결합)', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 0, desc: '인터넷 -5,500원 + TV -2,200원 유선결합 할인 적용', default: true },
+          { id: 'lg_cham', group: 'current', name: '참 쉬운 가족결합 (유무선 결합)', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDiscSpeed: { 100: 5500, 200: 5500, 500: 9900, 1000: 13200, 2500: 13200 }, desc: '인터넷 총 1.1만~1.87만원 할인 (유선 -5,500 + 속도별 모바일 추가할인)' },
+          { id: 'lg_together', group: 'current', name: 'U+투게더 결합', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDiscSpeed: { 100: 11000, 200: 11000, 500: 11000, 1000: 11000, 2500: 11000 }, desc: '인터넷 11,000원 추가할인' },
+          { id: 'lg_legacy_home', group: 'legacy', name: '[구] 한방에Home (한방에홈 1/2)', wireDisc: { 100: 8800, 200: 8800, 500: 11000, 1000: 11000, 2500: 11000 }, mobileDisc: 0, desc: '인터넷 정액 감면 (100M: -8,800원 / 500M·1G: -11,000원)' },
+          { id: 'lg_legacy_love', group: 'legacy', name: '[구] 가족무한사랑 (유무선 결합)', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 5500, hasMobilePenalty: true, desc: '인터넷 -5,500원 + 모바일 총액구간별 할인' },
+          { id: 'lg_legacy_yo', group: 'legacy', name: '[구] 한방에yo (한방에YO)', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 0, desc: '인터넷 기본할인 유지 (모바일 청구서에서 회선당 할인)' }
         ],
-        tabs: [{ id: 'lg_safe', name: '프리미엄 안심' }, { id: 'lg_smart_giga', name: '스마트기가' }, { id: 'lg_basic', name: '기본 인터넷' }],
+        tabs: [
+          { id: 'lg_basic', name: '기본상품' }, 
+          { id: 'lg_prem_comp', name: '프리미엄 안심 보상' }, 
+          { id: 'lg_prem_safe', name: '프리미엄 안심' }, 
+          { id: 'lg_smart_giga', name: '스마트기가' }
+        ],
         internet: {
-          lg_safe: [
-            { id: 'lg_safe_500', name: '프리미엄 안심 500M', price: 37400, noContract: 52800, speed: 500, default: true },
-            { id: 'lg_safe_100', name: '프리미엄 안심 100M', price: 25300, noContract: 42900, speed: 100 },
-            { id: 'lg_safe_1g', name: '프리미엄 안심 1기가', price: 42900, noContract: 59400, speed: 1000 }
+          lg_basic: [
+            { id: 'lg_b_500', name: '와이파이기본 기가 Slim안심 500M', price: 33000, noContract: 46200, speed: 500, default: true },
+            { id: 'lg_b_100', name: '와이파이기본 광랜 안심 100M', price: 22000, noContract: 39600, speed: 100 },
+            { id: 'lg_b_200', name: '와이파이기본 안심 200M', price: 25300, noContract: 42900, speed: 200 },
+            { id: 'lg_b_1g', name: '와이파이기본 기가 안심 1G', price: 38500, noContract: 55000, speed: 1000 }
+          ],
+          lg_prem_comp: [
+            { id: 'lg_pc_500', name: '프리미엄 안심 보상 500M', price: 39600, noContract: 52800, speed: 500, default: true },
+            { id: 'lg_pc_100', name: '프리미엄 안심 보상 100M', price: 27500, noContract: 45100, speed: 100 },
+            { id: 'lg_pc_200', name: '프리미엄 안심 보상 200M', price: 30800, noContract: 48400, speed: 200 },
+            { id: 'lg_pc_1g', name: '프리미엄 안심 보상 1G', price: 45100, noContract: 61600, speed: 1000 }
+          ],
+          lg_prem_safe: [
+            { id: 'lg_ps_500', name: '프리미엄 안심 500M', price: 37400, noContract: 50600, speed: 500, default: true },
+            { id: 'lg_ps_100', name: '프리미엄 안심 100M', price: 25300, noContract: 42900, speed: 100 },
+            { id: 'lg_ps_200', name: '프리미엄 안심 200M', price: 28600, noContract: 46200, speed: 200 },
+            { id: 'lg_ps_1g', name: '프리미엄 안심 1기가', price: 42900, noContract: 59400, speed: 1000 }
           ],
           lg_smart_giga: [
-            { id: 'lg_smart_500', name: '스마트기가 최대 500M', price: 35200, noContract: 50600, speed: 500, default: true },
-            { id: 'lg_smart_1g', name: '스마트기가 최대 1G', price: 40700, noContract: 57200, speed: 1000 }
-          ],
-          lg_basic: [
-            { id: 'lg_b_500', name: '기가슬림안심 500M', price: 33000, noContract: 46200, speed: 500, default: true },
-            { id: 'lg_b_100', name: '광랜안심 100M', price: 22000, noContract: 39600, speed: 100 },
-            { id: 'lg_b_1g', name: '기가안심 1G', price: 38500, noContract: 55000, speed: 1000 }
+            { id: 'lg_sg_500', name: '스마트기가 최대 500M', price: 35200, noContract: 48400, speed: 500, default: true },
+            { id: 'lg_sg_1g', name: '스마트기가 최대 1G', price: 40700, noContract: 57200, speed: 1000 },
+            { id: 'lg_sg_2_5g', name: '스마트기가 최대 2.5G', price: 47300, noContract: 63800, speed: 2500 }
           ]
         },
         wifiHw: {
           default: [
-            { id: 'lg_wifi6_2', name: '기가 WiFi6 기본제공 (무료)', price: 0, noContract: 0, default: true }, 
-            { id: 'lg_wifi6_spk', name: '기가 WiFi6 + 홈스피커', price: 1100, noContract: 6600 },
+            { id: 'lg_wifi6_1', name: '기가WiFi6 1대 (기본제공)', price: 0, noContract: 0, default: true },
+            { id: 'lg_wifi_giga', name: '기가WiFi (기본제공)', price: 0, noContract: 0 },
+            { id: 'lg_wifi7_1', name: '기가WiFi7 (기본제공)', price: 0, noContract: 0 },
+            { id: 'lg_wifi6_2', name: '기가WiFi6 2대 (기본제공)', price: 0, noContract: 0 },
+            { id: 'lg_wifi_spk', name: '기가WiFi + 스마트홈 스피커 (기본제공)', price: 0, noContract: 0 },
+            { id: 'lg_wifi6_spk', name: '기가WiFi6 + 스마트홈 스피커 (기본제공)', price: 0, noContract: 0 },
+            { id: 'lg_wifi_prem', name: '기가WiFi 프리미엄', price: 5500, noContract: 11000 },
             { id: 'lg_old_giga_free', name: '[구] 기가 와이파이 (무료)', price: 0, noContract: 0 },
             { id: 'lg_old_wifi', name: '[구] 일반 와이파이 (100M)', price: 1100, noContract: 4400 },
             { id: 'lg_old_giga', name: '[구] 기가 와이파이 (유료)', price: 2200, noContract: 5500 },
-            { id: 'lg_old_prem', name: '[구] 기가 와이파이 프리미엄', price: 3300, noContract: 9900 },
             { id: 'none', name: '공유기 미적용', price: 0, noContract: 0 }
           ]
         },
@@ -701,7 +719,7 @@
       const stbEl = document.getElementById('stbOption');
       const stb2El = document.getElementById('stbOption2');
       
-      let wifiList = (currentCarrier === 'KT' || currentCarrier === 'SK') ? (c.wifiHw[currentTab] || c.wifiHw[Object.keys(c.wifiHw)[0]]) : c.wifiHw.default;
+      let wifiList = c.wifiHw[currentTab] || c.wifiHw.default || c.wifiHw[Object.keys(c.wifiHw)[0]];
       wifiEl.innerHTML = wifiList.map(i => `<option value="${i.id}" ${i.default?'selected':''}>${i.name} (+${i.price.toLocaleString()}원)</option>`).join('');
       
       const tvOptionsHtml = c.tv.map(i => `<option value="${i.id}" ${i.default?'selected':''}>${i.name} (${i.price.toLocaleString()}원)</option>`).join('');
@@ -756,7 +774,7 @@
       const c = CARRIER_DATA[currentCarrier];
       const intList = c.internet[currentTab] || [];
       const intObj = intList.find(x => x.id === document.getElementById('internetPlan').value) || { name: '미적용', price: 0, noContract: 0, speed: 500 };
-      let wifiList = (currentCarrier === 'KT' || currentCarrier === 'SK') ? (c.wifiHw[currentTab] || c.wifiHw[Object.keys(c.wifiHw)[0]]) : c.wifiHw.default;
+      let wifiList = c.wifiHw[currentTab] || c.wifiHw.default || c.wifiHw[Object.keys(c.wifiHw)[0]];
       const wifiObj = wifiList.find(x => x.id === document.getElementById('wifiOption').value) || { name: '미적용', price: 0, noContract: 0 };
       
       const tvObj = c.tv.find(x => x.id === document.getElementById('tvPlan').value) || c.tv[0];
@@ -810,17 +828,14 @@
       return calculatePenalty3(mDiscount, days);
     }
 
-    // [수정된 부분] 선택된 세대별로 장비 반환금 계산 방식을 동적으로 분기
     function calculateEquipmentPenalty(monthlyDiscount, days, carrierKey) {
       if (days <= 0 || monthlyDiscount <= 0 || days >= 1095) return 0;
       
       if (penaltyType === '5') {
-        // 위약금5 (최신): 장비 임대료는 가입 첫 달부터 (잔여일수 / 1095) 비율로 엄격하게 직선 하락
         const dailyDiscount = monthlyDiscount / 30.4167;
         const totalAccumulated = dailyDiscount * days;
         return totalAccumulated * ((1095 - days) / 1095);
       } else {
-        // 위약금4, 3 (구형): 대표님 지적대로 과거엔 장비 반환금도 기본 요금 위약금 궤적을 100% 동일하게 따라갔음
         return getPenalty(monthlyDiscount, days, carrierKey);
       }
     }
@@ -893,7 +908,6 @@
       const p2 = Math.round(getPenalty(mTvPlan, currentDays, currentCarrier));
       const p3 = Math.round(getPenalty(mIntBund, currentDays, currentCarrier));
       const p4 = Math.round(getPenalty(mTvBund, currentDays, currentCarrier));
-      // 수정된 장비 위약금 함수 호출 (carrierKey 파라미터 추가 전달)
       const p5 = Math.round(calculateEquipmentPenalty(mEquip, currentDays, currentCarrier));
       const pGift = currentDays <= 365 ? gift : 0;
       const totalPenalty = p1 + p2 + p3 + p4 + p5 + pGift;
@@ -920,7 +934,6 @@
         const tp2 = getPenalty(mTvPlan, d, currentCarrier);
         const tp3 = getPenalty(mIntBund, d, currentCarrier);
         const tp4 = getPenalty(mTvBund, d, currentCarrier);
-        // 차트 렌더링 루프 내부에도 carrierKey 파라미터 추가 전달
         const tp5 = calculateEquipmentPenalty(mEquip, d, currentCarrier);
         dataPoints.push(Math.round(tp1 + tp2 + tp3 + tp4 + tp5 + (d <= 365 ? gift : 0)));
 
