@@ -28,23 +28,14 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.25);
     }
     
-    /* 인쇄(PDF 저장) 시 1장 맞춤용 최적화 스타일 */
+    /* 인쇄(PDF 저장) 시 적용되는 전용 스타일 - 모바일 백지 현상 원천 차단 */
     @media print {
-      /* 용지 여백을 최소화 (기본 여백 때문에 2장으로 밀리는 현상 방지) */
-      @page { size: A4 portrait; margin: 6mm; }
-      body { background-color: #ffffff; -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; padding: 0; }
+      @page { size: A4 portrait; margin: 10mm; }
+      body { background-color: #ffffff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       /* 메인 계산기 화면은 인쇄 시 숨김 */
       #app-container { display: none !important; }
       /* 숨겨뒀던 PDF 템플릿만 인쇄 시 노출 */
-      #pdfTemplate { 
-        display: block !important; 
-        position: static; 
-        width: 100%; 
-        margin: 0; 
-        padding: 0; 
-        box-shadow: none; 
-        page-break-inside: avoid; /* 페이지 넘김 방지 */
-      }
+      #pdfTemplate { display: block !important; position: static; width: 100%; margin: 0; padding: 0; box-shadow: none; }
     }
   </style>
 </head>
@@ -56,7 +47,7 @@
     <!-- Header -->
     <header class="text-center space-y-1">
       <div class="inline-flex items-center gap-1.5 bg-slate-200 text-slate-700 px-3 py-1 rounded-full text-xs font-bold">
-        <span>SKT/SKB · KT · LG U+ 공식 전산 연동</span>
+        <span>SKT · KT · LGU+ 공식 전산 연동</span>
       </div>
       <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900">통신 3사 3년 약정 위약금 & 실청구 계산기</h1>
       <p class="text-xs sm:text-sm text-slate-500">위약금 5, 4, 3세대 및 TV 복수단말(셋탑 할인 포함) 일할계산을 지원합니다.</p>
@@ -410,7 +401,7 @@
                 <select id="targetBundleSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
               </div>
 
-              <input type="text" id="compTargetProduct" class="w-full text-[11px] sm:text-xs font-bold text-blue-900 bg-blue-50/30 p-1.5 rounded border border-blue-200 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-blue-300" placeholder="위에서 선택하거나 직접 입력 (예: LG 500M + 프리미엄 TV)">
+              <input type="text" id="compTargetProduct" class="w-full text-[11px] sm:text-xs font-bold text-blue-900 bg-blue-50/30 p-1.5 rounded border border-blue-200 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-blue-300" placeholder="위에서 선택하거나 직접 입력 (예: LGU+ 500M + 프리미엄 TV)">
               
               <!-- 변경 후 예상 월 납부액 표시/수정 칸 -->
               <div class="flex justify-between items-center bg-blue-50 p-1.5 rounded border border-blue-100 text-[11px]">
@@ -624,7 +615,7 @@
   <script>
     const CARRIER_DATA = {
       SK: {
-        name: 'SK telecom / SKB',
+        name: 'SKT',
         color: '#ea580c',
         thresholdDays: 270, 
         baseDenominatorDays: 825, 
@@ -691,7 +682,7 @@
         ]
       },
       KT: {
-        name: 'KT olleh',
+        name: 'KT',
         color: '#dc2626',
         thresholdDays: 270, 
         baseDenominatorDays: 825, 
@@ -766,7 +757,7 @@
         ]
       },
       LG: {
-        name: 'LG U+',
+        name: 'LGU+',
         color: '#e11d48',
         thresholdDays: 270,
         baseDenominatorDays: 825,
@@ -1737,7 +1728,7 @@ ${tvListText}
       });
     });
 
-    // 💡 [완벽 해결] 모바일 백지 버그 없는 기본 인쇄(PDF 저장) 기능 호출
+    // 💡 [수정] 모바일 인쇄(기본 PDF 저장) 기능 연결
     document.getElementById('pdfBtn').addEventListener('click', function() {
       // 1. PDF 템플릿에 데이터 채워넣기
       const { intObj, wifiObj, tvObj, stbObj, bundleObj } = getSelectedObjects();
@@ -1766,9 +1757,9 @@ ${tvListText}
       if (tvCount === 2) {
           const tv2Obj = getSelectedObjects().tv2Obj;
           const stb2Obj = getSelectedObjects().stb2Obj;
-          tvStbText += `<br>[복수] ${tv2Obj.name} (${tv2Obj.price.toLocaleString()}원) + ${stb2Obj.name} (${stb2Obj.price.toLocaleString()}원)`;
+          tvStbText += `\n[복수] ${tv2Obj.name} (${tv2Obj.price.toLocaleString()}원) + ${stb2Obj.name} (${stb2Obj.price.toLocaleString()}원)`;
       }
-      document.getElementById('pdfTvStbNamePrice').innerHTML = tvStbText;
+      document.getElementById('pdfTvStbNamePrice').innerText = tvStbText;
       
       document.getElementById('pdfBundleName').innerText = bundleObj.name;
       
