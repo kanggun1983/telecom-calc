@@ -503,73 +503,73 @@
 
   </div>
 
-  <!-- PDF 렌더링용 템플릿 (화면 밖으로 숨김 처리) -->
-  <div class="absolute -left-[9999px] top-0">
-    <div id="pdfTemplate" class="w-[794px] bg-white p-10 text-slate-900 font-sans" style="min-height: 1123px;">
+  <!-- PDF 렌더링용 템플릿 (모바일 백지 오류 방지 위해 z-index 숨김 처리 적용) -->
+  <div id="pdfWrapper" style="display: none; width: 794px; background-color: white;">
+    <div id="pdfTemplate" style="width: 794px; min-height: 1123px; padding: 40px; background-color: #ffffff; color: #0f172a; box-sizing: border-box; font-family: sans-serif;">
       
       <!-- PDF 헤더 -->
-      <div class="flex justify-between items-end border-b-2 border-slate-900 pb-4 mb-6">
-        <h1 class="text-3xl font-black tracking-tight" id="pdfCarrierName">통신사 로고/이름</h1>
-        <div class="text-right">
-          <h2 class="text-lg font-bold">[매장명] 가입 견적서</h2>
-          <p class="text-sm text-slate-500" id="pdfDate">날짜</p>
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px;">
+        <h1 style="font-size: 30px; font-weight: 900; margin: 0;" id="pdfCarrierName">통신사 로고/이름</h1>
+        <div style="text-align: right;">
+          <h2 style="font-size: 18px; font-weight: bold; margin: 0 0 4px 0;">[매장명] 가입 견적서</h2>
+          <p style="font-size: 14px; color: #64748b; margin: 0;" id="pdfDate">날짜</p>
         </div>
       </div>
 
       <!-- 요금 요약 테이블 -->
-      <table class="w-full border-collapse border border-slate-300 text-center mb-6">
+      <table style="width: 100%; border-collapse: collapse; text-align: center; margin-bottom: 24px; border: 1px solid #cbd5e1;">
         <thead>
-          <tr class="bg-slate-100">
-            <th class="border border-slate-300 py-3 text-sm font-bold">인터넷</th>
-            <th class="border border-slate-300 py-3 text-sm font-bold">TV / 셋톱박스</th>
-            <th class="border border-slate-300 py-3 text-sm font-bold">결합 유형</th>
+          <tr style="background-color: #f1f5f9;">
+            <th style="border: 1px solid #cbd5e1; padding: 12px; font-size: 14px; font-weight: bold;">인터넷</th>
+            <th style="border: 1px solid #cbd5e1; padding: 12px; font-size: 14px; font-weight: bold;">TV / 셋톱박스</th>
+            <th style="border: 1px solid #cbd5e1; padding: 12px; font-size: 14px; font-weight: bold;">결합 유형</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="border border-slate-300 py-4 text-sm" id="pdfIntName">-</td>
-            <td class="border border-slate-300 py-4 text-sm" id="pdfTvName">-</td>
-            <td class="border border-slate-300 py-4 text-sm text-rose-600 font-bold" id="pdfBundleName">-</td>
+            <td style="border: 1px solid #cbd5e1; padding: 16px; font-size: 14px;" id="pdfIntName">-</td>
+            <td style="border: 1px solid #cbd5e1; padding: 16px; font-size: 14px;" id="pdfTvName">-</td>
+            <td style="border: 1px solid #cbd5e1; padding: 16px; font-size: 14px; color: #e11d48; font-weight: bold;" id="pdfBundleName">-</td>
           </tr>
         </tbody>
       </table>
 
       <!-- 청구 금액 상세 -->
-      <div class="grid grid-cols-2 gap-4 mb-6">
-        <div class="border border-slate-300 p-4">
-          <h3 class="font-bold text-center mb-4 pb-2 border-b border-slate-200">할인 전 기본 요금</h3>
-          <div class="flex justify-between text-sm mb-2"><span>인터넷+와이파이</span><span id="pdfBaseInt">0원</span></div>
-          <div class="flex justify-between text-sm mb-2"><span>TV+셋톱박스</span><span id="pdfBaseTv">0원</span></div>
-          <div class="flex justify-between text-lg font-black mt-4 pt-2 border-t border-slate-200 text-slate-500">
+      <div style="display: flex; gap: 16px; margin-bottom: 24px;">
+        <div style="flex: 1; border: 1px solid #cbd5e1; padding: 16px;">
+          <h3 style="font-weight: bold; text-align: center; margin: 0 0 16px 0; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">할인 전 기본 요금</h3>
+          <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px;"><span>인터넷+와이파이</span><span id="pdfBaseInt">0원</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px;"><span>TV+셋톱박스</span><span id="pdfBaseTv">0원</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 900; margin-top: 16px; padding-top: 8px; border-top: 1px solid #e2e8f0; color: #64748b;">
             <span>합계 금액</span><span id="pdfBaseTotal">0원</span>
           </div>
         </div>
         
-        <div class="border-2 border-rose-500 p-4 bg-rose-50">
-          <h3 class="font-bold text-center mb-4 pb-2 border-b border-rose-200 text-rose-700">결합 할인 적용 후 (최종 청구액)</h3>
-          <div class="flex justify-between text-sm mb-2 text-rose-700"><span>결합 총 할인액</span><span id="pdfTotalDisc">-0원</span></div>
-          <div class="flex justify-between text-2xl font-black mt-4 pt-2 border-t border-rose-200 text-rose-600">
+        <div style="flex: 1; border: 2px solid #f43f5e; padding: 16px; background-color: #fff1f2;">
+          <h3 style="font-weight: bold; text-align: center; margin: 0 0 16px 0; padding-bottom: 8px; border-bottom: 1px solid #fecdd3; color: #be123c;">결합 할인 적용 후 (최종 청구액)</h3>
+          <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; color: #be123c;"><span>결합 총 할인액</span><span id="pdfTotalDisc">-0원</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 24px; font-weight: 900; margin-top: 16px; padding-top: 8px; border-top: 1px solid #fecdd3; color: #e11d48;">
             <span>최종 월 납부액</span><span id="pdfFinalTotal">0원</span>
           </div>
         </div>
       </div>
 
       <!-- 타사 비교 및 해지 위약금 요약 -->
-      <div class="bg-slate-100 p-5 rounded-lg border border-slate-300">
-        <h3 class="font-bold text-slate-800 mb-3 text-lg">💡 위약금 및 타사 이동 비교 분석</h3>
-        <div class="text-sm space-y-2">
-          <div class="flex justify-between"><span>현재 발생 위약금 총액:</span><span class="font-bold text-rose-600" id="pdfPenalty">0원</span></div>
-          <div class="flex justify-between"><span>타사 이동 시 예상 사은품:</span><span class="font-bold text-blue-600" id="pdfNewGift">0원</span></div>
-          <div class="flex justify-between mt-2 pt-2 border-t border-slate-300 font-black text-base">
+      <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; border: 1px solid #cbd5e1;">
+        <h3 style="font-weight: bold; color: #1e293b; margin: 0 0 12px 0; font-size: 18px;">💡 위약금 및 타사 이동 비교 분석</h3>
+        <div style="font-size: 14px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span>현재 발생 위약금 총액:</span><span style="font-weight: bold; color: #e11d48;" id="pdfPenalty">0원</span></div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span>타사 이동 시 예상 사은품:</span><span style="font-weight: bold; color: #2563eb;" id="pdfNewGift">0원</span></div>
+          <div style="display: flex; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid #cbd5e1; font-weight: 900; font-size: 16px;">
             <span>최종 분석 결과:</span><span id="pdfResultText">-</span>
           </div>
         </div>
       </div>
 
       <!-- 푸터 -->
-      <div class="mt-10 text-center text-xs text-slate-400">
-        <p>* 본 견적서는 상담용 안내 자료이며, 실제 개통 시 전산 및 회선 상태에 따라 소폭 변동될 수 있습니다.</p>
-        <p>담당자 : [매장명] [이름] ([연락처])</p>
+      <div style="margin-top: 40px; text-align: center; font-size: 12px; color: #94a3b8;">
+        <p style="margin: 0 0 4px 0;">* 본 견적서는 상담용 안내 자료이며, 실제 개통 시 전산 및 회선 상태에 따라 소폭 변동될 수 있습니다.</p>
+        <p style="margin: 0;">담당자 : [매장명] [이름] ([연락처])</p>
       </div>
     </div>
   </div>
@@ -1690,7 +1690,7 @@ ${tvListText}
       });
     });
 
-    // PDF 다운로드 버튼 동작
+    // PDF 다운로드 버튼 동작 (모바일 백지 오류 픽스 적용)
     document.getElementById('pdfBtn').addEventListener('click', () => {
       const { intObj, wifiObj, tvObj, stbObj, bundleObj } = getSelectedObjects();
       
@@ -1715,17 +1715,37 @@ ${tvListText}
       document.getElementById('pdfResultText').innerText = document.getElementById('compResult').innerText;
 
       const element = document.getElementById('pdfTemplate');
+      const wrapper = document.getElementById('pdfWrapper');
+      
+      // 모바일 브라우저 최적화: 캡처 시점에만 화면 안쪽 최하단으로 숨겨서 렌더링되게 만듦 (백지 현상 방지)
+      wrapper.style.display = 'block';
+      wrapper.style.position = 'fixed';
+      wrapper.style.top = '0';
+      wrapper.style.left = '0';
+      wrapper.style.zIndex = '-9999';
+
       const opt = {
         margin:       0,
         filename:     `견적서_${CARRIER_DATA[currentCarrier].name}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
+        html2canvas:  { 
+            scale: 2, 
+            backgroundColor: '#ffffff',
+            windowWidth: 800 // 모바일 화면 비율 영향 안받도록 너비 고정
+        },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
-      html2pdf().set(opt).from(element).save().then(() => {
-        alert('PDF 견적서가 성공적으로 다운로드되었습니다.');
-      });
+      // 렌더링 준비 시간 0.1초 부여 후 PDF 생성
+      setTimeout(() => {
+        html2pdf().set(opt).from(element).save().then(() => {
+          wrapper.style.display = 'none';
+          alert('PDF 견적서가 성공적으로 다운로드되었습니다.');
+        }).catch(err => {
+          wrapper.style.display = 'none';
+          alert('PDF 생성 오류가 발생했습니다.');
+        });
+      }, 100);
     });
 
     setCarrier('SK');
