@@ -167,7 +167,7 @@
         <!-- 수동 입력 토글 -->
         <div class="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
           <div class="flex justify-between items-center">
-            <label class="text-xs font-extrabold text-slate-800">⚙️ 과거 요금제 월 할인액 수동 입력</label>
+            <label class="text-xs font-extrabold text-slate-800">⚙️ 과거 요금제 할인/납부액 수동 입력</label>
             <label class="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" id="manualModeToggle" class="sr-only peer">
               <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-600"></div>
@@ -195,6 +195,10 @@
               <div class="col-span-2">
                 <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">장비(공유기/셋톱) 할인액</label>
                 <input type="number" id="manEquip" class="w-full text-xs p-2 border border-slate-300 rounded outline-none focus:border-rose-500 bg-white" placeholder="예: 4400">
+              </div>
+              <div class="col-span-2 pt-2 border-t border-slate-200 mt-1">
+                <label class="block text-[10px] font-extrabold text-rose-700 mb-0.5">💰 실제 청구서 월 납부액 (수기 입력)</label>
+                <input type="number" id="manMonthlyBill" class="w-full text-xs font-black p-2 border border-rose-300 rounded outline-none focus:border-rose-500 bg-rose-50 text-rose-900" placeholder="예: 27250 (비워두면 위 선택창 요금으로 자동계산)">
               </div>
             </div>
           </div>
@@ -1336,11 +1340,11 @@
       calculateAndRender();
     });
 
-    ['startDateInput', 'endDateInput', 'internetPlan', 'wifiOption', 'tvPlan', 'tvPlan2', 'stbOption', 'stbOption2', 'gift', 'months', 'manualModeToggle', 'manIntPlan', 'manTvPlan', 'manIntBund', 'manTvBund', 'manEquip', 'compNewGift', 'compTargetProduct', 'compTargetMonthlyInput', 'tobeChangeToggle', 'tobeChangedProductManual', 'tobeChangedMonthlyInput', 'tobeMaintainPeriodInput'].forEach(id => {
+    ['startDateInput', 'endDateInput', 'internetPlan', 'wifiOption', 'tvPlan', 'tvPlan2', 'stbOption', 'stbOption2', 'gift', 'months', 'manualModeToggle', 'manIntPlan', 'manTvPlan', 'manIntBund', 'manTvBund', 'manEquip', 'manMonthlyBill', 'compNewGift', 'compTargetProduct', 'compTargetMonthlyInput', 'tobeChangeToggle', 'tobeChangedProductManual', 'tobeChangedMonthlyInput', 'tobeMaintainPeriodInput'].forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
       
-      if (id === 'compTargetMonthlyInput' || id === 'tobeChangedMonthlyInput' || id === 'tobeChangedProductManual' || id === 'tobeMaintainPeriodInput') {
+      if (id === 'compTargetMonthlyInput' || id === 'tobeChangedMonthlyInput' || id === 'tobeChangedProductManual' || id === 'tobeMaintainPeriodInput' || id === 'manMonthlyBill') {
         el.addEventListener('input', () => {
           calculateAndRender();
         });
@@ -1502,7 +1506,15 @@
       }
 
       const totalMonthlyDiscount = tvDiscAmount + wireIntDiscAmount + mobileDiscAmount;
-      const finalMonthly = Math.max(0, regularSubtotal - totalMonthlyDiscount);
+      let finalMonthly = Math.max(0, regularSubtotal - totalMonthlyDiscount);
+
+      // 💡 수기 입력 시 월 실납부액 덮어쓰기
+      if (document.getElementById('manualModeToggle').checked) {
+        const manualMonthlyVal = document.getElementById('manMonthlyBill').value;
+        if (manualMonthlyVal !== '') {
+          finalMonthly = Math.max(0, parseInt(manualMonthlyVal, 10) || 0);
+        }
+      }
 
       const proratedAmt = Math.round((finalMonthly / daysInMonth) * terminationDayInMonth);
       document.getElementById('proratedMonthBill').innerText = proratedAmt.toLocaleString();
@@ -1557,8 +1569,13 @@
 
       if (cancelMode === 'tv') {
         let afterIntSubtotal = intObj.price + wifiObj.price;
-        if (tvCount === 2) afterIntSubtotal += (tv2Obj.price + stb2Obj.price);
-        document.getElementById('afterMonthlyBill').innerText = Math.max(0, afterIntSubtotal - mobileDiscAmount).toLocaleString();
+        // 💡 [버그 수정 완료] 복수단말 TV 2대 요금을 다시 더하는 로직을 완전히 삭제했습니다!
+        
+        let afterMonthly = Math.max(0, afterIntSubtotal - mobileDiscAmount);
+        if (document.getElementById('manualModeToggle').checked && document.getElementById('manMonthlyBill').value !== '') {
+            afterMonthly = Math.max(0, parseInt(document.getElementById('manMonthlyBill').value, 10) || 0);
+        }
+        document.getElementById('afterMonthlyBill').innerText = afterMonthly.toLocaleString();
       }
 
       const labels = [], dataPoints = [], pointColors = [], pointRadii = [];
