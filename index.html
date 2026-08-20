@@ -1394,8 +1394,34 @@
       return (days <= c.thresholdDays) ? totalAccumulated : totalAccumulated * (Math.max(0, 1095 - days) / c.baseDenominatorDays);
     }
 
-    function calculatePenalty4(monthlyDiscount, days) {
+    function calculatePenalty4(monthlyDiscount, days, carrierKey) {
       if (days <= 0 || monthlyDiscount <= 0 || days >= 1095) return 0;
+      
+      if (carrierKey === 'LG') {
+          let penalty = 0;
+          let dailyDiscount = monthlyDiscount / 30.4167;
+          let currentDay = 1;
+
+          while (currentDay <= days) {
+              let month = Math.ceil(currentDay / 30.4167);
+              let rate = 0;
+              if (month <= 9) rate = 0.85;
+              else if (month <= 12) rate = 0.80;
+              else if (month <= 18) rate = 0.30;
+              else if (month <= 21) rate = 0.25;
+              else if (month <= 24) rate = 0.00;
+              else if (month <= 28) rate = -0.10;
+              else if (month <= 32) rate = -0.25;
+              else if (month <= 34) rate = -0.85;
+              else rate = -1.70;
+
+              penalty += dailyDiscount * rate;
+              currentDay++;
+          }
+          return Math.max(0, penalty);
+      }
+
+      // SK, KT 기존 로직
       const dailyDiscount = monthlyDiscount / 30.4167;
       const totalAccumulated = dailyDiscount * days;
       return (days <= 730) ? totalAccumulated : totalAccumulated * (Math.max(0, 1095 - days) / 365);
@@ -1411,7 +1437,7 @@
 
     function getPenalty(mDiscount, days, carrierKey) {
       if (penaltyType === '5') return calculatePenalty5(mDiscount, days, carrierKey);
-      if (penaltyType === '4') return calculatePenalty4(mDiscount, days);
+      if (penaltyType === '4') return calculatePenalty4(mDiscount, days, carrierKey);
       return calculatePenalty3(mDiscount, days);
     }
 
