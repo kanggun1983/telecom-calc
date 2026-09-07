@@ -18,14 +18,16 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <style>
+    /* 크롬, 사파리, 삼성인터넷용 슬라이더 커스텀 */
     input[type=range]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      height: 22px;
-      width: 22px;
-      border-radius: 50%;
-      background: #e11d48;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+      height: 22px; width: 22px; border-radius: 50%;
+      background: #e11d48; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    }
+    /* 파이어폭스 등 기타 브라우저용 슬라이더 커스텀 (호환성 패치) */
+    input[type=range]::-moz-range-thumb {
+      height: 22px; width: 22px; border-radius: 50%; border: none;
+      background: #e11d48; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.25);
     }
     
     /* 인쇄(PDF 저장) 시 적용되는 전용 스타일 - 모바일 백지 현상 원천 차단 */
@@ -1103,8 +1105,14 @@
       calculateAndRender();
     });
 
+    // 💡 [수정] 텍스트 지웠을 때 다시 자동연동 되도록 복구
     document.getElementById('compCurrentProduct').addEventListener('input', function() {
-      this.setAttribute('data-edited', 'true');
+      if (this.value.trim() === '') {
+        this.setAttribute('data-edited', 'false');
+        calculateAndRender();
+      } else {
+        this.setAttribute('data-edited', 'true');
+      }
     });
 
     // --- [타사 선택 토글 & 드롭다운 로직] ---
@@ -1508,7 +1516,7 @@
       const totalMonthlyDiscount = tvDiscAmount + wireIntDiscAmount + mobileDiscAmount;
       let finalMonthly = Math.max(0, regularSubtotal - totalMonthlyDiscount);
 
-      // 💡 수기 입력 시 월 실납부액 덮어쓰기
+      // 💡 수기 입력 시 월 실납부액 덮어쓰기 (전체 해지 또는 현재 상태일 때만)
       if (document.getElementById('manualModeToggle').checked) {
         const manualMonthlyVal = document.getElementById('manMonthlyBill').value;
         if (manualMonthlyVal !== '') {
@@ -1565,16 +1573,24 @@
       document.getElementById('bundleDiscount1').innerText = `${p3.toLocaleString()}원`;
       document.getElementById('bundleDiscount2').innerText = `${p4.toLocaleString()}원`;
       document.getElementById('equipDiscount').innerText = `${p5.toLocaleString()}원`;
+      
+      // 💡 [수정] 사은품 환수 텍스트 상태 실시간 업데이트 적용
       document.getElementById('giftClawbackVal').innerText = `${pGift.toLocaleString()}원`;
+      const giftStatusEl = document.getElementById('giftStatusText');
+      if (currentDays <= 365) {
+        giftStatusEl.innerText = `${Math.floor(floatingMonths)}개월 차 (사은품 전액 환수 대상)`;
+        giftStatusEl.className = 'text-[11px] text-rose-500 font-bold';
+      } else {
+        giftStatusEl.innerText = `${Math.floor(floatingMonths)}개월 차 (사은품 환수 의무 소멸)`;
+        giftStatusEl.className = 'text-[11px] text-emerald-400 font-semibold';
+      }
 
       if (cancelMode === 'tv') {
         let afterIntSubtotal = intObj.price + wifiObj.price;
-        // 💡 [버그 수정 완료] 복수단말 TV 2대 요금을 다시 더하는 로직을 완전히 삭제했습니다!
-        
         let afterMonthly = Math.max(0, afterIntSubtotal - mobileDiscAmount);
-        if (document.getElementById('manualModeToggle').checked && document.getElementById('manMonthlyBill').value !== '') {
-            afterMonthly = Math.max(0, parseInt(document.getElementById('manMonthlyBill').value, 10) || 0);
-        }
+        
+        // 💡 [치명적 버그 완벽 제거] TV 단독 해지 시 '수기 요금 총액'이 인터넷 단독 요금란을 덮어씌우는 오류를 100% 차단했습니다.
+        // 이제 수동모드를 켜도 TV해지 후 인터넷 요금은 오직 '선택된 인터넷 기본료 + 와이파이 - 무선할인'으로만 안전하게 계산됩니다.
         document.getElementById('afterMonthlyBill').innerText = afterMonthly.toLocaleString();
       }
 
@@ -1763,6 +1779,12 @@
           tobeText += `\n   ↳ [의무유지 후 변경]: ${periodText} 이후 -> ${changedProdStr} (월 ${changedFee.toLocaleString()}원 적용)`;
         }
 
+        // 💡 [수정] 복사 텍스트에도 신규 예상 사은품 출력
+        const expectedNewGift = parseInt(document.getElementById('compNewGift').value) || 0;
+        if (expectedNewGift > 0) {
+            tobeText += `\n   ↳ [신규 혜택]: 타사 이동 예상 사은품 ${expectedNewGift.toLocaleString()}원 반영됨`;
+        }
+
         compAnalysisText = `
 --------------------------------------
 [📊 타사 이동 비교 분석 요약]
@@ -1777,7 +1799,8 @@
 
       if (cancelMode === 'tv') {
         let cancelItemText = `${tvObj.name} + ${stbObj.name}`;
-        if (tvCount === 2) cancelItemText += ` (복수단말 포함)`;
+        // 💡 [수정] TV 단독 해지 복사 텍스트 시, 복수 단말 기종 명확히 출력
+        if (tvCount === 2) cancelItemText += `\n - [복수단말] 2번째 TV: ${tv2Obj.name} + ${stb2Obj.name}`;
 
         summaryText = `[${storeName}] ${titleCarrierText} 3년 약정 TV 단독 해지 정산서
 담당: ${counselorName} (${counselorPhone})${customerInfoStr}
@@ -1954,6 +1977,11 @@ ${tvListText}
         }
       }
       
+      const expectedNewGift = parseInt(document.getElementById('compNewGift').value) || 0;
+      if (expectedNewGift > 0) {
+        changeInfoText += (changeInfoText ? '\n' : '') + `↳ [신규 혜택]: 타사 이동 예상 사은품 ${expectedNewGift.toLocaleString()}원 반영됨`;
+      }
+
       document.getElementById('pdfAnalysisTarget').innerText = tobeText;
       document.getElementById('pdfAnalysisChangeInfo').innerText = changeInfoText;
       document.getElementById('pdfAnalysisMaintain').innerText = document.getElementById('compMaintain').innerText;
