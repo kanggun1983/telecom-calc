@@ -1,657 +1,439 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <!-- 위약금 계산기 전용 PWA 설정 -->
-  <link rel="manifest" href="telecom-manifest.json">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="위약금 계산기">
-  <link rel="apple-touch-icon" href="icon-192.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>인터넷·TV 위약금 계산기</title>
+<link rel="manifest" href="telecom-manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="위약금 계산기">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#111827">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg:#f1f2f4;--card:#fff;--ink:#111827;--ink2:#374151;--muted:#6b7280;--line:#e5e7eb;--soft:#f8fafc;
+  --accent:#ea580c;--accent-ink:#9a3412;--accent-soft:#fff4ec;
+  --good:#047857;--good-soft:#ecfdf5;--bad:#dc2626;--bad-soft:#fef2f2;--r:14px;
+}
+body[data-carrier="KT"]{--accent:#dc2626;--accent-ink:#991b1b;--accent-soft:#fef2f2}
+body[data-carrier="LG"]{--accent:#d6006f;--accent-ink:#9d174d;--accent-soft:#fdf2f8}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;-webkit-font-smoothing:antialiased;font-size:15px;line-height:1.45}
+button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.num{font-variant-numeric:tabular-nums}
+.hidden{display:none!important}
 
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>통신 3사 인터넷·TV 3년 약정 위약금 & 실청구 계산기</title>
-  
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
-  <style>
-    /* 크롬, 사파리, 삼성인터넷용 슬라이더 커스텀 */
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      height: 22px; width: 22px; border-radius: 50%;
-      background: #e11d48; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.25);
-    }
-    /* 파이어폭스 등 기타 브라우저용 슬라이더 커스텀 (호환성 패치) */
-    input[type=range]::-moz-range-thumb {
-      height: 22px; width: 22px; border-radius: 50%; border: none;
-      background: #e11d48; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.25);
-    }
-    
-    /* 인쇄(PDF 저장) 시 적용되는 전용 스타일 - 모바일 백지 현상 원천 차단 */
-    @media print {
-      @page { size: A4 portrait; margin: 10mm; }
-      body { background-color: #ffffff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      /* 메인 계산기 화면은 인쇄 시 숨김 */
-      #app-container { display: none !important; }
-      /* 숨겨뒀던 PDF 템플릿만 인쇄 시 노출 */
-      #pdfTemplate { display: block !important; position: static; width: 100%; margin: 0; padding: 0; box-shadow: none; }
-    }
-  </style>
+/* 상단바 */
+.topbar{position:sticky;top:0;z-index:40;background:#111827;color:#fff;padding:10px 16px;padding-top:max(10px,env(safe-area-inset-top))}
+.topbar-in{max-width:1180px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand b{display:block;font-size:16px;font-weight:800;letter-spacing:-.01em}
+.brand span{display:block;font-size:11px;color:#9ca3af}
+.carrier-seg{display:flex;gap:3px;background:#1f2937;border-radius:11px;padding:3px}
+.carrier-seg button{border:0;background:transparent;color:#9ca3af;font-weight:800;font-size:14px;padding:8px 14px;border-radius:8px;min-width:54px}
+.carrier-seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+
+/* 레이아웃 */
+.layout{max-width:1180px;margin:0 auto;padding:14px 14px 110px;display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+.col{display:flex;flex-direction:column;gap:12px;min-width:0}
+@media (min-width:1000px){
+  .layout{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);align-items:start;padding-bottom:40px}
+  #heroCard{position:sticky;top:70px;z-index:5;box-shadow:0 8px 24px rgba(17,24,39,.18)}
+}
+
+/* 카드 */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.card-h h2{margin:0;font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px}
+.step{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--ink);color:#fff;font-size:12px;font-weight:800}
+.field{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.field:first-child{margin-top:0}
+.lbl{font-size:12px;font-weight:700;color:var(--muted)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.grid2>.field{margin-top:0}
+.grid2>*{min-width:0}
+input[type=date]{min-width:0;max-width:100%;padding-right:8px}
+#dateView>.grid2:first-child,.field>.grid2{margin-top:0}
+.hint{font-size:12px;color:var(--muted);margin:6px 0 0;line-height:1.5}
+
+/* 입력 */
+select,input[type=text],input[type=number],input[type=date],input[type=tel]{
+  width:100%;font:inherit;font-size:15px;color:var(--ink);background:#fff;border:1px solid #d1d5db;border-radius:10px;
+  padding:10px 12px;min-height:44px;outline:none;-webkit-appearance:none;appearance:none}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;text-overflow:ellipsis}
+select:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+input[type=number]{text-align:right;font-variant-numeric:tabular-nums}
+.unit{position:relative}
+.unit input{padding-right:34px}
+.unit::after{content:attr(data-unit);position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);pointer-events:none}
+input[type=range]{width:100%;accent-color:var(--accent);height:28px}
+
+/* 세그먼트 · 칩 */
+.seg{display:flex;gap:3px;background:#eef0f3;border-radius:10px;padding:3px}
+.seg button{flex:1;border:0;background:transparent;font-size:14px;font-weight:700;color:var(--muted);padding:8px 6px;border-radius:8px;min-height:40px;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.seg.sm button{font-size:13px;min-height:34px;padding:5px 6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;color:var(--ink2);min-height:34px}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.tag{display:inline-block;font-size:11px;font-weight:800;padding:2px 7px;border-radius:6px;background:var(--accent-soft);color:var(--accent-ink);white-space:nowrap}
+.tag.gray{background:#f1f5f9;color:var(--muted)}
+.infobar{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;margin-top:10px}
+.infobar b{font-size:14px}
+
+/* 토글 스위치 */
+.switch{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;font-size:14px;font-weight:700}
+.switch input{position:absolute;opacity:0;pointer-events:none}
+.switch i{flex:none;width:42px;height:24px;border-radius:999px;background:#d1d5db;position:relative;transition:.15s}
+.switch i::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.switch input:checked+i{background:var(--accent)}
+.switch input:checked+i::after{left:21px}
+.sub-box{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+
+/* 결과 히어로 */
+.hero{background:#111827;color:#fff;border-radius:var(--r);padding:18px}
+.hero .k{font-size:12px;font-weight:700;color:#9ca3af}
+.hero .big{font-size:40px;font-weight:900;letter-spacing:-.02em;line-height:1.1;margin-top:4px}
+.hero .big small{font-size:16px;font-weight:700;color:#d1d5db;margin-left:3px}
+.hero-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.hero-meta span{font-size:12px;font-weight:700;color:#d1d5db;background:#1f2937;border-radius:6px;padding:3px 8px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}
+.stat{background:#1f2937;border-radius:10px;padding:10px}
+.stat .k{display:block;font-size:11px}
+.stat .v{display:block;font-size:17px;font-weight:800;margin-top:2px}
+.stat .v.accent{color:#fbbf24}
+
+/* 표 */
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl td{padding:9px 0;border-bottom:1px solid #f1f2f4;vertical-align:top}
+.tbl td:last-child{text-align:right;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tbl tr.zero td{color:#9ca3af}
+.tbl tr.zero td:last-child{font-weight:500}
+.tbl tr.total td{border-bottom:0;border-top:2px solid var(--ink);padding-top:11px;font-size:16px;font-weight:900}
+.tbl tr.total td:last-child{color:var(--accent-ink)}
+.tbl .sub{display:block;font-size:12px;color:var(--muted);font-weight:500}
+.tbl tr.minus td:last-child{color:var(--good)}
+
+/* 비교 */
+.bars{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.bar .row{font-size:13px;font-weight:700}
+.bar .track{height:12px;background:#eef0f3;border-radius:999px;overflow:hidden;margin-top:5px}
+.bar .fill{height:100%;border-radius:999px;background:#9ca3af;transition:width .25s}
+.bar.change .fill{background:var(--accent)}
+.verdict{margin-top:14px;border-radius:12px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.verdict.good{background:var(--good-soft);color:var(--good)}
+.verdict.bad{background:var(--bad-soft);color:var(--bad)}
+.verdict.even{background:#f1f5f9;color:var(--muted)}
+.verdict b{font-size:17px;font-weight:900}
+.verdict .num{font-size:20px;font-weight:900}
+
+details.fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-weight:800;font-size:15px}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin-right:4px;transition:.15s}
+details.fold[open]>summary::after{transform:rotate(-135deg)}
+
+/* 버튼 */
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{border:0;border-radius:12px;min-height:50px;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn.dark{background:var(--ink);color:#fff}
+.btn.accent{background:var(--accent);color:#fff}
+.btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink2);min-height:40px;font-size:13px}
+
+/* 모바일 하단 고정바 */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#111827;color:#fff;padding:10px 14px;padding-bottom:max(10px,env(safe-area-inset-bottom));display:flex;align-items:center;gap:12px;box-shadow:0 -4px 16px rgba(0,0,0,.18)}
+.dock .d{flex:1;min-width:0;cursor:pointer}
+.dock .d small{display:block;font-size:11px;color:#9ca3af;font-weight:700}
+.dock .d b{font-size:20px;font-weight:900}
+.dock .d em{font-style:normal;font-size:12px;font-weight:800;margin-left:6px}
+.dock .btn{min-height:44px;padding:0 16px;font-size:14px}
+@media (min-width:1000px){.dock{display:none}}
+
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;font-weight:700;z-index:60;opacity:0;transition:.2s;pointer-events:none}
+.toast.show{opacity:1}
+.chart-box{position:relative;height:190px}
+
+@media (max-width:420px){
+  .hero .big{font-size:34px}
+  .carrier-seg button{padding:8px 10px;min-width:46px}
+  .stat .v{font-size:15px}
+}
+
+/* 인쇄 */
+#pdfTemplate{display:none}
+@media print{
+  @page{size:A4 portrait;margin:10mm}
+  body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .topbar,.layout,.dock,.toast{display:none!important}
+  #pdfTemplate{display:block!important}
+}
+</style>
 </head>
-<body class="bg-slate-100 text-slate-800 antialiased min-h-screen">
-  
-  <!-- 메인 앱 컨테이너 -->
-  <div id="app-container" class="max-w-6xl mx-auto space-y-5 py-6 px-3 sm:px-6 lg:px-8">
-    
-    <!-- Header -->
-    <header class="text-center space-y-1">
-      <div class="inline-flex items-center gap-1.5 bg-slate-200 text-slate-700 px-3 py-1 rounded-full text-xs font-bold">
-        <span>SKT · KT · LGU+ 공식 전산 연동</span>
-      </div>
-      <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900">통신 3사 3년 약정 위약금 & 실청구 계산기</h1>
-      <p class="text-xs sm:text-sm text-slate-500">위약금 5, 4, 3세대 및 TV 복수단말(셋탑 할인 포함) 일할계산을 지원합니다.</p>
-    </header>
+<body data-carrier="SK">
 
-    <!-- Carrier Switcher -->
-    <div class="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-3 gap-2">
-      <button type="button" class="carrier-top-btn py-3 text-xs sm:text-sm md:text-base font-extrabold rounded-xl transition border border-orange-500 bg-orange-50 text-orange-600 shadow-sm" data-carrier="SK">
-        SK
-      </button>
-      <button type="button" class="carrier-top-btn py-3 text-xs sm:text-sm md:text-base font-extrabold rounded-xl transition border border-transparent text-slate-500 hover:bg-slate-50" data-carrier="KT">
-        KT
-      </button>
-      <button type="button" class="carrier-top-btn py-3 text-xs sm:text-sm md:text-base font-extrabold rounded-xl transition border border-transparent text-slate-500 hover:bg-slate-50" data-carrier="LG">
-        LGU+
-      </button>
-    </div>
-
-    <!-- Main Content Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      
-      <!-- Input Column (6 Cols) -->
-      <section class="lg:col-span-6 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-        
-        <!-- Termination Mode Selector -->
-        <div class="bg-gradient-to-r from-rose-50 to-amber-50 p-3.5 rounded-xl border border-rose-200 space-y-2">
-          <label class="block text-xs font-black text-rose-950">🚨 해지 유형 선택</label>
-          <div class="grid grid-cols-2 gap-2">
-            <button type="button" id="modeFullBtn" class="cancel-mode-btn py-2.5 px-3 rounded-lg text-xs sm:text-sm font-extrabold transition bg-rose-600 text-white shadow-sm flex items-center justify-center gap-1.5" data-mode="full">
-              <span>전체 해지 (인터넷+TV)</span>
-            </button>
-            <button type="button" id="modeTvBtn" class="cancel-mode-btn py-2.5 px-3 rounded-lg text-xs sm:text-sm font-extrabold transition bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-1.5" data-mode="tv">
-              <span>TV만 해지 (인터넷 유지)</span>
-            </button>
-          </div>
-          <p id="cancelModeDesc" class="text-[11px] text-rose-700 font-bold pt-0.5">※ 인터넷과 TV를 모두 해지할 때 발생하는 총 위약금을 계산합니다.</p>
-        </div>
-
-        <!-- 위약금 5/4/3 선택 토글 -->
-        <div class="bg-indigo-50/60 p-3.5 rounded-xl border border-indigo-200 space-y-2 mt-2">
-          <label class="block text-xs font-black text-indigo-950">📜 위약금 적용 방식 (가입 연도 기준)</label>
-          <div class="grid grid-cols-3 gap-2">
-            <button type="button" class="penalty-type-btn py-2.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-extrabold transition bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1" data-type="5">
-              <span>위약금5 (최신)</span>
-            </button>
-            <button type="button" class="penalty-type-btn py-2.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-extrabold transition bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-1" data-type="4">
-              <span>위약금4 (구형)</span>
-            </button>
-            <button type="button" class="penalty-type-btn py-2.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-extrabold transition bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-1" data-type="3">
-              <span>위약금3 (계단)</span>
-            </button>
-          </div>
-          <p id="penaltyTypeDesc" class="text-[11px] text-indigo-700 font-bold pt-0.5">※ 위약금5: 23년 하반기 (KT 9.8 / SK 9.27 / LG 11.1) 이후 가입·재약정</p>
-        </div>
-
-        <!-- 1. Internet Section -->
-        <div class="space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-          <label class="block text-xs font-bold text-slate-700">🌐 1. 인터넷 상품 선택</label>
-          <div id="internetTabs" class="flex flex-wrap gap-1 bg-slate-200 p-1 rounded-lg text-xs font-semibold"></div>
-          <div>
-            <select id="internetPlan" class="w-full text-xs sm:text-sm rounded-lg border border-slate-300 p-2.5 bg-white font-medium focus:ring-2 focus:ring-rose-500 outline-none"></select>
-          </div>
-          <div>
-            <div class="flex justify-between items-center mb-1">
-              <label class="text-[11px] font-semibold text-slate-500">WiFi 공유기 선택</label>
-              <span id="wifiBadge" class="text-[10px] text-blue-600 font-bold bg-blue-50 px-1.5 py-0.5 rounded">전산 요금 연동</span>
-            </div>
-            <select id="wifiOption" class="w-full text-xs sm:text-sm rounded-lg border border-slate-300 p-2 bg-white font-medium focus:ring-2 focus:ring-rose-500 outline-none"></select>
-          </div>
-        </div>
-
-        <!-- 2. TV & STB Section (복수단말) -->
-        <div class="space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-          <div class="flex justify-between items-center">
-            <label id="tvSectionTitle" class="block text-xs font-bold text-slate-700">📺 2. IPTV & 셋톱박스 선택</label>
-            <div class="inline-flex rounded-lg bg-slate-200 p-0.5 text-[11px] font-bold">
-              <button type="button" id="tvCount1Btn" class="tv-count-btn px-2.5 py-1 rounded-md bg-white text-slate-900 shadow-sm transition">TV 1대</button>
-              <button type="button" id="tvCount2Btn" class="tv-count-btn px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition">TV 2대(복수)</button>
-            </div>
-          </div>
-          
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-500 mb-1">메인 TV 요금제</label>
-            <select id="tvPlan" class="w-full text-xs sm:text-sm rounded-lg border border-slate-300 p-2.5 bg-white font-medium focus:ring-2 focus:ring-rose-500 outline-none"></select>
-          </div>
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-500 mb-1">메인 셋톱박스 기종</label>
-            <select id="stbOption" class="w-full text-xs sm:text-sm rounded-lg border border-slate-300 p-2 bg-white font-medium focus:ring-2 focus:ring-rose-500 outline-none"></select>
-          </div>
-
-          <!-- 2번째 TV -->
-          <div id="secondTvBox" class="hidden space-y-2 pt-2.5 border-t border-slate-300">
-            <div class="flex justify-between items-center">
-              <label class="text-[11px] font-extrabold text-indigo-900">📺 2번째 TV (복수단말 50% 할인 적용)</label>
-            </div>
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">2번째 TV 요금제</label>
-              <select id="tvPlan2" class="w-full text-xs rounded-lg border border-indigo-200 p-2 bg-white font-medium focus:ring-2 focus:ring-indigo-500 outline-none"></select>
-            </div>
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">2번째 셋톱박스 기종</label>
-              <select id="stbOption2" class="w-full text-xs rounded-lg border border-indigo-200 p-2 bg-white font-medium focus:ring-2 focus:ring-indigo-500 outline-none"></select>
-            </div>
-          </div>
-        </div>
-
-        <!-- 3. Wireless Bundle Selection -->
-        <div class="space-y-2 bg-blue-50/80 p-3.5 rounded-xl border border-blue-200">
-          <div class="flex justify-between items-center">
-            <label id="bundleSectionTitle" class="text-xs font-extrabold text-blue-950">📱 3. 결합할인 선택</label>
-            <span class="text-[10px] text-blue-700 font-bold bg-blue-100 px-1.5 py-0.5 rounded">전산 할인선택</span>
-          </div>
-          <select id="wirelessBundleSelect" class="w-full text-xs sm:text-sm rounded-lg border border-blue-300 p-2.5 bg-white font-bold text-blue-900 focus:ring-2 focus:ring-blue-500 outline-none"></select>
-          <p id="bundleDescText" class="text-[11px] text-blue-600 mt-1 font-medium"></p>
-        </div>
-
-        <!-- 수동 입력 토글 -->
-        <div class="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-          <div class="flex justify-between items-center">
-            <label class="text-xs font-extrabold text-slate-800">⚙️ 과거 요금제 할인/납부액 수동 입력</label>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" id="manualModeToggle" class="sr-only peer">
-              <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-600"></div>
-            </label>
-          </div>
-          <div id="manualInputBox" class="hidden space-y-2 pt-2 border-t border-slate-200">
-            <p class="text-[10px] text-rose-600 font-bold mb-1">※ 과거 가입자의 실제 전산상 '월 할인액'을 입력하세요. (선택한 요금제 단가를 무시하고 입력값으로 계산합니다)</p>
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">인터넷 기본할인액</label>
-                <input type="number" id="manIntPlan" class="w-full text-xs p-2 border border-slate-300 rounded outline-none focus:border-rose-500 bg-white" placeholder="예: 11000">
-              </div>
-              <div>
-                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">TV 기본할인액</label>
-                <input type="number" id="manTvPlan" class="w-full text-xs p-2 border border-slate-300 rounded outline-none focus:border-rose-500 bg-white" placeholder="예: 6600">
-              </div>
-              <div>
-                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">인터넷 결합할인액</label>
-                <input type="number" id="manIntBund" class="w-full text-xs p-2 border border-slate-300 rounded outline-none focus:border-rose-500 bg-white" placeholder="예: 5500">
-              </div>
-              <div>
-                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">TV 결합할인액</label>
-                <input type="number" id="manTvBund" class="w-full text-xs p-2 border border-slate-300 rounded outline-none focus:border-rose-500 bg-white" placeholder="예: 2200">
-              </div>
-              <div class="col-span-2">
-                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">장비(공유기/셋톱) 할인액</label>
-                <input type="number" id="manEquip" class="w-full text-xs p-2 border border-slate-300 rounded outline-none focus:border-rose-500 bg-white" placeholder="예: 4400">
-              </div>
-              <div class="col-span-2 pt-2 border-t border-slate-200 mt-1">
-                <label class="block text-[10px] font-extrabold text-rose-700 mb-0.5">💰 실제 청구서 월 납부액 (수기 입력)</label>
-                <input type="number" id="manMonthlyBill" class="w-full text-xs font-black p-2 border border-rose-300 rounded outline-none focus:border-rose-500 bg-rose-50 text-rose-900" placeholder="예: 27250 (비워두면 위 선택창 요금으로 자동계산)">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 4. Gift & Duration -->
-        <div class="space-y-3 pt-1">
-          <div>
-            <div class="flex justify-between items-center mb-1">
-              <label class="text-xs font-bold text-slate-700">가입 사은품 (현금/상품권)</label>
-              <span id="giftValText" class="text-xs font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">45만 원</span>
-            </div>
-            <input id="gift" type="range" min="0" max="800000" step="10000" value="450000" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
-            <span class="text-[11px] text-amber-600 block mt-0.5">※ 3년 약정 기준: 개통 후 365일(1년) 이내 해지 시 100% 전액 환수</span>
-          </div>
-
-          <div class="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200 space-y-3">
-            <div class="flex justify-between items-center">
-              <label class="text-xs font-extrabold text-slate-800">사용 기간 입력 방식</label>
-              <div class="inline-flex rounded-lg bg-amber-200/70 p-0.5 text-[11px] font-bold">
-                <button type="button" id="calcModeMonthBtn" class="calc-type-btn px-2.5 py-1 rounded-md bg-white text-amber-900 shadow-sm transition">간편 개월 수</button>
-                <button type="button" id="calcModeDateBtn" class="calc-type-btn px-2.5 py-1 rounded-md text-amber-800 hover:text-amber-950 transition">정밀 일할계산 (날짜선택)</button>
-              </div>
-            </div>
-
-            <div id="monthSliderView" class="space-y-1">
-              <div class="flex justify-between items-center mb-1">
-                <span class="text-[11px] font-bold text-slate-600">사용 개월 수</span>
-                <span id="monthValText" class="text-sm font-black text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-md">13개월 차 (약 395일)</span>
-              </div>
-              <input id="months" type="range" min="1" max="36" step="1" value="13" class="w-full h-2.5 bg-amber-200 rounded-lg appearance-none cursor-pointer">
-              <div class="flex justify-between text-[10px] text-slate-500 font-semibold mt-1">
-                <span>1개월</span>
-                <span>12개월</span>
-                <span>18개월</span>
-                <span>36개월</span>
-              </div>
-            </div>
-
-            <div id="datePickerView" class="hidden space-y-2 pt-2 border-t border-amber-200/80">
-              <p class="text-[10.5px] text-amber-700 font-bold leading-tight -mt-0.5 mb-1">💡 개통일자 입력 시 가입 연도별 위약금(5·4·3세대)이 자동 선택됩니다.</p>
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <label class="block text-[11px] font-bold text-slate-600 mb-1">📅 개통일자</label>
-                  <input id="startDateInput" type="date" class="w-full text-xs font-semibold p-2 bg-white border border-amber-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500">
-                </div>
-                <div>
-                  <label class="block text-[11px] font-bold text-slate-600 mb-1">📅 해지(예정)일자</label>
-                  <input id="endDateInput" type="date" class="w-full text-xs font-semibold p-2 bg-white border border-amber-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500">
-                </div>
-              </div>
-              <div class="bg-amber-100/90 p-2 rounded-lg text-xs font-bold text-amber-950 flex justify-between items-center mt-2">
-                <span>정산 총 사용일수:</span>
-                <span id="exactDaysText" class="text-sm text-rose-600 font-black">0일 (0개월 0일)</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </section>
-
-      <!-- Results Column (6 Cols) -->
-      <section class="lg:col-span-6 space-y-4">
-        
-        <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-5 rounded-2xl text-white shadow-md space-y-4 border border-slate-700">
-          
-          <div class="space-y-1.5 pb-3 border-b border-slate-700/80">
-            <div class="flex justify-between items-center text-xs">
-              <span class="text-slate-400">3년 약정 정상 총액 (소계)</span>
-              <span id="baseMonthlyBill" class="text-slate-300 font-semibold">0원</span>
-            </div>
-            
-            <div class="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700 text-xs space-y-1 my-2">
-              <div class="font-bold text-emerald-400 flex justify-between">
-                <span>🔍 적용된 3년 약정 결합할인 내역</span>
-                <span id="bundleMonthlyDiscount">-0원/월</span>
-              </div>
-              <div class="text-[11px] text-slate-300 space-y-0.5 pt-1 border-t border-slate-700">
-                <div class="flex justify-between">
-                  <span class="text-slate-400">· TV 결합할인:</span>
-                  <span id="discTvText" class="font-semibold text-slate-200">0원</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-slate-400">· 인터넷 결합할인 (유선):</span>
-                  <span id="discIntWireText" class="font-semibold text-slate-200">0원</span>
-                </div>
-                <div class="flex justify-between text-emerald-300 font-bold">
-                  <span>· 모바일(유무선) 추가할인:</span>
-                  <span id="discMobileText">0원</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="flex justify-between items-baseline pt-1">
-              <div>
-                <span class="text-[11px] text-slate-400 block">3년 약정 최종 월 납부액</span>
-                <span id="totalMonthlyBill" class="text-3xl font-black text-emerald-400">0</span>
-                <span class="text-xs text-slate-300">원/월</span>
-              </div>
-              <div class="text-right">
-                <span id="penaltyTitleLabel" class="text-[11px] text-rose-300 font-bold block">3년 약정 해지 총 위약금 (전체)</span>
-                <span id="totalPenalty" class="text-2xl sm:text-3xl font-black text-amber-400">0</span>
-                <span class="text-xs text-slate-300">원</span>
-              </div>
-            </div>
-
-            <div class="bg-slate-800/90 p-2 rounded-lg border border-slate-700 flex justify-between items-center text-xs mt-1">
-              <span class="text-slate-300">📅 해지 당월 일할 통신요금:</span>
-              <span class="text-emerald-300 font-bold"><span id="proratedMonthBill">0</span>원</span>
-            </div>
-
-            <div id="afterCancelBox" class="hidden mt-2 pt-2 border-t border-slate-700/80 bg-rose-950/40 p-2.5 rounded-lg border border-rose-800/60">
-              <div class="flex justify-between items-center text-xs">
-                <span class="text-rose-200 font-bold">👉 TV 해지 후 인터넷 단독 월 납부액:</span>
-                <span class="text-sm font-black text-amber-300"><span id="afterMonthlyBill">0</span>원/월</span>
-              </div>
-              <p class="text-[10px] text-slate-400 mt-0.5">※ TV 결합할인이 소멸되고 인터넷 단독/무선 결합 3년 약정 요금으로 변경됩니다.</p>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2 text-xs">
-            <div class="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700">
-              <span id="planDiscLabel1" class="text-slate-400 block text-[10px]">인터넷 기본할인 반환금</span>
-              <span id="planDiscount1" class="font-bold text-slate-100">0원</span>
-            </div>
-            <div class="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700">
-              <span id="planDiscLabel2" class="text-slate-400 block text-[10px]">TV 기본할인 반환금</span>
-              <span id="planDiscount2" class="font-bold text-slate-100">0원</span>
-            </div>
-            <div class="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700">
-              <span id="bundleDiscLabel1" class="text-slate-400 block text-[10px]">인터넷 결합할인 반환금</span>
-              <span id="bundleDiscount1" class="font-bold text-rose-300">0원</span>
-            </div>
-            <div class="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700">
-              <span id="bundleDiscLabel2" class="text-slate-400 block text-[10px]">TV 결합할인 반환금</span>
-              <span id="bundleDiscount2" class="font-bold text-rose-300">0원</span>
-            </div>
-            <div class="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700">
-              <span id="equipDiscLabel" class="text-slate-400 block text-[10px]">장비(공유기/셋톱) 반환금</span>
-              <span id="equipDiscount" class="font-bold text-slate-100">0원</span>
-            </div>
-            <div class="bg-slate-800/90 p-2.5 rounded-lg border border-slate-700">
-              <span id="giftClawback" class="text-slate-400 block text-[10px]">사은품 환수금</span>
-              <span id="giftClawbackVal" class="font-extrabold text-amber-300">0원</span>
-            </div>
-            <div class="bg-slate-800/90 p-2 rounded-lg border border-slate-700 col-span-2 text-center">
-              <span id="giftStatusText" class="text-[11px] text-emerald-400 font-semibold">13개월 차 (사은품 환수 의무 소멸)</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-2">
-          <div class="flex justify-between items-center">
-            <h3 id="chartTitleText" class="font-bold text-xs sm:text-sm text-slate-800">1~36개월 3년 약정 위약금 추이 (전체 해지)</h3>
-            <span class="text-[11px] font-semibold text-slate-500">선택: <strong id="chartCurrentMonth" class="text-rose-600">13개월</strong></span>
-          </div>
-          <div class="relative h-48 w-full">
-            <canvas id="penaltyChart"></canvas>
-          </div>
-        </div>
-
-        <!-- 📊 유지 vs 타사 변경 비교 분석 -->
-        <div class="bg-blue-50/70 p-4 sm:p-5 rounded-2xl shadow-sm border border-blue-200 space-y-3 mt-4">
-          <div class="flex justify-between items-end border-b border-blue-200 pb-3">
-            <h3 class="text-xs sm:text-sm font-black text-blue-900">📊 유지 vs 타사 변경 비교 분석</h3>
-            <div class="text-right">
-              <span class="block text-[10px] text-blue-600 font-bold mb-0.5">예상 총 해지비용</span>
-              <span id="compTotalPenalty" class="text-xl sm:text-2xl font-black text-rose-600">0원</span>
-            </div>
-          </div>
-
-          <!-- AS-IS / TO-BE 상품 비교 영역 -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 pb-3 border-b border-blue-200">
-            <!-- AS-IS (현재) -->
-            <div class="bg-white p-2.5 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between space-y-2">
-              <div>
-                <label class="block text-[10px] sm:text-[11px] font-bold text-slate-500 mb-1">AS-IS (현재 이용 상품)</label>
-                <input type="text" id="compCurrentProduct" class="w-full text-[11px] sm:text-xs font-bold text-slate-800 bg-transparent border-none p-0 focus:ring-0" placeholder="자동 연동 또는 직접 입력">
-              </div>
-              <div class="flex justify-between items-center bg-slate-100 p-1.5 rounded border border-slate-200 text-[11px]">
-                <span class="font-bold text-slate-600">👉 현재 월 납부액:</span>
-                <span id="compCurrentMonthlyText" class="font-black text-slate-800 text-xs">0원/월</span>
-              </div>
-            </div>
-
-            <!-- TO-BE (타사 이동) + 하향/변경 토글 기능 통합 -->
-            <div class="bg-white p-2.5 rounded-lg border border-blue-300 shadow-sm ring-1 ring-blue-100 space-y-2">
-              <div class="flex justify-between items-center">
-                <label class="block text-[10px] sm:text-[11px] font-bold text-blue-600">TO-BE (타사 이동 상품)</label>
-                <div class="inline-flex rounded-md bg-blue-100 p-0.5 text-[10px] font-bold" id="targetCarrierToggle">
-                  <button type="button" class="target-carrier-btn px-2 py-0.5 rounded text-slate-600 hover:text-blue-900 transition" data-target="SK">SK</button>
-                  <button type="button" class="target-carrier-btn px-2 py-0.5 rounded text-slate-600 hover:text-blue-900 transition" data-target="KT">KT</button>
-                  <button type="button" class="target-carrier-btn px-2 py-0.5 rounded text-slate-600 hover:text-blue-900 transition" data-target="LG">LG</button>
-                  <button type="button" class="target-carrier-btn px-2 py-0.5 rounded text-slate-600 hover:text-blue-900 transition" data-target="manual">직접</button>
-                </div>
-              </div>
-
-              <!-- 타사 상품 선택 드롭다운 (결합상품 포함) -->
-              <div id="targetProductDropdowns" class="hidden flex flex-col gap-1.5 pt-0.5">
-                <div class="grid grid-cols-2 gap-1.5">
-                  <select id="targetInternetSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
-                  <select id="targetTvSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
-                </div>
-                <div class="grid grid-cols-2 gap-1.5">
-                  <select id="targetStbSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
-                  <select id="targetBundleSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
-                </div>
-              </div>
-
-              <input type="text" id="compTargetProduct" class="w-full text-[11px] sm:text-xs font-bold text-blue-900 bg-blue-50/30 p-1.5 rounded border border-blue-200 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-blue-300" placeholder="위에서 선택하거나 직접 입력 (예: LGU+ 500M + 프리미엄 TV)">
-              
-              <!-- 변경 후 예상 월 납부액 표시/수정 칸 -->
-              <div class="flex justify-between items-center bg-blue-50 p-1.5 rounded border border-blue-100 text-[11px]">
-                <span class="font-bold text-blue-800">👉 개통 시 월 납부액:</span>
-                <div class="flex items-center gap-1">
-                  <input type="number" id="compTargetMonthlyInput" class="w-20 text-right p-1 border border-blue-300 rounded font-black text-blue-950 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="0">
-                  <span class="font-bold text-blue-900 text-[10px]">원/월</span>
-                </div>
-              </div>
-
-              <!-- TO-BE 진행 중 요금제 하향/변경 기능 -->
-              <div class="pt-2 border-t border-blue-200 mt-2">
-                <label class="flex items-center space-x-1.5 cursor-pointer mb-1.5">
-                  <input type="checkbox" id="tobeChangeToggle" class="rounded text-blue-600 focus:ring-blue-500 w-3 h-3">
-                  <span class="text-[10px] sm:text-[11px] font-bold text-blue-800">개통 후 요금제 하향/변경 (의무유지기간 적용)</span>
-                </label>
-                <div id="tobeChangeBox" class="hidden space-y-2 bg-blue-50/50 p-2 rounded border border-blue-200">
-                  <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-bold text-blue-700 w-12 mt-0.5">유지기간:</span>
-                    <select id="tobeMaintainPeriodSelect" class="flex-1 text-[10.5px] p-1 border border-blue-200 rounded text-blue-900 outline-none focus:ring-1 focus:ring-blue-500">
-                      <option value="6">M+5 (약 6개월)</option>
-                      <option value="10">M+9 (약 10개월)</option>
-                      <option value="9">275일 (약 9개월)</option>
-                      <option value="13">13개월</option>
-                      <option value="custom">직접입력(개월)</option>
-                    </select>
-                    <input type="number" id="tobeMaintainPeriodInput" class="hidden w-16 text-right p-1 border border-blue-200 rounded text-[10.5px] outline-none focus:ring-1 focus:ring-blue-500" placeholder="개월 수">
-                  </div>
-                  
-                  <!-- 변경상품 영역 업데이트 (드롭다운 토글) -->
-                  <div class="flex items-start gap-2">
-                    <span class="text-[10px] font-bold text-blue-700 w-12 mt-1">변경상품:</span>
-                    <!-- 직접 입력 모드 -->
-                    <input type="text" id="tobeChangedProductManual" class="hidden flex-1 text-[10.5px] p-1 border border-blue-200 rounded text-blue-900 outline-none focus:ring-1 focus:ring-blue-500" placeholder="직접 입력 (예: 100M + 기본형 TV)">
-                    
-                    <!-- 드롭다운 모드 -->
-                    <div id="tobeChangedDropdowns" class="flex-1 flex flex-col gap-1.5 w-full">
-                      <div class="grid grid-cols-2 gap-1.5">
-                        <select id="tobeChangeIntSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
-                        <select id="tobeChangeTvSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
-                      </div>
-                      <div class="grid grid-cols-2 gap-1.5">
-                        <select id="tobeChangeStbSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
-                        <select id="tobeChangeBundleSelect" class="text-[10.5px] p-1 border border-blue-200 rounded bg-blue-50/50 text-blue-950 font-medium outline-none focus:ring-1 focus:ring-blue-500"></select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="flex justify-between items-center text-[11px] pt-1">
-                    <span class="font-bold text-blue-800">👉 변경 후 월 납부액:</span>
-                    <div class="flex items-center gap-1">
-                      <input type="number" id="tobeChangedMonthlyInput" class="w-20 text-right p-1 border border-blue-300 rounded font-black text-blue-700 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="0">
-                      <span class="font-bold text-blue-900 text-[10px]">원/월</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          <div class="space-y-2 text-xs font-medium text-slate-600 pb-3 border-b border-blue-200 mt-2">
-            <div class="flex justify-between">
-              <span>약정 할인반환금 (기본/결합)</span><span id="compDisc" class="font-bold text-slate-800">0원</span>
-            </div>
-            <div class="flex justify-between">
-              <span>설치비 / 사은품 반환</span><span id="compGift" class="font-bold text-slate-800">0원</span>
-            </div>
-            <div class="flex justify-between">
-              <span>장비 / 단말 관련 비용</span><span id="compEquip" class="font-bold text-slate-800">0원</span>
-            </div>
-          </div>
-
-          <div class="space-y-2 text-xs font-medium text-slate-600 pb-3 border-b border-blue-200">
-            <div class="flex justify-between">
-              <span>사용기간 / 남은 약정</span><span id="compPeriod" class="font-bold text-slate-800">0개월 / 36개월</span>
-            </div>
-            <div class="flex justify-between">
-              <span>약정 만료까지 유지비용</span><span id="compMaintain" class="font-bold text-slate-800">0원</span>
-            </div>
-            <div class="flex justify-between items-center pt-2 mt-1">
-              <span class="text-[11px] sm:text-xs text-blue-700 font-bold">➕ 타사 이동 신규 사은품 (예상)</span>
-              <input type="number" id="compNewGift" class="w-24 sm:w-28 text-right p-1.5 border border-blue-300 rounded text-blue-700 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm text-xs sm:text-sm" value="450000" step="10000">
-            </div>
-            <div class="flex justify-between pt-1">
-              <span>지금 변경 시 비교비용</span><span id="compChange" class="font-bold text-slate-800">0원</span>
-            </div>
-            <div class="flex justify-between">
-              <span>지금 변경의 예상 차이</span><span id="compDiff" class="font-bold text-rose-600">0원</span>
-            </div>
-          </div>
-
-          <div class="flex justify-between items-center pt-1">
-            <span class="text-sm font-bold text-slate-800">계산상 판단</span>
-            <span id="compResult" class="text-sm font-black text-rose-600">약정 유지가 유리</span>
-          </div>
-        </div>
-
-        <!-- 📝 수기 입력: 고객 & 상담사 정보 -->
-        <div class="bg-indigo-50/50 p-4 rounded-2xl shadow-sm border border-indigo-100 space-y-3 mt-4">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <!-- 상담사 정보 -->
-            <div class="space-y-1.5">
-              <label class="block text-[11px] font-extrabold text-indigo-800">🏢 매장 및 담당자 정보</label>
-              <input type="text" id="inputStoreName" value="" class="w-full text-xs font-semibold p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" placeholder="매장명 (예: 폰값연구소)">
-              <div class="flex gap-2">
-                <input type="text" id="inputCounselorName" value="" class="w-1/2 text-xs font-semibold p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" placeholder="상담사 이름">
-                <input type="text" id="inputCounselorPhone" value="" class="w-1/2 text-xs font-semibold p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" placeholder="담당자 연락처">
-              </div>
-            </div>
-
-            <!-- 고객 정보 -->
-            <div class="space-y-1.5">
-              <label class="block text-[11px] font-extrabold text-indigo-800">👤 고객 정보 (선택)</label>
-              <input type="text" id="inputCustomerName" value="" class="w-full text-xs font-semibold p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" placeholder="고객명">
-              <div class="flex gap-2">
-                <input type="text" id="inputCustomerBirth" value="" class="w-1/2 text-xs font-semibold p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" placeholder="생년월일 (예: 900101)">
-                <input type="text" id="inputCustomerPhone" value="" class="w-1/2 text-xs font-semibold p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" placeholder="고객 연락처">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 액션 버튼 영역 -->
-        <div class="grid grid-cols-2 gap-2 mt-4">
-          <button id="copyBtn" type="button" class="w-full py-3.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition shadow-sm">
-            <span>📋 텍스트 복사</span>
-          </button>
-          <button id="pdfBtn" type="button" class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition shadow-sm">
-            <span>📄 PDF 견적서 저장</span>
-          </button>
-        </div>
-
-      </section>
-    </div>
-
-  </div>
-
-  <!-- 인쇄(PDF 저장) 시 노출될 템플릿 영역 (화면에 보이지 않음) - 한 장 맞춤 최적화 적용됨 -->
-  <div id="pdfTemplate" style="display: none;">
-    <div style="width: 100%; font-family: sans-serif; color: #1e293b; line-height: 1.3;">
-      
-      <!-- PDF 헤더 -->
-      <div style="border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-end;">
-        <h1 style="font-size: 22px; font-weight: 900; margin: 0;" id="pdfCarrierName">[통신사]</h1>
-        <div style="text-align: right;">
-          <h2 style="font-size: 14px; font-weight: bold; margin: 0 0 3px 0;" id="pdfStoreNameTitle">[매장명] 가입 및 해지 정산서</h2>
-          <p style="font-size: 11px; color: #0f172a; font-weight: bold; margin: 0 0 2px 0;" id="pdfCustomerInfo"></p>
-          <p style="font-size: 11px; color: #64748b; margin: 0;" id="pdfDate">날짜</p>
-        </div>
-      </div>
-
-      <!-- 요약 박스 -->
-      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; margin-bottom: 12px;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px;">
-          <span style="font-weight: bold;">■ 적용 산정식:</span> <span id="pdfCalcType">-</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px;">
-          <span style="font-weight: bold;">■ 정산 사용 기간:</span> <span id="pdfUsedPeriod">-</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 12px;">
-          <span style="font-weight: bold; color: #e11d48;">■ 3년 약정 총 예상 위약금(일할):</span> <span id="pdfTotalPenaltyTop" style="font-weight: 900; color: #e11d48;">-</span>
-        </div>
-      </div>
-
-      <!-- 1. 가입 상품 및 요금 내역 -->
-      <h3 style="font-size: 13px; font-weight: bold; margin-bottom: 6px; border-left: 3px solid #0f172a; padding-left: 6px;">1. 가입 상품 및 요금 내역 (3년 약정 기준)</h3>
-      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 11.5px; margin-bottom: 12px;">
-        <tbody>
-          <tr style="border-bottom: 1px solid #e2e8f0;">
-            <th style="padding: 6px 8px; width: 25%; background-color: #f1f5f9;">인터넷</th>
-            <td style="padding: 6px 8px;" id="pdfIntNamePrice">-</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #e2e8f0;">
-            <th style="padding: 6px 8px; background-color: #f1f5f9;">WiFi 공유기</th>
-            <td style="padding: 6px 8px;" id="pdfWifiNamePrice">-</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #e2e8f0;">
-            <th style="padding: 6px 8px; background-color: #f1f5f9;">IPTV / 셋톱박스</th>
-            <td style="padding: 6px 8px;" id="pdfTvStbNamePrice">-</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #e2e8f0;">
-            <th style="padding: 6px 8px; background-color: #fff1f2; color: #be123c;">결합 유형</th>
-            <td style="padding: 6px 8px; font-weight: bold; color: #be123c;" id="pdfBundleName">-</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #e2e8f0; font-weight: bold;">
-            <th style="padding: 6px 8px; background-color: #f1f5f9;">정상 총액</th>
-            <td style="padding: 6px 8px;" id="pdfBaseTotal">-</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #2563eb;">
-            <th style="padding: 6px 8px; background-color: #f1f5f9;">결합 할인액</th>
-            <td style="padding: 6px 8px;" id="pdfTotalDisc">-</td>
-          </tr>
-          <tr style="border-bottom: 2px solid #0f172a; font-weight: 900; font-size: 13px;">
-            <th style="padding: 8px; background-color: #f8fafc;">최종 실납부액</th>
-            <td style="padding: 8px; color: #e11d48;" id="pdfFinalTotal">-</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- 2. 해지 세부 위약금 내역 -->
-      <h3 style="font-size: 13px; font-weight: bold; margin-bottom: 6px; border-left: 3px solid #e11d48; padding-left: 6px; color: #e11d48;">2. 해지 세부 위약금 내역</h3>
-      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 11.5px; margin-bottom: 12px;">
-        <tbody>
-          <tr style="border-bottom: 1px dashed #e2e8f0;"><th style="padding: 4px 8px; width: 50%;">인터넷 기본할인 반환금</th><td style="padding: 4px 8px; text-align: right;" id="pdfP1">-</td></tr>
-          <tr style="border-bottom: 1px dashed #e2e8f0;"><th style="padding: 4px 8px;">TV 기본할인 반환금</th><td style="padding: 4px 8px; text-align: right;" id="pdfP2">-</td></tr>
-          <tr style="border-bottom: 1px dashed #e2e8f0;"><th style="padding: 4px 8px;">인터넷 결합할인 반환금</th><td style="padding: 4px 8px; text-align: right;" id="pdfP3">-</td></tr>
-          <tr style="border-bottom: 1px dashed #e2e8f0;"><th style="padding: 4px 8px;">TV 결합할인 반환금</th><td style="padding: 4px 8px; text-align: right;" id="pdfP4">-</td></tr>
-          <tr style="border-bottom: 1px dashed #e2e8f0;"><th style="padding: 4px 8px;">장비 임대료 반환금</th><td style="padding: 4px 8px; text-align: right;" id="pdfP5">-</td></tr>
-          <tr style="border-bottom: 1px solid #cbd5e1;"><th style="padding: 4px 8px;">사은품 환수금</th><td style="padding: 4px 8px; text-align: right;" id="pdfPGift">-</td></tr>
-          <tr><th style="padding: 8px; font-weight: 900; font-size: 13px;">총 예상 위약금 합계</th><td style="padding: 8px; text-align: right; font-weight: 900; font-size: 14px; color: #e11d48;" id="pdfTotalPenaltyBot">-</td></tr>
-        </tbody>
-      </table>
-
-      <!-- 3. 타사 비교 분석 -->
-      <h3 style="font-size: 13px; font-weight: bold; margin-bottom: 6px; border-left: 3px solid #2563eb; padding-left: 6px; color: #1d4ed8;">3. 타사 이동 비교 분석 요약</h3>
-      <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; padding: 10px; border-radius: 6px; font-size: 11.5px; line-height: 1.4;">
-        <div style="margin-bottom: 4px;"><span style="font-weight: bold;">- 현재 이용 상품:</span> <span id="pdfAnalysisCurrent">-</span></div>
-        <div style="margin-bottom: 4px;"><span style="font-weight: bold;">- 타사 이동 상품:</span> <span id="pdfAnalysisTarget">-</span></div>
-        <div style="margin-bottom: 4px; padding-left: 10px; color: #475569;" id="pdfAnalysisChangeInfo"></div>
-        <div style="margin-bottom: 4px;"><span style="font-weight: bold;">- 약정 만료까지 기존 유지비용:</span> <span id="pdfAnalysisMaintain">-</span></div>
-        <div style="margin-bottom: 8px;"><span style="font-weight: bold;">- 지금 변경 시 비교비용:</span> <span id="pdfAnalysisChange">-</span></div>
-        <div style="padding-top: 8px; border-top: 1px solid #bfdbfe; font-size: 13px; font-weight: 900;">
-          <span style="color: #1e3a8a;">- 예상 손익 결과:</span> <span id="pdfAnalysisDiffResult">-</span>
-        </div>
-      </div>
-
-      <!-- Footer -->
-      <div style="margin-top: 15px; border-top: 1px solid #0f172a; padding-top: 10px; font-size: 10.5px; color: #64748b; line-height: 1.4;">
-        <p style="font-weight: bold; color: #334155; margin-bottom: 3px;">[해지 시 필독 유의사항]</p>
-        <p style="margin: 0 0 2px 0;">1. 임대 장비 미반납금 (변상금): 모뎀, 셋톱박스, 공유기, 리모컨을 반납하지 않으면 15~25만 원 상당의 기기 원가가 일시불 청구됩니다. (정상 반납 시 0원)</p>
-        <p style="margin: 0 0 2px 0;">2. 해지 당월 일할 요금: 해지 시점까지 사용한 이번 달 통신 요금이 별도 합산 청구됩니다.</p>
-        <p style="margin: 0;">※ 통신사 실제 해지 정산 시 일할 계산 및 회선 상태에 따라 소폭 변동될 수 있습니다.</p>
-        <p id="pdfFooterInfo" style="margin-top: 8px; font-size: 12px; font-weight: bold; text-align: center; color: #1e293b;">담당: [이름] ([연락처]) / [매장명]</p>
-      </div>
-
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><b>위약금 계산기</b><span>인터넷·TV 3년 약정 · 약관 산식 기준</span></div>
+    <div class="carrier-seg" id="carrierSeg" role="group" aria-label="현재 통신사">
+      <button data-v="SK" aria-pressed="true">SK</button>
+      <button data-v="KT" aria-pressed="false">KT</button>
+      <button data-v="LG" aria-pressed="false">LGU+</button>
     </div>
   </div>
+</header>
 
-  <script>
-    const CARRIER_DATA = {
+<main class="layout">
+  <!-- 입력 -->
+  <div class="col col-input">
+
+    <section class="card">
+      <div class="card-h"><h2><span class="step">1</span>사용 기간</h2>
+        <div class="seg sm" id="durSeg" style="width:170px">
+          <button data-v="date" aria-pressed="true">개통일</button>
+          <button data-v="month" aria-pressed="false">개월 수</button>
+        </div>
+      </div>
+
+      <div id="dateView">
+        <div class="grid2">
+          <div class="field"><span class="lbl">개통(재약정)일</span><input type="date" id="startDate"></div>
+          <div class="field"><span class="lbl">해지(예정)일</span><input type="date" id="endDate"></div>
+        </div>
+        <div class="infobar"><span class="num" id="daysText">-</span><span class="tag gray num" id="expireText">-</span></div>
+      </div>
+
+      <div id="monthView" class="hidden">
+        <div class="row"><span class="lbl">사용 개월 수</span><b class="num" id="monthText">13개월 차</b></div>
+        <input type="range" id="months" min="1" max="36" step="1" value="13">
+        <div class="chips" id="monthChips">
+          <button class="chip" data-v="6">6개월</button><button class="chip" data-v="12">12개월</button>
+          <button class="chip" data-v="13">13개월</button><button class="chip" data-v="18">18개월</button>
+          <button class="chip" data-v="24">24개월</button><button class="chip" data-v="30">30개월</button>
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:14px">
+        <div class="row"><span class="lbl">위약금 산식</span><span class="tag" id="ptypeAutoTag">개통일 기준 자동</span></div>
+        <div class="seg" id="ptypeSeg">
+          <button data-v="5" aria-pressed="true">위약금5 (현행)</button>
+          <button data-v="4" aria-pressed="false">위약금4</button>
+          <button data-v="3" aria-pressed="false">위약금3</button>
+        </div>
+        <p class="hint" id="ptypeDesc"></p>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2><span class="step">2</span>해지 범위</h2></div>
+      <div class="seg" id="cancelSeg">
+        <button data-v="full" aria-pressed="true">전체 해지</button>
+        <button data-v="tv" aria-pressed="false">TV만 해지</button>
+      </div>
+      <p class="hint" id="cancelDesc">인터넷과 TV를 모두 해지할 때의 위약금입니다.</p>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2><span class="step">3</span>이용 상품</h2></div>
+      <div class="field">
+        <span class="lbl">인터넷</span>
+        <div class="chips" id="intTabs"></div>
+        <select id="internetPlan"></select>
+      </div>
+      <div class="field"><span class="lbl">WiFi 공유기</span><select id="wifiOption"></select></div>
+
+      <div class="field" style="margin-top:16px">
+        <div class="row"><span class="lbl" id="tvTitle">TV · 셋톱박스</span>
+          <div class="seg sm" id="tvCountSeg" style="width:150px">
+            <button data-v="1" aria-pressed="true">TV 1대</button>
+            <button data-v="2" aria-pressed="false">2대</button>
+          </div>
+        </div>
+        <select id="tvPlan"></select>
+        <select id="stbOption"></select>
+      </div>
+      <div id="tv2Box" class="field hidden">
+        <span class="lbl">2번째 TV (복수 50% 할인)</span>
+        <select id="tvPlan2"></select>
+        <select id="stbOption2"></select>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2><span class="step">4</span>결합 할인</h2></div>
+      <select id="bundleSelect"></select>
+      <p class="hint" id="bundleDesc"></p>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2><span class="step">5</span>받은 사은품</h2></div>
+      <div class="unit" data-unit="원"><input type="number" id="gift" inputmode="numeric" step="10000" value="450000"></div>
+      <div class="chips" id="giftChips" style="margin-top:8px">
+        <button class="chip" data-v="0">없음</button><button class="chip" data-v="300000">30만</button>
+        <button class="chip" data-v="400000">40만</button><button class="chip" data-v="450000">45만</button>
+        <button class="chip" data-v="500000">50만</button><button class="chip" data-v="600000">60만</button>
+      </div>
+      <p class="hint">개통 후 365일 이내 해지 시 전액 환수로 계산합니다.</p>
+    </section>
+
+    <section class="card">
+      <label class="switch"><span>전산 금액 직접 입력<span class="hint" style="display:block;font-weight:500;margin:2px 0 0">구 요금제 등 상품 목록과 금액이 다를 때</span></span><input type="checkbox" id="manualToggle"><i></i></label>
+      <div id="manualBox" class="sub-box hidden">
+        <p class="hint" style="margin:0 0 4px">전산에 찍힌 <b>월 할인액</b>을 넣으면 위 상품 금액 대신 이 값으로 계산합니다.</p>
+        <div class="grid2">
+          <div class="field"><span class="lbl">인터넷 요금할인</span><div class="unit" data-unit="원"><input type="number" id="manIntPlan" inputmode="numeric" placeholder="0"></div></div>
+          <div class="field"><span class="lbl">TV 요금할인</span><div class="unit" data-unit="원"><input type="number" id="manTvPlan" inputmode="numeric" placeholder="0"></div></div>
+          <div class="field"><span class="lbl">인터넷 결합할인</span><div class="unit" data-unit="원"><input type="number" id="manIntBund" inputmode="numeric" placeholder="0"></div></div>
+          <div class="field"><span class="lbl">TV 결합할인</span><div class="unit" data-unit="원"><input type="number" id="manTvBund" inputmode="numeric" placeholder="0"></div></div>
+          <div class="field"><span class="lbl">장비 임대료 할인</span><div class="unit" data-unit="원"><input type="number" id="manEquip" inputmode="numeric" placeholder="0"></div></div>
+          <div class="field"><span class="lbl">실제 월 청구액</span><div class="unit" data-unit="원"><input type="number" id="manMonthly" inputmode="numeric" placeholder="자동"></div></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 결과 -->
+  <div class="col col-result" id="resultCol">
+
+    <section class="hero" id="heroCard">
+      <span class="k" id="heroLabel">지금 해지 시 예상 위약금</span>
+      <div class="big num"><span id="rTotal">0</span><small>원</small></div>
+      <div class="hero-meta"><span id="mType">-</span><span id="mDays">-</span><span id="mCancel">-</span></div>
+      <div class="stats">
+        <div class="stat"><span class="k">월 실납부액</span><span class="v num" id="rMonthly">0</span></div>
+        <div class="stat"><span class="k">당월 일할요금</span><span class="v num" id="rProrated">0</span></div>
+        <div class="stat" id="statGift"><span class="k" id="statGiftK">사은품 환수</span><span class="v num accent" id="rGiftStat">0</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>위약금 내역</h2><span class="tag gray" id="giftStatus">-</span></div>
+      <table class="tbl"><tbody id="bdBody"></tbody></table>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>월 요금 구성</h2><span class="tag gray">3년 약정 기준</span></div>
+      <table class="tbl"><tbody id="billBody"></tbody></table>
+    </section>
+
+    <section class="card">
+      <div class="card-h"><h2>개월별 위약금 추이</h2><span class="tag" id="chartNow">-</span></div>
+      <div class="chart-box"><canvas id="penaltyChart"></canvas></div>
+    </section>
+
+    <section class="card" id="compareCard">
+      <div class="card-h"><h2>타사 이동 비교</h2>
+        <div class="seg sm" id="targetSeg" style="width:200px">
+          <button data-v="SK" aria-pressed="true">SK</button><button data-v="KT" aria-pressed="false">KT</button>
+          <button data-v="LG" aria-pressed="false">LG</button><button data-v="manual" aria-pressed="false">직접</button>
+        </div>
+      </div>
+
+      <div class="field"><span class="lbl">현재 상품</span><input type="text" id="curProduct" placeholder="자동 입력"></div>
+
+      <div id="targetSelects">
+        <div class="field"><span class="lbl">이동할 상품</span>
+          <div class="grid2"><select id="tInt"></select><select id="tTv"></select></div>
+          <div class="grid2"><select id="tStb"></select><select id="tBundle"></select></div>
+        </div>
+      </div>
+      <div class="field"><span class="lbl">이동 상품명</span><input type="text" id="tProduct" placeholder="예: LGU+ 500M + 프리미엄 TV"></div>
+      <div class="grid2">
+        <div class="field"><span class="lbl">이동 후 월 납부액</span><div class="unit" data-unit="원"><input type="number" id="tMonthly" inputmode="numeric" placeholder="0"></div></div>
+        <div class="field"><span class="lbl">이동 시 받을 사은품</span><div class="unit" data-unit="원"><input type="number" id="newGift" inputmode="numeric" step="10000" value="450000"></div></div>
+      </div>
+
+      <div class="sub-box">
+        <label class="switch"><span>개통 후 요금제 하향 (의무유지 후)</span><input type="checkbox" id="tobeToggle"><i></i></label>
+        <div id="tobeBox" class="hidden">
+          <div class="field"><span class="lbl">의무 유지 기간</span>
+            <div class="grid2">
+              <select id="tobePeriod">
+                <option value="6">M+5 (약 6개월)</option><option value="9">275일 (약 9개월)</option>
+                <option value="10">M+9 (약 10개월)</option><option value="13">13개월</option>
+                <option value="custom">직접 입력</option>
+              </select>
+              <div class="unit hidden" data-unit="개월" id="tobePeriodWrap"><input type="number" id="tobePeriodInput" inputmode="numeric" placeholder="0"></div>
+            </div>
+          </div>
+          <div class="field" id="tobeSelects"><span class="lbl">하향할 상품</span>
+            <div class="grid2"><select id="bInt"></select><select id="bTv"></select></div>
+            <div class="grid2"><select id="bStb"></select><select id="bBundle"></select></div>
+          </div>
+          <div class="field hidden" id="tobeManualWrap"><span class="lbl">하향할 상품명</span><input type="text" id="tobeProductManual" placeholder="예: 100M + 기본형 TV"></div>
+          <div class="field"><span class="lbl">하향 후 월 납부액</span><div class="unit" data-unit="원"><input type="number" id="tobeMonthly" inputmode="numeric" placeholder="0"></div></div>
+        </div>
+      </div>
+
+      <div class="bars">
+        <div class="bar keep"><div class="row"><span>약정 유지 시 <span class="lbl" id="cRemain"></span></span><span class="num" id="cKeep">0원</span></div><div class="track"><div class="fill" id="fKeep"></div></div></div>
+        <div class="bar change"><div class="row"><span>지금 이동 시 <span class="lbl">(위약금+요금−사은품)</span></span><span class="num" id="cChange">0원</span></div><div class="track"><div class="fill" id="fChange"></div></div></div>
+      </div>
+      <div class="verdict even" id="verdict"><b id="vText">-</b><span class="num" id="vDiff">0원</span></div>
+    </section>
+
+    <details class="card fold" id="infoFold">
+      <summary>매장 · 고객 정보 <span class="lbl" id="infoSummary" style="margin-left:auto;margin-right:12px;font-weight:600"></span></summary>
+      <div class="field" style="margin-top:12px"><span class="lbl">매장명</span><input type="text" id="storeName" placeholder="예: 폰값연구소"></div>
+      <div class="grid2">
+        <div class="field"><span class="lbl">담당자</span><input type="text" id="counselorName" placeholder="이름"></div>
+        <div class="field"><span class="lbl">담당자 연락처</span><input type="tel" id="counselorPhone" placeholder="010-0000-0000"></div>
+      </div>
+      <p class="hint">매장 정보는 이 기기에 저장돼 다음에도 자동으로 채워집니다.</p>
+      <div class="field"><span class="lbl">고객명</span><input type="text" id="customerName" placeholder="선택"></div>
+      <div class="grid2">
+        <div class="field"><span class="lbl">생년월일</span><input type="text" id="customerBirth" inputmode="numeric" placeholder="900101"></div>
+        <div class="field"><span class="lbl">고객 연락처</span><input type="tel" id="customerPhone" placeholder="선택"></div>
+      </div>
+      <button class="btn ghost" id="clearCustomer" style="margin-top:12px;width:100%">고객 정보만 지우기</button>
+    </details>
+
+    <div class="actions">
+      <button class="btn dark" id="copyBtn">📋 문자용 복사</button>
+      <button class="btn accent" id="pdfBtn">📄 견적서 PDF</button>
+    </div>
+  </div>
+</main>
+
+<div class="dock" id="dock">
+  <div class="d" id="dockGo"><small>예상 위약금</small><b class="num" id="dTotal">0</b><b style="font-size:13px">원</b><em id="dVerdict"></em></div>
+  <button class="btn accent" id="dockCopy">복사</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- PDF 템플릿 -->
+<div id="pdfTemplate">
+  <div style="font-family:'Pretendard Variable',Pretendard,sans-serif;color:#111827;line-height:1.35;font-size:11.5px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111827;padding-bottom:8px;margin-bottom:12px">
+      <div><div style="font-size:11px;color:#6b7280;font-weight:700">인터넷·TV 해지 정산 견적서</div><div style="font-size:22px;font-weight:900" id="pdfCarrier">-</div></div>
+      <div style="text-align:right"><div style="font-size:14px;font-weight:800" id="pdfStore">-</div><div style="font-weight:700" id="pdfCustomer"></div><div style="color:#6b7280" id="pdfDate">-</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+      <div style="border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="color:#6b7280;font-weight:700">예상 위약금 합계</div><div style="font-size:20px;font-weight:900;color:#be123c" id="pdfTotal">-</div></div>
+      <div style="border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="color:#6b7280;font-weight:700">현재 월 납부액</div><div style="font-size:20px;font-weight:900" id="pdfMonthly">-</div></div>
+      <div style="border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="color:#6b7280;font-weight:700">사용 기간</div><div style="font-size:13px;font-weight:800" id="pdfPeriod">-</div><div style="color:#6b7280" id="pdfType">-</div></div>
+    </div>
+    <div style="font-size:13px;font-weight:800;border-left:3px solid #111827;padding-left:6px;margin-bottom:6px">1. 이용 상품 및 요금 (3년 약정)</div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:12px" id="pdfProducts"></table>
+    <div style="font-size:13px;font-weight:800;border-left:3px solid #be123c;padding-left:6px;margin-bottom:6px;color:#be123c">2. 위약금 세부 내역</div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:12px" id="pdfPenalty"></table>
+    <div id="pdfCompareWrap">
+      <div style="font-size:13px;font-weight:800;border-left:3px solid #1d4ed8;padding-left:6px;margin-bottom:6px;color:#1d4ed8">3. 타사 이동 비교</div>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px;line-height:1.6" id="pdfCompare"></div>
+    </div>
+    <div style="margin-top:14px;border-top:1px solid #111827;padding-top:8px;color:#6b7280;font-size:10.5px;line-height:1.5">
+      <b style="color:#374151">[해지 시 유의사항]</b><br>
+      1. 임대 장비(모뎀·셋톱박스·공유기·리모컨) 미반납 시 기기 원가가 별도 청구됩니다. 정상 반납 시 0원입니다.<br>
+      2. 해지 당월 사용 요금은 일할 계산되어 별도 청구됩니다.<br>
+      ※ 실제 해지 정산은 통신사 전산 기준이며, 일할 계산·회선 상태에 따라 소폭 달라질 수 있습니다.
+      <div style="margin-top:8px;text-align:center;font-size:12px;font-weight:800;color:#111827" id="pdfFooter">-</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CARRIER_DATA = {
       SK: {
         name: 'SKT',
         color: '#ea580c',
@@ -875,1127 +657,586 @@
       }
     };
 
-    let currentCarrier = 'SK';
-    let currentTab = 'wifi';
-    let currentBundleId = 'sk_wire_only';
-    let cancelMode = 'full';
-    let durationCalcType = 'month';
-    let penaltyType = '5';
-    let tvCount = 1;
-    let penaltyChartInstance = null;
+const $ = id => document.getElementById(id);
+const won = n => Math.round(n || 0).toLocaleString('ko-KR');
+const clean = s => (s || '').replace(/\s*\(.*?\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+const DAY_M = 30.4167;
 
-    let targetCarrier = 'SK';
+const S = { carrier: 'SK', tab: null, bundleId: null, cancel: 'full', dur: 'date', ptype: '5', tvCount: 1, target: 'SK' };
+let chart = null, lastR = null;
 
-    const todayObj = new Date();
-    const thirteenMonthsAgo = new Date();
-    thirteenMonthsAgo.setMonth(todayObj.getMonth() - 13);
-    const formatDateStr = (d) => d.toISOString().split('T')[0];
-
-    const carrierBtns = document.querySelectorAll('.carrier-top-btn');
-    const cancelModeBtns = document.querySelectorAll('.cancel-mode-btn');
-    const penaltyTypeBtns = document.querySelectorAll('.penalty-type-btn');
-    const tvCount1Btn = document.getElementById('tvCount1Btn');
-    const tvCount2Btn = document.getElementById('tvCount2Btn');
-    const secondTvBox = document.getElementById('secondTvBox');
-
-    document.getElementById('startDateInput').value = formatDateStr(thirteenMonthsAgo);
-    document.getElementById('endDateInput').value = formatDateStr(todayObj);
-
-    function updatePenaltyTypeUI() {
-      penaltyTypeBtns.forEach(b => {
-        b.className = (b.getAttribute('data-type') === penaltyType)
-          ? 'penalty-type-btn py-2.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-extrabold transition bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1'
-          : 'penalty-type-btn py-2.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-extrabold transition bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-1';
-      });
-      if (penaltyType === '5') {
-        document.getElementById('penaltyTypeDesc').innerText = "※ 위약금5: 23년 하반기 (KT 9.8 / SK 9.27 / LG 11.1) 이후 가입·재약정";
-      } else if (penaltyType === '4') {
-        document.getElementById('penaltyTypeDesc').innerText = "※ 위약금4: 2018년 ~ 23년 하반기 개편일 이전 가입·재약정 (24개월 최고점)";
-      } else {
-        document.getElementById('penaltyTypeDesc').innerText = "※ 위약금3: 2018년 이전 가입 후 한 번도 재약정을 하지 않은 고객 (계단식 누적)";
-      }
+/* ---------- 위약금 산식 (기존 로직 유지) ---------- */
+function calculatePenalty5(m, days, ck) {
+  if (days <= 0 || m <= 0 || days >= 1095) return 0;
+  const c = CARRIER_DATA[ck];
+  const acc = (m / DAY_M) * days;
+  return days <= c.thresholdDays ? acc : acc * (Math.max(0, 1095 - days) / c.baseDenominatorDays);
+}
+function calculatePenalty4(m, days, ck) {
+  if (days <= 0 || m <= 0 || days >= 1095) return 0;
+  const dd = m / DAY_M;
+  if (ck === 'LG') {
+    let p = 0;
+    for (let d = 1; d <= days; d++) {
+      const mo = Math.ceil(d / DAY_M);
+      const r = mo <= 9 ? .85 : mo <= 12 ? .80 : mo <= 18 ? .30 : mo <= 21 ? .25 : mo <= 24 ? 0 : mo <= 28 ? -.10 : mo <= 32 ? -.25 : mo <= 34 ? -.85 : -1.70;
+      p += dd * r;
     }
-
-    function autoSelectPenaltyType() {
-      if (durationCalcType !== 'date') return;
-      const startDate = new Date(document.getElementById('startDateInput').value);
-      if (isNaN(startDate)) return;
-
-      let reformDateStr = '';
-      if (currentCarrier === 'KT') reformDateStr = '2023-09-08';
-      else if (currentCarrier === 'SK') reformDateStr = '2023-09-27';
-      else if (currentCarrier === 'LG') reformDateStr = '2023-11-01';
-
-      const reformDate = new Date(reformDateStr);
-      const type3Date = new Date('2018-01-01');
-
-      let newType = '5';
-      if (startDate < type3Date) {
-        newType = '3';
-      } else if (startDate < reformDate) {
-        newType = '4';
-      } else {
-        newType = '5';
-      }
-
-      if (penaltyType !== newType) {
-        penaltyType = newType;
-        updatePenaltyTypeUI();
-      }
-    }
-
-    tvCount1Btn.addEventListener('click', () => {
-      tvCount = 1;
-      tvCount1Btn.className = 'tv-count-btn px-2.5 py-1 rounded-md bg-white text-slate-900 shadow-sm transition';
-      tvCount2Btn.className = 'tv-count-btn px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition';
-      secondTvBox.classList.add('hidden');
-      updateTargetProductText();
-      calculateAndRender();
-    });
-
-    tvCount2Btn.addEventListener('click', () => {
-      tvCount = 2;
-      tvCount2Btn.className = 'tv-count-btn px-2.5 py-1 rounded-md bg-white text-indigo-900 shadow-sm transition font-bold';
-      tvCount1Btn.className = 'tv-count-btn px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition';
-      secondTvBox.classList.remove('hidden');
-      updateTargetProductText();
-      calculateAndRender();
-    });
-
-    penaltyTypeBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        penaltyType = btn.getAttribute('data-type');
-        updatePenaltyTypeUI();
-        calculateAndRender();
-      });
-    });
-
-    document.getElementById('calcModeMonthBtn').addEventListener('click', (e) => {
-      durationCalcType = 'month';
-      e.target.className = 'calc-type-btn px-2.5 py-1 rounded-md bg-white text-amber-900 shadow-sm transition';
-      document.getElementById('calcModeDateBtn').className = 'calc-type-btn px-2.5 py-1 rounded-md text-amber-800 hover:text-amber-950 transition';
-      document.getElementById('monthSliderView').classList.remove('hidden');
-      document.getElementById('datePickerView').classList.add('hidden');
-      calculateAndRender();
-    });
-
-    document.getElementById('calcModeDateBtn').addEventListener('click', (e) => {
-      durationCalcType = 'date';
-      e.target.className = 'calc-type-btn px-2.5 py-1 rounded-md bg-white text-amber-900 shadow-sm transition';
-      document.getElementById('calcModeMonthBtn').className = 'calc-type-btn px-2.5 py-1 rounded-md text-amber-800 hover:text-amber-950 transition';
-      document.getElementById('datePickerView').classList.remove('hidden');
-      document.getElementById('monthSliderView').classList.add('hidden');
-      autoSelectPenaltyType();
-      calculateAndRender();
-    });
-
-    cancelModeBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        cancelMode = btn.getAttribute('data-mode');
-        cancelModeBtns.forEach(b => {
-          b.className = (b.getAttribute('data-mode') === cancelMode)
-            ? 'cancel-mode-btn py-2.5 px-3 rounded-lg text-xs sm:text-sm font-extrabold transition bg-rose-600 text-white shadow-sm flex items-center justify-center gap-1.5'
-            : 'cancel-mode-btn py-2.5 px-3 rounded-lg text-xs sm:text-sm font-extrabold transition bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-1.5';
-        });
-
-        if (cancelMode === 'tv') {
-          document.getElementById('cancelModeDesc').innerText = '※ 인터넷 3년 약정은 유지하고 TV와 셋톱박스만 단독 해지할 때의 위약금을 계산합니다.';
-          document.getElementById('penaltyTitleLabel').innerText = '3년 약정 TV 단독 해지 위약금';
-          document.getElementById('equipDiscLabel').innerText = '셋톱박스 임대료 반환금 (일할)';
-          document.getElementById('chartTitleText').innerText = '1~36개월 3년 약정 위약금 추이 (TV만 해지)';
-        } else {
-          document.getElementById('cancelModeDesc').innerText = '※ 인터넷과 TV를 모두 해지할 때 발생하는 총 위약금을 계산합니다.';
-          document.getElementById('penaltyTitleLabel').innerText = '3년 약정 해지 총 위약금 (전체)';
-          document.getElementById('equipDiscLabel').innerText = '장비(공유기/셋톱) 반환금 (일할)';
-          document.getElementById('chartTitleText').innerText = '1~36개월 3년 약정 위약금 추이 (전체 해지)';
-        }
-        
-        document.getElementById('afterCancelBox').classList.toggle('hidden', cancelMode !== 'tv');
-        
-        compCurrentProduct.setAttribute('data-edited', 'false');
-        calculateAndRender();
-      });
-    });
-
-    function setCarrier(carrierKey) {
-      currentCarrier = carrierKey;
-      const c = CARRIER_DATA[carrierKey];
-      currentTab = c.tabs[0].id;
-      currentBundleId = c.bundles.find(b => b.default)?.id || c.bundles[0].id;
-
-      carrierBtns.forEach(btn => {
-        btn.className = (btn.getAttribute('data-carrier') === carrierKey)
-          ? `carrier-top-btn py-3 text-xs sm:text-sm md:text-base font-extrabold rounded-xl transition border ${c.btnActive}`
-          : 'carrier-top-btn py-3 text-xs sm:text-sm md:text-base font-extrabold rounded-xl transition border border-transparent text-slate-500 hover:bg-slate-50';
-      });
-
-      document.getElementById('tvSectionTitle').innerText = c.tvTitle;
-      document.getElementById('bundleSectionTitle').innerText = c.bundleTitle;
-      document.getElementById('compCurrentProduct').setAttribute('data-edited', 'false');
-
-      if (durationCalcType === 'date') autoSelectPenaltyType();
-
-      renderSubTabs();
-      populateStaticOptions();
-      populateWirelessBundles();
-      renderInternetOptions();
-    }
-
-    carrierBtns.forEach(btn => btn.addEventListener('click', () => setCarrier(btn.getAttribute('data-carrier'))));
-
-    function renderSubTabs() {
-      const tabsEl = document.getElementById('internetTabs');
-      tabsEl.innerHTML = '';
-      CARRIER_DATA[currentCarrier].tabs.forEach(tab => {
-        const btn = document.createElement('button');
-        btn.textContent = tab.name;
-        btn.className = (tab.id === currentTab) ? 'flex-1 min-w-[70px] py-1.5 px-2 rounded-md bg-white text-slate-900 shadow-sm font-bold' : 'flex-1 min-w-[70px] py-1.5 px-2 rounded-md text-slate-600 hover:text-slate-900';
-        btn.addEventListener('click', () => { currentTab = tab.id; renderSubTabs(); populateStaticOptions(); renderInternetOptions(); });
-        tabsEl.appendChild(btn);
-      });
-    }
-
-    function populateStaticOptions() {
-      const c = CARRIER_DATA[currentCarrier];
-      const wifiEl = document.getElementById('wifiOption');
-      const tvEl = document.getElementById('tvPlan');
-      const tv2El = document.getElementById('tvPlan2');
-      const stbEl = document.getElementById('stbOption');
-      const stb2El = document.getElementById('stbOption2');
-      
-      let wifiList = c.wifiHw[currentTab] || c.wifiHw.default || c.wifiHw[Object.keys(c.wifiHw)[0]];
-      wifiEl.innerHTML = wifiList.map(i => `<option value="${i.id}" ${i.default?'selected':''}>${i.name} (+${i.price.toLocaleString()}원)</option>`).join('');
-      
-      const tvOptionsHtml = c.tv.map(i => `<option value="${i.id}" ${i.default?'selected':''}>${i.name} (${i.price.toLocaleString()}원)</option>`).join('');
-      tvEl.innerHTML = tvOptionsHtml;
-
-      const tv2OptionsHtml = c.tv.map(i => `<option value="${i.id}" ${i.default?'selected':''}>${i.name} (복수 50%할인: ${Math.round(i.price*0.5).toLocaleString()}원)</option>`).join('');
-      tv2El.innerHTML = tv2OptionsHtml;
-
-      const stbOptionsHtml = c.stb.map(i => `<option value="${i.id}" ${i.default?'selected':''}>${i.name} (+${i.price.toLocaleString()}원)</option>`).join('');
-      stbEl.innerHTML = stbOptionsHtml;
-
-      const stb2OptionsHtml = c.stb.map(i => `<option value="${i.id}" ${i.default?'selected':''}>${i.name} (복수 50%할인: +${Math.round(i.price*0.5).toLocaleString()}원)</option>`).join('');
-      stb2El.innerHTML = stb2OptionsHtml;
-    }
-
-    function renderInternetOptions() {
-      const list = CARRIER_DATA[currentCarrier].internet[currentTab] || [];
-      document.getElementById('internetPlan').innerHTML = list.map(i => `<option value="${i.id}" ${i.default?'selected':''}>${i.name} (${i.price.toLocaleString()}원)</option>`).join('');
-      calculateAndRender();
-    }
-
-    function populateWirelessBundles() {
-      const c = CARRIER_DATA[currentCarrier];
-      const bundleEl = document.getElementById('wirelessBundleSelect');
-      let currentHtml = `<optgroup label="✨ 현행 결합상품">`;
-      let legacyHtml = `<optgroup label="⏳ 구 결합상품">`;
-      c.bundles.forEach(b => {
-        const opt = `<option value="${b.id}" ${b.id===currentBundleId?'selected':''}>${b.name}</option>`;
-        if(b.group === 'legacy') legacyHtml += opt; else currentHtml += opt;
-      });
-      bundleEl.innerHTML = currentHtml + '</optgroup>' + legacyHtml + '</optgroup>';
-      document.getElementById('bundleDescText').innerText = `💡 ${c.bundles.find(b=>b.id===currentBundleId).desc}`;
-    }
-
-    document.getElementById('wirelessBundleSelect').addEventListener('change', (e) => {
-      currentBundleId = e.target.value;
-      document.getElementById('bundleDescText').innerText = `💡 ${CARRIER_DATA[currentCarrier].bundles.find(b=>b.id===currentBundleId).desc}`;
-      document.getElementById('compCurrentProduct').setAttribute('data-edited', 'false');
-      calculateAndRender();
-    });
-
-    // 💡 [수정] 텍스트 지웠을 때 다시 자동연동 되도록 복구
-    document.getElementById('compCurrentProduct').addEventListener('input', function() {
-      if (this.value.trim() === '') {
-        this.setAttribute('data-edited', 'false');
-        calculateAndRender();
-      } else {
-        this.setAttribute('data-edited', 'true');
-      }
-    });
-
-    // --- [타사 선택 토글 & 드롭다운 로직] ---
-    const targetCarrierBtns = document.querySelectorAll('.target-carrier-btn');
-    const targetProductDropdowns = document.getElementById('targetProductDropdowns');
-    const targetIntSelect = document.getElementById('targetInternetSelect');
-    const targetTvSelect = document.getElementById('targetTvSelect');
-    const targetStbSelect = document.getElementById('targetStbSelect');
-    const targetBundleSelect = document.getElementById('targetBundleSelect');
-    const compTargetProductInput = document.getElementById('compTargetProduct');
-    const compTargetMonthlyInput = document.getElementById('compTargetMonthlyInput');
-    
-    // --- [변경상품 하향/변경용 변수] ---
-    const tobeChangeIntSelect = document.getElementById('tobeChangeIntSelect');
-    const tobeChangeTvSelect = document.getElementById('tobeChangeTvSelect');
-    const tobeChangeStbSelect = document.getElementById('tobeChangeStbSelect');
-    const tobeChangeBundleSelect = document.getElementById('tobeChangeBundleSelect');
-    const tobeChangedProductManual = document.getElementById('tobeChangedProductManual');
-    const tobeChangedMonthlyInput = document.getElementById('tobeChangedMonthlyInput');
-
-    function calculateTargetMonthly() {
-      if (targetCarrier === 'manual') {
-        const manualVal = parseInt(compTargetMonthlyInput.value, 10);
-        return isNaN(manualVal) ? 0 : manualVal;
-      }
-      const c = CARRIER_DATA[targetCarrier];
-      if (!c) return 0;
-      
-      const intId = targetIntSelect.value;
-      let targetInt = null;
-      for (const tabKey in c.internet) {
-        targetInt = c.internet[tabKey].find(x => x.id === intId);
-        if (targetInt) break;
-      }
-      if (!targetInt) {
-        const defaultTab = c.tabs[0].id;
-        targetInt = c.internet[defaultTab]?.[0] || { price: 0, speed: 500 };
-      }
-
-      const tvId = targetTvSelect.value;
-      const targetTv = c.tv.find(x => x.id === tvId) || c.tv[0] || { price: 0, discount: 0 };
-      
-      const stbId = targetStbSelect.value;
-      const targetStb = c.stb.find(x => x.id === stbId) || c.stb[0] || { price: 0 };
-      
-      const bundleId = targetBundleSelect.value;
-      const targetBundle = c.bundles.find(x => x.id === bundleId) || c.bundles[0] || {};
-
-      let subtotal = (targetInt.price || 0) + (targetTv.price || 0) + (targetStb.price || 0);
-      let tvDisc = (targetTv.price > 0 && targetInt.price > 0) ? (targetTv.discount || 0) : 0;
-
-      if (tvCount === 2) {
-        subtotal += Math.round((targetTv.price || 0) * 0.5) + Math.round((targetStb.price || 0) * 0.5);
-        tvDisc += Math.round((targetTv.discount || 0) * 0.5);
-      }
-
-      let wireDisc = 0, mobileDisc = 0;
-      if (targetBundle.isRate && targetBundle.rate) {
-        mobileDisc = Math.round((targetInt.price || 0) * targetBundle.rate);
-      } else {
-        const speed = targetInt.speed || 500;
-        wireDisc = targetBundle.wireDisc ? (targetBundle.wireDisc[speed] || targetBundle.wireDisc[500] || 0) : 0;
-        mobileDisc = targetBundle.mobileDiscSpeed ? (targetBundle.mobileDiscSpeed[speed] || targetBundle.mobileDiscSpeed[500] || 0) : (targetBundle.mobileDisc || 0);
-      }
-
-      const totalDisc = tvDisc + wireDisc + mobileDisc;
-      return Math.max(0, subtotal - totalDisc);
-    }
-
-    function calculateTobeChangedMonthly() {
-      if (targetCarrier === 'manual') return; 
-      
-      const c = CARRIER_DATA[targetCarrier];
-      if (!c) return;
-      
-      const intId = tobeChangeIntSelect.value;
-      let targetInt = null;
-      for (const tabKey in c.internet) {
-        targetInt = c.internet[tabKey].find(x => x.id === intId);
-        if (targetInt) break;
-      }
-      if (!targetInt) {
-        const defaultTab = c.tabs[0].id;
-        targetInt = c.internet[defaultTab]?.[0] || { price: 0, speed: 500 };
-      }
-
-      const tvId = tobeChangeTvSelect.value;
-      const targetTv = c.tv.find(x => x.id === tvId) || c.tv[0] || { price: 0, discount: 0 };
-      
-      const stbId = tobeChangeStbSelect.value;
-      const targetStb = c.stb.find(x => x.id === stbId) || c.stb[0] || { price: 0 };
-      
-      const bundleId = tobeChangeBundleSelect.value;
-      const targetBundle = c.bundles.find(x => x.id === bundleId) || c.bundles[0] || {};
-
-      let subtotal = (targetInt.price || 0) + (targetTv.price || 0) + (targetStb.price || 0);
-      let tvDisc = (targetTv.price > 0 && targetInt.price > 0) ? (targetTv.discount || 0) : 0;
-
-      if (tvCount === 2) {
-        subtotal += Math.round((targetTv.price || 0) * 0.5) + Math.round((targetStb.price || 0) * 0.5);
-        tvDisc += Math.round((targetTv.discount || 0) * 0.5);
-      }
-
-      let wireDisc = 0, mobileDisc = 0;
-      if (targetBundle.isRate && targetBundle.rate) {
-        mobileDisc = Math.round((targetInt.price || 0) * targetBundle.rate);
-      } else {
-        const speed = targetInt.speed || 500;
-        wireDisc = targetBundle.wireDisc ? (targetBundle.wireDisc[speed] || targetBundle.wireDisc[500] || 0) : 0;
-        mobileDisc = targetBundle.mobileDiscSpeed ? (targetBundle.mobileDiscSpeed[speed] || targetBundle.mobileDiscSpeed[500] || 0) : (targetBundle.mobileDisc || 0);
-      }
-
-      const totalDisc = tvDisc + wireDisc + mobileDisc;
-      tobeChangedMonthlyInput.value = Math.max(0, subtotal - totalDisc);
-    }
-
-    function updateTargetProductText() {
-      if (targetCarrier === 'manual') return;
-      const intText = targetIntSelect.options[targetIntSelect.selectedIndex]?.text || '';
-      const tvText = targetTvSelect.options[targetTvSelect.selectedIndex]?.text || '';
-      const stbText = targetStbSelect.options[targetStbSelect.selectedIndex]?.text || '';
-      const bundleText = targetBundleSelect.options[targetBundleSelect.selectedIndex]?.text || '';
-      
-      const cleanInt = intText.replace(/\s*\(.*?\)\s*/g, '').trim();
-      const cleanTv = tvText.replace(/\s*\(.*?\)\s*/g, '').trim();
-      const cleanStb = stbText.replace(/\s*\(.*?\)\s*/g, '').trim();
-      
-      const tvPart = (cleanTv === '미적용' || cleanTv.includes('미적용')) ? '인터넷 단독' : `${cleanTv} + ${cleanStb}`;
-      compTargetProductInput.value = `[${CARRIER_DATA[targetCarrier].name}] ${cleanInt} + ${tvPart} / ${bundleText}`;
-
-      compTargetMonthlyInput.value = calculateTargetMonthly();
-    }
-
-    function populateTargetDropdowns(carrierKey) {
-      const c = CARRIER_DATA[carrierKey];
-
-      let intHtml = '';
-      c.tabs.forEach(tab => {
-        const list = c.internet[tab.id] || [];
-        if (list.length > 0) {
-          intHtml += `<optgroup label="[${tab.name}]">`;
-          intHtml += list.map(item => `<option value="${item.id}">${item.name}</option>`).join('');
-          intHtml += `</optgroup>`;
-        }
-      });
-      targetIntSelect.innerHTML = intHtml;
-      tobeChangeIntSelect.innerHTML = intHtml; 
-      
-      const tvHtml = c.tv.map(item => `<option value="${item.id}">${item.name}</option>`).join('');
-      targetTvSelect.innerHTML = tvHtml;
-      tobeChangeTvSelect.innerHTML = tvHtml;
-      
-      const stbHtml = c.stb.map(item => `<option value="${item.id}">${item.name}</option>`).join('');
-      targetStbSelect.innerHTML = stbHtml;
-      tobeChangeStbSelect.innerHTML = stbHtml;
-      
-      let currentHtml = `<optgroup label="✨ 현행 결합">`;
-      let legacyHtml = `<optgroup label="⏳ 구 결합">`;
-      c.bundles.forEach(b => {
-        const opt = `<option value="${b.id}">${b.name}</option>`;
-        if(b.group === 'legacy') legacyHtml += opt; else currentHtml += opt;
-      });
-      const bundleHtml = currentHtml + '</optgroup>' + legacyHtml + '</optgroup>';
-      
-      targetBundleSelect.innerHTML = bundleHtml;
-      tobeChangeBundleSelect.innerHTML = bundleHtml;
-
-      const intOptions = Array.from(tobeChangeIntSelect.options);
-      const fallbackInt = intOptions.find(opt => opt.text.includes('100M'));
-      if (fallbackInt) tobeChangeIntSelect.value = fallbackInt.value;
-
-      const tvOptions = Array.from(tobeChangeTvSelect.options);
-      const fallbackTv = tvOptions.find(opt => opt.text.includes('기본') || opt.text.includes('베이직') || opt.text.includes('실속'));
-      if (fallbackTv) tobeChangeTvSelect.value = fallbackTv.value;
-
-      const stbOptions = Array.from(tobeChangeStbSelect.options);
-      const fallbackStb = stbOptions.find(opt => opt.value === c.stb.find(x => x.default)?.id);
-      if (fallbackStb) {
-          tobeChangeStbSelect.value = fallbackStb.value;
-          targetStbSelect.value = fallbackStb.value;
-      }
-
-      updateTargetProductText();
-      calculateTobeChangedMonthly();
-    }
-
-    targetCarrierBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const selected = btn.getAttribute('data-target');
-        targetCarrier = selected;
-
-        targetCarrierBtns.forEach(b => {
-          if (b.getAttribute('data-target') === selected) {
-            b.className = 'target-carrier-btn px-2 py-0.5 rounded bg-white text-blue-900 shadow-sm font-bold transition';
-          } else {
-            b.className = 'target-carrier-btn px-2 py-0.5 rounded text-slate-600 hover:text-blue-900 transition';
-          }
-        });
-
-        if (selected === 'manual') {
-          targetProductDropdowns.classList.add('hidden');
-          document.getElementById('tobeChangedDropdowns').classList.add('hidden');
-          tobeChangedProductManual.classList.remove('hidden');
-          compTargetProductInput.focus();
-        } else {
-          targetProductDropdowns.classList.remove('hidden');
-          document.getElementById('tobeChangedDropdowns').classList.remove('hidden');
-          tobeChangedProductManual.classList.add('hidden');
-          populateTargetDropdowns(selected);
-        }
-        calculateAndRender();
-      });
-    });
-
-    targetIntSelect.addEventListener('change', () => { updateTargetProductText(); calculateAndRender(); });
-    targetTvSelect.addEventListener('change', () => { updateTargetProductText(); calculateAndRender(); });
-    targetStbSelect.addEventListener('change', () => { updateTargetProductText(); calculateAndRender(); });
-    targetBundleSelect.addEventListener('change', () => { updateTargetProductText(); calculateAndRender(); });
-
-    tobeChangeIntSelect.addEventListener('change', () => { calculateTobeChangedMonthly(); calculateAndRender(); });
-    tobeChangeTvSelect.addEventListener('change', () => { calculateTobeChangedMonthly(); calculateAndRender(); });
-    tobeChangeStbSelect.addEventListener('change', () => { calculateTobeChangedMonthly(); calculateAndRender(); });
-    tobeChangeBundleSelect.addEventListener('change', () => { calculateTobeChangedMonthly(); calculateAndRender(); });
-
-    document.getElementById('tobeMaintainPeriodSelect').addEventListener('change', (e) => {
-      const customInput = document.getElementById('tobeMaintainPeriodInput');
-      if (e.target.value === 'custom') {
-        customInput.classList.remove('hidden');
-        customInput.focus();
-      } else {
-        customInput.classList.add('hidden');
-      }
-      calculateAndRender();
-    });
-
-    ['startDateInput', 'endDateInput', 'internetPlan', 'wifiOption', 'tvPlan', 'tvPlan2', 'stbOption', 'stbOption2', 'gift', 'months', 'manualModeToggle', 'manIntPlan', 'manTvPlan', 'manIntBund', 'manTvBund', 'manEquip', 'manMonthlyBill', 'compNewGift', 'compTargetProduct', 'compTargetMonthlyInput', 'tobeChangeToggle', 'tobeChangedProductManual', 'tobeChangedMonthlyInput', 'tobeMaintainPeriodInput'].forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      
-      if (id === 'compTargetMonthlyInput' || id === 'tobeChangedMonthlyInput' || id === 'tobeChangedProductManual' || id === 'tobeMaintainPeriodInput' || id === 'manMonthlyBill') {
-        el.addEventListener('input', () => {
-          calculateAndRender();
-        });
-        return;
-      }
-
-      const eventType = (el.tagName === 'SELECT' || el.type === 'date' || el.type === 'checkbox') ? 'change' : 'input';
-      el.addEventListener(eventType, (e) => {
-        if(id === 'gift') document.getElementById('giftValText').innerText = (document.getElementById('gift').value/10000)+'만 원';
-        if(id === 'startDateInput') autoSelectPenaltyType();
-        if(id === 'manualModeToggle') document.getElementById('manualInputBox').classList.toggle('hidden', !e.target.checked);
-        if(id === 'tobeChangeToggle') document.getElementById('tobeChangeBox').classList.toggle('hidden', !e.target.checked);
-        if(id === 'internetPlan' || id === 'tvPlan') document.getElementById('compCurrentProduct').setAttribute('data-edited', 'false');
-        
-        calculateAndRender();
-      });
-    });
-
-    function getSelectedObjects() {
-      const c = CARRIER_DATA[currentCarrier];
-      const intList = c.internet[currentTab] || [];
-      const intObj = intList.find(x => x.id === document.getElementById('internetPlan').value) || { name: '미적용', price: 0, noContract: 0, speed: 500 };
-      let wifiList = c.wifiHw[currentTab] || c.wifiHw.default || c.wifiHw[Object.keys(c.wifiHw)[0]];
-      const wifiObj = wifiList.find(x => x.id === document.getElementById('wifiOption').value) || { name: '미적용', price: 0, noContract: 0 };
-      
-      const tvObj = c.tv.find(x => x.id === document.getElementById('tvPlan').value) || c.tv[0];
-      const stbObj = c.stb.find(x => x.id === document.getElementById('stbOption').value) || c.stb[0];
-      
-      const rawTv2 = c.tv.find(x => x.id === document.getElementById('tvPlan2').value) || c.tv[0];
-      const tv2Obj = { 
-        ...rawTv2, 
-        price: Math.round(rawTv2.price * 0.5), 
-        noContract: Math.round(rawTv2.noContract * 0.5), 
-        discount: Math.round(rawTv2.discount * 0.5) 
-      };
-
-      const rawStb2 = c.stb.find(x => x.id === document.getElementById('stbOption2').value) || c.stb[0];
-      const stb2Obj = {
-        ...rawStb2,
-        price: Math.round(rawStb2.price * 0.5),
-        noContract: Math.round(rawStb2.noContract * 0.5)
-      };
-
-      const bundleObj = c.bundles.find(b => b.id === currentBundleId) || c.bundles[0];
-      return { intObj, wifiObj, tvObj, stbObj, tv2Obj, stb2Obj, bundleObj };
-    }
-
-    function calculatePenalty5(monthlyDiscount, days, carrierKey) {
-      if (days <= 0 || monthlyDiscount <= 0 || days >= 1095) return 0;
-      const c = CARRIER_DATA[carrierKey];
-      const dailyDiscount = monthlyDiscount / 30.4167;
-      const totalAccumulated = dailyDiscount * days;
-      return (days <= c.thresholdDays) ? totalAccumulated : totalAccumulated * (Math.max(0, 1095 - days) / c.baseDenominatorDays);
-    }
-
-    function calculatePenalty4(monthlyDiscount, days, carrierKey) {
-      if (days <= 0 || monthlyDiscount <= 0 || days >= 1095) return 0;
-      
-      if (carrierKey === 'LG') {
-          let penalty = 0;
-          let dailyDiscount = monthlyDiscount / 30.4167;
-          let currentDay = 1;
-
-          while (currentDay <= days) {
-              let month = Math.ceil(currentDay / 30.4167);
-              let rate = 0;
-              if (month <= 9) rate = 0.85;
-              else if (month <= 12) rate = 0.80;
-              else if (month <= 18) rate = 0.30;
-              else if (month <= 21) rate = 0.25;
-              else if (month <= 24) rate = 0.00;
-              else if (month <= 28) rate = -0.10;
-              else if (month <= 32) rate = -0.25;
-              else if (month <= 34) rate = -0.85;
-              else rate = -1.70;
-
-              penalty += dailyDiscount * rate;
-              currentDay++;
-          }
-          return Math.max(0, penalty);
-      }
-
-      // SK, KT 기존 로직
-      const dailyDiscount = monthlyDiscount / 30.4167;
-      const totalAccumulated = dailyDiscount * days;
-      return (days <= 730) ? totalAccumulated : totalAccumulated * (Math.max(0, 1095 - days) / 365);
-    }
-
-    function calculatePenalty3(monthlyDiscount, days) {
-      if (days <= 0 || monthlyDiscount <= 0 || days >= 1095) return 0;
-      const dailyDiscount = monthlyDiscount / 30.4167;
-      if (days <= 365) return (days * dailyDiscount) * 1.0;
-      if (days <= 730) return (365 * dailyDiscount) * 1.0 + ((days - 365) * dailyDiscount) * 0.5;
-      return (365 * dailyDiscount) * 1.0 + (365 * dailyDiscount) * 0.5;
-    }
-
-    function getPenalty(mDiscount, days, carrierKey) {
-      if (penaltyType === '5') return calculatePenalty5(mDiscount, days, carrierKey);
-      if (penaltyType === '4') return calculatePenalty4(mDiscount, days, carrierKey);
-      return calculatePenalty3(mDiscount, days);
-    }
-
-    function calculateEquipmentPenalty(monthlyDiscount, days, carrierKey) {
-      if (days <= 0 || monthlyDiscount <= 0 || days >= 1095) return 0;
-      if (penaltyType === '5') {
-        const dailyDiscount = monthlyDiscount / 30.4167;
-        const totalAccumulated = dailyDiscount * days;
-        return totalAccumulated * ((1095 - days) / 1095);
-      } else {
-        return getPenalty(monthlyDiscount, days, carrierKey);
-      }
-    }
-
-    function calculateAndRender() {
-      const { intObj, wifiObj, tvObj, stbObj, tv2Obj, stb2Obj, bundleObj } = getSelectedObjects();
-      const gift = parseInt(document.getElementById('gift').value, 10);
-
-      const compCurrentEl = document.getElementById('compCurrentProduct');
-      if (compCurrentEl.getAttribute('data-edited') !== 'true') {
-        const shortIntName = intObj.name.replace(/\s*\(.*?\)\s*/g, '').trim();
-        const shortTvName = cancelMode === 'tv' ? '인터넷 단독' : tvObj.name.replace(/\s*\(.*?\)\s*/g, '').trim();
-        compCurrentEl.value = `[${CARRIER_DATA[currentCarrier].name}] ${shortIntName} + ${shortTvName} / ${bundleObj.name}`;
-      }
-
-      let currentDays = 0, floatingMonths = 0, terminationDayInMonth = 15;
-      let daysInMonth = 30;
-
-      if (durationCalcType === 'date') {
-        const startD = new Date(document.getElementById('startDateInput').value);
-        const endD = new Date(document.getElementById('endDateInput').value);
-        const diffTime = endD - startD;
-        currentDays = Math.max(1, Math.min(1095, Math.floor(diffTime / 86400000)));
-        floatingMonths = currentDays / 30.4167;
-        document.getElementById('exactDaysText').innerText = `${currentDays}일 (${Math.floor(floatingMonths)}개월 ${Math.floor(currentDays%30.4167)}일)`;
-        document.getElementById('chartCurrentMonth').innerText = `${floatingMonths.toFixed(1)}개월`;
-        
-        if (!isNaN(endD.getTime())) {
-          terminationDayInMonth = endD.getDate();
-          daysInMonth = new Date(endD.getFullYear(), endD.getMonth() + 1, 0).getDate();
-        }
-      } else {
-        floatingMonths = parseInt(document.getElementById('months').value, 10);
-        currentDays = Math.round(floatingMonths * 30.4167);
-        document.getElementById('monthValText').innerText = `${floatingMonths}개월 차 (약 ${currentDays}일)`;
-        document.getElementById('chartCurrentMonth').innerText = `${floatingMonths}개월`;
-      }
-
-      let regularSubtotal = intObj.price + wifiObj.price + tvObj.price + stbObj.price;
-      if (tvCount === 2) regularSubtotal += (tv2Obj.price + stb2Obj.price);
-
-      let tvDiscAmount = (tvObj.price > 0 && intObj.price > 0) ? (tvObj.discount || 0) : 0;
-      if (tvCount === 2 && tv2Obj.price > 0) tvDiscAmount += (tv2Obj.discount || 0);
-
-      let wireIntDiscAmount = 0, mobileDiscAmount = 0;
-      if (bundleObj.isRate && bundleObj.rate) { mobileDiscAmount = Math.round(intObj.price * bundleObj.rate); } 
-      else {
-        wireIntDiscAmount = bundleObj.wireDisc ? (bundleObj.wireDisc[intObj.speed] || bundleObj.wireDisc[500] || 0) : 0;
-        mobileDiscAmount = bundleObj.mobileDiscSpeed ? (bundleObj.mobileDiscSpeed[intObj.speed] || bundleObj.mobileDiscSpeed[500] || 0) : (bundleObj.mobileDisc || 0);
-      }
-
-      const totalMonthlyDiscount = tvDiscAmount + wireIntDiscAmount + mobileDiscAmount;
-      let finalMonthly = Math.max(0, regularSubtotal - totalMonthlyDiscount);
-
-      // 💡 수기 입력 시 월 실납부액 덮어쓰기 (전체 해지 또는 현재 상태일 때만)
-      if (document.getElementById('manualModeToggle').checked) {
-        const manualMonthlyVal = document.getElementById('manMonthlyBill').value;
-        if (manualMonthlyVal !== '') {
-          finalMonthly = Math.max(0, parseInt(manualMonthlyVal, 10) || 0);
+    return Math.max(0, p);
+  }
+  const acc = dd * days;
+  return days <= 730 ? acc : acc * (Math.max(0, 1095 - days) / 365);
+}
+function calculatePenalty3(m, days, ck) {
+  if (days <= 0 || m <= 0 || days >= 1095) return 0;
+  const dd = m / DAY_M;
+  if (ck === 'LG') return dd * days; // LG '16.03.31 이전: 받은 할인 전액
+  if (days <= 365) return days * dd;
+  if (days <= 730) return 365 * dd + (days - 365) * dd * 0.5;
+  return 365 * dd + 365 * dd * 0.5;
+}
+function getPenalty(m, d, ck) {
+  if (S.ptype === '5') return calculatePenalty5(m, d, ck);
+  if (S.ptype === '4') return calculatePenalty4(m, d, ck);
+  return calculatePenalty3(m, d, ck);
+}
+function equipPenalty(m, d, ck) {
+  if (d <= 0 || m <= 0 || d >= 1095) return 0;
+  if (S.ptype === '5' && ck === 'LG') return calculatePenalty5(m, d, ck); // LG '23.11.01~ 장비도 서비스와 동일 산식
+  if (S.ptype === '5') return (m / DAY_M) * d * ((1095 - d) / 1095);
+  return getPenalty(m, d, ck);
+}
+
+/* ---------- 유틸 ---------- */
+const pad = n => String(n).padStart(2, '0');
+const fmtDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseDate = v => { if (!v) return null; const [y, m, d] = v.split('-').map(Number); return new Date(y, m - 1, d); };
+function setSeg(id, v) { document.querySelectorAll(`#${id} [data-v]`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(v)))); }
+function onSeg(id, fn) { $(id).addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (b) fn(b.dataset.v); }); }
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 1800); }
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+};
+const PTYPE_LABEL = { '5': '위약금5', '4': '위약금4', '3': '위약금3' };
+
+function autoPtype() {
+  const st = parseDate($('startDate').value);
+  if (!st) return null;
+  const reform = { KT: '2023-09-08', SK: '2023-09-27', LG: '2023-11-01' }[S.carrier];
+  const old = S.carrier === 'LG' ? '2016-04-01' : '2018-01-01';
+  if (st < parseDate(old)) return '3';
+  if (st < parseDate(reform)) return '4';
+  return '5';
+}
+function applyAutoPtype() {
+  if (S.dur !== 'date') return;
+  const a = autoPtype();
+  if (a) S.ptype = a;
+}
+function renderPtype() {
+  setSeg('ptypeSeg', S.ptype);
+  const isLG = S.carrier === 'LG';
+  const reformTxt = { KT: "'23.09.08", SK: "'23.09.27", LG: "'23.11.01" }[S.carrier];
+  const desc = {
+    '5': `${reformTxt} 이후 가입·재약정. 받은 할인 누적액 기준, ${CARRIER_DATA[S.carrier].thresholdDays}일 이후 잔여기간 비율로 감소`,
+    '4': isLG ? `'16.04.01 ~ '23.10.31 가입·재약정. 월별 할인반환율(85% → -170%) 적용` : `'18년 ~ ${reformTxt} 이전 가입·재약정. 24개월 최고점 후 감소`,
+    '3': isLG ? `'16.03.31 이전 가입·재약정. 이용월수 × 월 할인액 전액` : `'18년 이전 가입 후 재약정 없음. 1년차 100% · 2년차 50% 계단식`
+  }[S.ptype];
+  $('ptypeDesc').textContent = desc;
+  const a = S.dur === 'date' ? autoPtype() : null;
+  $('ptypeAutoTag').classList.toggle('hidden', !(a && a === S.ptype));
+}
+
+/* ---------- 상품 목록 ---------- */
+function wifiList() { const c = CARRIER_DATA[S.carrier]; return c.wifiHw[S.tab] || c.wifiHw.default || c.wifiHw[Object.keys(c.wifiHw)[0]]; }
+const opt = (i, txt) => `<option value="${i.id}" ${i.default ? 'selected' : ''}>${txt}</option>`;
+
+function renderTabs() {
+  const c = CARRIER_DATA[S.carrier];
+  $('intTabs').innerHTML = c.tabs.map(t => `<button class="chip" data-v="${t.id}" aria-pressed="${t.id === S.tab}">${t.name}</button>`).join('');
+}
+function fillInternet() {
+  const list = CARRIER_DATA[S.carrier].internet[S.tab] || [];
+  $('internetPlan').innerHTML = list.map(i => opt(i, `${i.name} · ${won(i.price)}원`)).join('');
+  $('wifiOption').innerHTML = wifiList().map(i => opt(i, `${i.name}${i.price ? ` · +${won(i.price)}원` : ''}`)).join('');
+}
+function fillTv() {
+  const c = CARRIER_DATA[S.carrier];
+  $('tvPlan').innerHTML = c.tv.map(i => opt(i, `${i.name} · ${won(i.price)}원`)).join('');
+  $('tvPlan2').innerHTML = c.tv.map(i => opt(i, `${i.name} · ${won(Math.round(i.price * .5))}원 (50%)`)).join('');
+  $('stbOption').innerHTML = c.stb.map(i => opt(i, `${i.name} · +${won(i.price)}원`)).join('');
+  $('stbOption2').innerHTML = c.stb.map(i => opt(i, `${i.name} · +${won(Math.round(i.price * .5))}원 (50%)`)).join('');
+  $('tvTitle').textContent = clean(c.tvTitle.replace(/^[^\s]+\s/, '').replace('선택', '')) || 'TV · 셋톱박스';
+}
+function bundleOptions(c, selId) {
+  let cur = '<optgroup label="현행 결합">', leg = '<optgroup label="구 결합">';
+  c.bundles.forEach(b => { const o = `<option value="${b.id}" ${b.id === selId ? 'selected' : ''}>${b.name}</option>`; if (b.group === 'legacy') leg += o; else cur += o; });
+  return cur + '</optgroup>' + leg + '</optgroup>';
+}
+function fillBundles() {
+  const c = CARRIER_DATA[S.carrier];
+  $('bundleSelect').innerHTML = bundleOptions(c, S.bundleId);
+  $('bundleDesc').textContent = (c.bundles.find(b => b.id === S.bundleId) || {}).desc || '';
+}
+
+function setCarrier(k) {
+  S.carrier = k;
+  const c = CARRIER_DATA[k];
+  S.tab = c.tabs[0].id;
+  S.bundleId = (c.bundles.find(b => b.default) || c.bundles[0]).id;
+  document.body.dataset.carrier = k;
+  setSeg('carrierSeg', k);
+  $('curProduct').dataset.edited = 'false';
+  applyAutoPtype();
+  renderTabs(); fillInternet(); fillTv(); fillBundles();
+  update();
+}
+
+/* ---------- 선택값 ---------- */
+function getSel() {
+  const c = CARRIER_DATA[S.carrier];
+  const intObj = (c.internet[S.tab] || []).find(x => x.id === $('internetPlan').value) || { name: '미적용', price: 0, noContract: 0, speed: 500 };
+  const wifiObj = wifiList().find(x => x.id === $('wifiOption').value) || { name: '미적용', price: 0, noContract: 0 };
+  const tvObj = c.tv.find(x => x.id === $('tvPlan').value) || c.tv[0];
+  const stbObj = c.stb.find(x => x.id === $('stbOption').value) || c.stb[0];
+  const t2 = c.tv.find(x => x.id === $('tvPlan2').value) || c.tv[0];
+  const s2 = c.stb.find(x => x.id === $('stbOption2').value) || c.stb[0];
+  const tv2Obj = { ...t2, price: Math.round(t2.price * .5), noContract: Math.round(t2.noContract * .5), discount: Math.round(t2.discount * .5) };
+  const stb2Obj = { ...s2, price: Math.round(s2.price * .5), noContract: Math.round(s2.noContract * .5) };
+  const bundleObj = c.bundles.find(b => b.id === S.bundleId) || c.bundles[0];
+  return { intObj, wifiObj, tvObj, stbObj, tv2Obj, stb2Obj, bundleObj };
+}
+
+function bundleDiscounts(bundle, intObj) {
+  if (bundle.isRate && bundle.rate) return { wire: 0, mobile: Math.round(intObj.price * bundle.rate) };
+  const sp = intObj.speed || 500;
+  const wire = bundle.wireDisc ? (bundle.wireDisc[sp] || bundle.wireDisc[500] || 0) : 0;
+  const mobile = bundle.mobileDiscSpeed ? (bundle.mobileDiscSpeed[sp] || bundle.mobileDiscSpeed[500] || 0) : (bundle.mobileDisc || 0);
+  return { wire, mobile };
+}
+
+function findInt(c, id) { for (const k in c.internet) { const f = c.internet[k].find(x => x.id === id); if (f) return f; } return c.internet[c.tabs[0].id]?.[0] || { price: 0, speed: 500 }; }
+function monthlyFor(ck, intId, tvId, stbId, bundleId) {
+  const c = CARRIER_DATA[ck];
+  const i = findInt(c, intId);
+  const tv = c.tv.find(x => x.id === tvId) || c.tv[0];
+  const stb = c.stb.find(x => x.id === stbId) || c.stb[0];
+  const b = c.bundles.find(x => x.id === bundleId) || c.bundles[0];
+  let sub = (i.price || 0) + (tv.price || 0) + (stb.price || 0);
+  let tvD = (tv.price > 0 && i.price > 0) ? (tv.discount || 0) : 0;
+  if (S.tvCount === 2) { sub += Math.round((tv.price || 0) * .5) + Math.round((stb.price || 0) * .5); tvD += Math.round((tv.discount || 0) * .5); }
+  const { wire, mobile } = bundleDiscounts(b, i);
+  return Math.max(0, sub - tvD - wire - mobile);
+}
+
+/* ---------- 계산 ---------- */
+function compute() {
+  const sel = getSel();
+  const { intObj, wifiObj, tvObj, stbObj, tv2Obj, stb2Obj, bundleObj } = sel;
+  const ck = S.carrier;
+  const gift = Math.max(0, parseInt($('gift').value, 10) || 0);
+
+  let days, fMonths, termDay = 15, dim = 30, start = null, end = null;
+  if (S.dur === 'date') {
+    start = parseDate($('startDate').value); end = parseDate($('endDate').value);
+    const diff = (start && end) ? Math.round((end - start) / 86400000) : 1;
+    days = Math.max(1, Math.min(1095, diff));
+    fMonths = days / DAY_M;
+    if (end) { termDay = end.getDate(); dim = new Date(end.getFullYear(), end.getMonth() + 1, 0).getDate(); }
+  } else {
+    fMonths = parseInt($('months').value, 10);
+    days = Math.round(fMonths * DAY_M);
+  }
+
+  let base = intObj.price + wifiObj.price + tvObj.price + stbObj.price;
+  if (S.tvCount === 2) base += tv2Obj.price + stb2Obj.price;
+  let tvDisc = (tvObj.price > 0 && intObj.price > 0) ? (tvObj.discount || 0) : 0;
+  if (S.tvCount === 2 && tv2Obj.price > 0) tvDisc += (tv2Obj.discount || 0);
+  const { wire, mobile } = bundleDiscounts(bundleObj, intObj);
+  const totalDisc = tvDisc + wire + mobile;
+  let monthly = Math.max(0, base - totalDisc);
+  const manual = $('manualToggle').checked;
+  if (manual && $('manMonthly').value !== '') monthly = Math.max(0, parseInt($('manMonthly').value, 10) || 0);
+  const prorated = Math.round((monthly / dim) * termDay);
+
+  const tvOnly = S.cancel === 'tv';
+  let mIntPlan = tvOnly ? 0 : Math.max(0, intObj.noContract - intObj.price);
+  let mTvPlan = Math.max(0, tvObj.noContract - tvObj.price);
+  if (S.tvCount === 2) mTvPlan += Math.max(0, tv2Obj.noContract - tv2Obj.price);
+  let mIntBund = (bundleObj.isPenaltyWaived || tvOnly) ? 0 : wire;
+  if (bundleObj.hasMobilePenalty) mIntBund += mobile;
+  let mTvBund = bundleObj.isPenaltyWaived ? 0 : tvDisc;
+  let mEquip = tvOnly ? Math.max(0, stbObj.noContract - stbObj.price)
+    : Math.max(0, wifiObj.noContract - wifiObj.price) + Math.max(0, stbObj.noContract - stbObj.price);
+  if (S.tvCount === 2) mEquip += Math.max(0, stb2Obj.noContract - stb2Obj.price);
+  if (manual) {
+    const v = id => parseInt($(id).value, 10) || 0;
+    mIntPlan = tvOnly ? 0 : v('manIntPlan'); mTvPlan = v('manTvPlan');
+    mIntBund = tvOnly ? 0 : v('manIntBund'); mTvBund = v('manTvBund'); mEquip = v('manEquip');
+  }
+
+  const pen = d => ({
+    p1: getPenalty(mIntPlan, d, ck), p2: getPenalty(mTvPlan, d, ck), p3: getPenalty(mIntBund, d, ck),
+    p4: getPenalty(mTvBund, d, ck), p5: equipPenalty(mEquip, d, ck), g: d <= 365 ? gift : 0
+  });
+  const P = pen(days);
+  const p = { p1: Math.round(P.p1), p2: Math.round(P.p2), p3: Math.round(P.p3), p4: Math.round(P.p4), p5: Math.round(P.p5), g: P.g };
+  const total = p.p1 + p.p2 + p.p3 + p.p4 + p.p5 + p.g;
+
+  const afterMonthly = tvOnly ? Math.max(0, intObj.price + wifiObj.price - mobile) : null;
+
+  const series = [];
+  for (let i = 1; i <= 36; i++) { const x = pen(Math.round(i * DAY_M)); series.push(Math.round(x.p1 + x.p2 + x.p3 + x.p4 + x.p5 + x.g)); }
+
+  // 비교
+  const usedM = Math.min(36, Math.round(days / DAY_M));
+  const remainM = Math.max(0, 36 - usedM);
+  const keepCost = remainM * monthly;
+  const newGift = parseInt($('newGift').value, 10) || 0;
+  const tMonthly = parseInt($('tMonthly').value, 10) || 0;
+  let newCost;
+  if ($('tobeToggle').checked) {
+    const pv = $('tobePeriod').value;
+    const keepM = pv === 'custom' ? (parseInt($('tobePeriodInput').value, 10) || 0) : parseInt(pv, 10);
+    const chg = parseInt($('tobeMonthly').value, 10) || 0;
+    newCost = remainM <= keepM ? remainM * tMonthly : keepM * tMonthly + (remainM - keepM) * chg;
+  } else newCost = remainM * tMonthly;
+  const changeCost = newCost + total - newGift;
+  const diff = keepCost - changeCost;
+
+  return { sel, days, fMonths, start, end, gift, base, tvDisc, wire, mobile, totalDisc, monthly, prorated, p, total, afterMonthly,
+    series, usedM, remainM, keepCost, changeCost, diff, newGift, tMonthly, manual };
+}
+
+/* ---------- 화면 ---------- */
+function bdRow(label, v, sub) {
+  return `<tr class="${v ? '' : 'zero'}"><td>${label}${sub ? `<span class="sub">${sub}</span>` : ''}</td><td>${won(v)}원</td></tr>`;
+}
+function render(R) {
+  const { sel, p } = R;
+  const tvOnly = S.cancel === 'tv';
+
+  // 기간 표시
+  if (S.dur === 'date') {
+    const m = Math.floor(R.days / DAY_M), d = Math.floor(R.days % DAY_M);
+    $('daysText').innerHTML = `<b>${R.days}일</b> 사용 (${m}개월 ${d}일)`;
+    if (R.start) { const e = new Date(R.start.getFullYear() + 3, R.start.getMonth(), R.start.getDate() - 1); $('expireText').textContent = `만료 ${fmtDate(e)}`; }
+  } else {
+    $('monthText').textContent = `${R.fMonths}개월 차 · 약 ${R.days}일`;
+    setSeg('monthChips', String(R.fMonths));
+  }
+  renderPtype();
+
+  // 히어로
+  $('heroLabel').textContent = tvOnly ? 'TV만 해지 시 예상 위약금' : '지금 해지 시 예상 위약금';
+  $('rTotal').textContent = won(R.total);
+  $('mType').textContent = PTYPE_LABEL[S.ptype];
+  $('mDays').textContent = S.dur === 'date' ? `${R.days}일 사용` : `${R.fMonths}개월 차`;
+  $('mCancel').textContent = `${CARRIER_DATA[S.carrier].name} · ${tvOnly ? 'TV만 해지' : '전체 해지'}`;
+  $('rMonthly').textContent = won(R.monthly);
+  $('rProrated').textContent = won(R.prorated);
+  if (tvOnly) { $('statGiftK').textContent = 'TV 해지 후 월요금'; $('rGiftStat').textContent = won(R.afterMonthly); }
+  else { $('statGiftK').textContent = '사은품 환수'; $('rGiftStat').textContent = won(p.g); }
+  setSeg('giftChips', String(R.gift));
+
+  // 위약금 내역
+  const inGift = R.days <= 365;
+  $('giftStatus').textContent = inGift ? '사은품 환수 대상 (1년 이내)' : '사은품 환수 없음 (1년 경과)';
+  $('bdBody').innerHTML =
+    bdRow('인터넷 요금할인 반환금', p.p1, tvOnly ? '인터넷 유지' : '') +
+    bdRow('TV 요금할인 반환금', p.p2) +
+    bdRow('인터넷 결합할인 반환금', p.p3, sel.bundleObj.isPenaltyWaived ? '결합 위약금 면제 상품' : '') +
+    bdRow('TV 결합할인 반환금', p.p4) +
+    bdRow(tvOnly ? '셋톱 임대료 반환금' : '장비(공유기·셋톱) 반환금', p.p5) +
+    bdRow('사은품 환수', p.g, R.gift ? `받은 사은품 ${won(R.gift)}원` : '') +
+    `<tr class="total"><td>합계</td><td>${won(R.total)}원</td></tr>`;
+
+  // 월 요금
+  const b = sel;
+  let billRows = '';
+  if (R.manual && $('manMonthly').value !== '') {
+    billRows = `<tr><td>실제 월 청구액 (직접 입력)</td><td>${won(R.monthly)}원</td></tr>`;
+  } else {
+    billRows += `<tr><td>${clean(b.intObj.name)}<span class="sub">${clean(b.wifiObj.name)}</span></td><td>${won(b.intObj.price + b.wifiObj.price)}원</td></tr>`;
+    if (b.tvObj.price) billRows += `<tr><td>${clean(b.tvObj.name)}<span class="sub">${clean(b.stbObj.name)}</span></td><td>${won(b.tvObj.price + b.stbObj.price)}원</td></tr>`;
+    if (S.tvCount === 2 && b.tv2Obj.price) billRows += `<tr><td>2번째 TV (50%)<span class="sub">${clean(b.tv2Obj.name)} + ${clean(b.stb2Obj.name)}</span></td><td>${won(b.tv2Obj.price + b.stb2Obj.price)}원</td></tr>`;
+    if (R.tvDisc) billRows += `<tr class="minus"><td>TV 결합할인</td><td>-${won(R.tvDisc)}원</td></tr>`;
+    if (R.wire) billRows += `<tr class="minus"><td>인터넷 결합할인</td><td>-${won(R.wire)}원</td></tr>`;
+    if (R.mobile) billRows += `<tr class="minus"><td>모바일 결합할인<span class="sub">${clean(b.bundleObj.name)}</span></td><td>-${won(R.mobile)}원</td></tr>`;
+    billRows += `<tr class="total"><td>월 실납부액</td><td>${won(R.monthly)}원</td></tr>`;
+  }
+  if (tvOnly) billRows += `<tr><td>TV 해지 후 인터넷 월요금<span class="sub">TV 결합할인 소멸 기준</span></td><td>${won(R.afterMonthly)}원</td></tr>`;
+  $('billBody').innerHTML = billRows;
+
+  // 차트
+  const nowM = Math.min(36, Math.max(1, Math.round(R.fMonths)));
+  $('chartNow').textContent = `현재 ${S.dur === 'date' ? R.fMonths.toFixed(1) : R.fMonths}개월`;
+  drawChart(R.series, nowM);
+
+  // 현재 상품 자동명
+  if ($('curProduct').dataset.edited !== 'true') {
+    $('curProduct').value = `[${CARRIER_DATA[S.carrier].name}] ${clean(b.intObj.name)} + ${tvOnly ? '인터넷 단독' : clean(b.tvObj.name)} / ${b.bundleObj.name}`;
+  }
+
+  // 비교
+  $('cRemain').textContent = `(남은 ${R.remainM}개월)`;
+  $('cKeep').textContent = `${won(R.keepCost)}원`;
+  $('cChange').textContent = `${won(R.changeCost)}원`;
+  const mx = Math.max(R.keepCost, R.changeCost, 1);
+  $('fKeep').style.width = `${Math.max(0, R.keepCost) / mx * 100}%`;
+  $('fChange').style.width = `${Math.max(0, R.changeCost) / mx * 100}%`;
+  const v = $('verdict');
+  if (R.diff > 0) { v.className = 'verdict good'; $('vText').textContent = '지금 이동이 유리'; $('vDiff').textContent = `+${won(R.diff)}원`; }
+  else if (R.diff < 0) { v.className = 'verdict bad'; $('vText').textContent = '약정 유지가 유리'; $('vDiff').textContent = `${won(R.diff)}원`; }
+  else { v.className = 'verdict even'; $('vText').textContent = '비용 동일'; $('vDiff').textContent = '0원'; }
+
+  // 하단바
+  $('dTotal').textContent = won(R.total);
+  const dv = $('dVerdict');
+  dv.textContent = R.diff > 0 ? `이동 +${won(R.diff)}` : R.diff < 0 ? '유지 유리' : '';
+  dv.style.color = R.diff > 0 ? '#34d399' : '#fca5a5';
+
+  // 정보 요약
+  const cn = $('customerName').value.trim();
+  $('infoSummary').textContent = [$('storeName').value.trim(), cn && `고객 ${cn}`].filter(Boolean).join(' · ');
+}
+
+function drawChart(data, nowM) {
+  const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  const labels = Array.from({ length: 36 }, (_, i) => `${i + 1}`);
+  const radii = data.map((_, i) => i + 1 === nowM ? 6 : 0);
+  const colors = data.map((_, i) => i + 1 === nowM ? '#111827' : accent);
+  if (typeof Chart === 'undefined') return;
+  if (!chart) {
+    chart = new Chart($('penaltyChart').getContext('2d'), {
+      type: 'line',
+      data: { labels, datasets: [{ data, borderColor: accent, backgroundColor: accent + '1f', borderWidth: 2.5, fill: true, tension: .25, pointRadius: radii, pointHoverRadius: 5, pointBackgroundColor: colors, pointBorderColor: colors }] },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: { duration: 200 },
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { title: c => `${c[0].label}개월 차`, label: c => ` ${won(c.parsed.y)}원` } } },
+        scales: {
+          x: { grid: { display: false }, ticks: { maxTicksLimit: 12, font: { size: 11 }, callback: (v, i) => `${i + 1}M` } },
+          y: { beginAtZero: true, grid: { color: '#f1f2f4' }, ticks: { font: { size: 11 }, callback: v => `${Math.round(v / 10000)}만` } }
         }
       }
-
-      const proratedAmt = Math.round((finalMonthly / daysInMonth) * terminationDayInMonth);
-      document.getElementById('proratedMonthBill').innerText = proratedAmt.toLocaleString();
-
-      document.getElementById('baseMonthlyBill').innerText = `${regularSubtotal.toLocaleString()}원`;
-      document.getElementById('bundleMonthlyDiscount').innerText = `-${totalMonthlyDiscount.toLocaleString()}원/월`;
-      document.getElementById('discTvText').innerText = `-${tvDiscAmount.toLocaleString()}원`;
-      document.getElementById('discIntWireText').innerText = `-${wireIntDiscAmount.toLocaleString()}원`;
-      document.getElementById('discMobileText').innerText = `-${mobileDiscAmount.toLocaleString()}원`;
-      document.getElementById('totalMonthlyBill').innerText = finalMonthly.toLocaleString();
-      document.getElementById('compCurrentMonthlyText').innerText = `${finalMonthly.toLocaleString()}원/월`;
-
-      let mIntPlan = cancelMode === 'tv' ? 0 : Math.max(0, intObj.noContract - intObj.price);
-      let mTvPlan = Math.max(0, tvObj.noContract - tvObj.price);
-      if (tvCount === 2) mTvPlan += Math.max(0, tv2Obj.noContract - tv2Obj.price);
-
-      let mIntBund = (bundleObj.isPenaltyWaived || cancelMode === 'tv') ? 0 : wireIntDiscAmount;
-      if (bundleObj.hasMobilePenalty) mIntBund += mobileDiscAmount;
-      let mTvBund = bundleObj.isPenaltyWaived ? 0 : tvDiscAmount;
-      
-      let mEquip = cancelMode === 'tv' ? Math.max(0, stbObj.noContract - stbObj.price) : Math.max(0, wifiObj.noContract - wifiObj.price) + Math.max(0, stbObj.noContract - stbObj.price);
-      if (tvCount === 2) mEquip += Math.max(0, stb2Obj.noContract - stb2Obj.price);
-
-      if (document.getElementById('manualModeToggle').checked) {
-        mIntPlan = parseInt(document.getElementById('manIntPlan').value) || 0;
-        mTvPlan = parseInt(document.getElementById('manTvPlan').value) || 0;
-        mIntBund = parseInt(document.getElementById('manIntBund').value) || 0;
-        mTvBund = parseInt(document.getElementById('manTvBund').value) || 0;
-        mEquip = parseInt(document.getElementById('manEquip').value) || 0;
-        
-        if (cancelMode === 'tv') {
-          mIntPlan = 0;
-          mIntBund = 0;
-        }
-      }
-
-      const p1 = Math.round(getPenalty(mIntPlan, currentDays, currentCarrier));
-      const p2 = Math.round(getPenalty(mTvPlan, currentDays, currentCarrier));
-      const p3 = Math.round(getPenalty(mIntBund, currentDays, currentCarrier));
-      const p4 = Math.round(getPenalty(mTvBund, currentDays, currentCarrier));
-      const p5 = Math.round(calculateEquipmentPenalty(mEquip, currentDays, currentCarrier));
-      const pGift = currentDays <= 365 ? gift : 0;
-      const totalPenalty = p1 + p2 + p3 + p4 + p5 + pGift;
-
-      document.getElementById('totalPenalty').innerText = totalPenalty.toLocaleString();
-      document.getElementById('planDiscount1').innerText = `${p1.toLocaleString()}원`;
-      document.getElementById('planDiscount2').innerText = `${p2.toLocaleString()}원`;
-      document.getElementById('bundleDiscount1').innerText = `${p3.toLocaleString()}원`;
-      document.getElementById('bundleDiscount2').innerText = `${p4.toLocaleString()}원`;
-      document.getElementById('equipDiscount').innerText = `${p5.toLocaleString()}원`;
-      
-      // 💡 [수정] 사은품 환수 텍스트 상태 실시간 업데이트 적용
-      document.getElementById('giftClawbackVal').innerText = `${pGift.toLocaleString()}원`;
-      const giftStatusEl = document.getElementById('giftStatusText');
-      if (currentDays <= 365) {
-        giftStatusEl.innerText = `${Math.floor(floatingMonths)}개월 차 (사은품 전액 환수 대상)`;
-        giftStatusEl.className = 'text-[11px] text-rose-500 font-bold';
-      } else {
-        giftStatusEl.innerText = `${Math.floor(floatingMonths)}개월 차 (사은품 환수 의무 소멸)`;
-        giftStatusEl.className = 'text-[11px] text-emerald-400 font-semibold';
-      }
-
-      if (cancelMode === 'tv') {
-        let afterIntSubtotal = intObj.price + wifiObj.price;
-        let afterMonthly = Math.max(0, afterIntSubtotal - mobileDiscAmount);
-        
-        // 💡 [치명적 버그 완벽 제거] TV 단독 해지 시 '수기 요금 총액'이 인터넷 단독 요금란을 덮어씌우는 오류를 100% 차단했습니다.
-        // 이제 수동모드를 켜도 TV해지 후 인터넷 요금은 오직 '선택된 인터넷 기본료 + 와이파이 - 무선할인'으로만 안전하게 계산됩니다.
-        document.getElementById('afterMonthlyBill').innerText = afterMonthly.toLocaleString();
-      }
-
-      const labels = [], dataPoints = [], pointColors = [], pointRadii = [];
-      for (let i = 1; i <= 36; i++) {
-        labels.push(`${i}M`);
-        const d = Math.round(i * 30.4167);
-        const tp1 = getPenalty(mIntPlan, d, currentCarrier);
-        const tp2 = getPenalty(mTvPlan, d, currentCarrier);
-        const tp3 = getPenalty(mIntBund, d, currentCarrier);
-        const tp4 = getPenalty(mTvBund, d, currentCarrier);
-        const tp5 = calculateEquipmentPenalty(mEquip, d, currentCarrier);
-        dataPoints.push(Math.round(tp1 + tp2 + tp3 + tp4 + tp5 + (d <= 365 ? gift : 0)));
-
-        if (Math.round(floatingMonths) === i) { pointColors.push('#6366f1'); pointRadii.push(6); } 
-        else { pointColors.push(CARRIER_DATA[currentCarrier].color); pointRadii.push(2); }
-      }
-      renderChart(labels, dataPoints, pointColors, pointRadii, CARRIER_DATA[currentCarrier].color);
-
-      const compUsedM = Math.min(36, Math.round(currentDays / 30.4167));
-      const compRemainM = Math.max(0, 36 - compUsedM);
-      const compMaintainCost = compRemainM * finalMonthly;
-      const expectedNewGift = parseInt(document.getElementById('compNewGift').value) || 0;
-      
-      let targetMonthlyVal = parseInt(compTargetMonthlyInput.value, 10);
-      if (isNaN(targetMonthlyVal)) {
-        targetMonthlyVal = 0;
-      }
-      
-      let compNewMaintainCost = 0;
-      const isTobeChanged = document.getElementById('tobeChangeToggle').checked;
-      
-      if (isTobeChanged) {
-        let maintainMonths = 0;
-        const periodSelectVal = document.getElementById('tobeMaintainPeriodSelect').value;
-        if (periodSelectVal === 'custom') {
-            maintainMonths = parseInt(document.getElementById('tobeMaintainPeriodInput').value, 10) || 0;
-        } else {
-            maintainMonths = parseInt(periodSelectVal, 10);
-        }
-        
-        const changedTobeFee = parseInt(document.getElementById('tobeChangedMonthlyInput').value, 10) || 0;
-
-        if (compRemainM <= maintainMonths) {
-            compNewMaintainCost = compRemainM * targetMonthlyVal;
-        } else {
-            compNewMaintainCost = (maintainMonths * targetMonthlyVal) + ((compRemainM - maintainMonths) * changedTobeFee);
-        }
-      } else {
-        compNewMaintainCost = compRemainM * targetMonthlyVal;
-      }
-
-      const compChangeCost = compNewMaintainCost + totalPenalty - expectedNewGift;
-      const diffCost = compMaintainCost - compChangeCost;
-
-      document.getElementById('compTotalPenalty').innerText = `${totalPenalty.toLocaleString()}원`;
-      document.getElementById('compDisc').innerText = `${(p1 + p2 + p3 + p4).toLocaleString()}원`;
-      document.getElementById('compGift').innerText = `${pGift.toLocaleString()}원`;
-      document.getElementById('compEquip').innerText = `${p5.toLocaleString()}원`;
-      
-      document.getElementById('compPeriod').innerText = `${compUsedM}개월 / ${compRemainM}개월`;
-      document.getElementById('compMaintain').innerText = `${compMaintainCost.toLocaleString()}원`;
-      document.getElementById('compChange').innerText = `${compChangeCost.toLocaleString()}원`;
-
-      const compDiffEl = document.getElementById('compDiff');
-      const compResultEl = document.getElementById('compResult');
-
-      if (diffCost > 0) {
-        compDiffEl.innerText = `+${diffCost.toLocaleString()}원 (이익)`;
-        compDiffEl.className = 'font-bold text-emerald-600';
-        compResultEl.innerText = '타사 변경(이동)이 유리';
-        compResultEl.className = 'text-sm font-black text-emerald-600';
-      } else if (diffCost < 0) {
-        compDiffEl.innerText = `${diffCost.toLocaleString()}원 (손실)`;
-        compDiffEl.className = 'font-bold text-rose-600';
-        compResultEl.innerText = '약정 유지가 유리';
-        compResultEl.className = 'text-sm font-black text-rose-600';
-      } else {
-        compDiffEl.innerText = `0원`;
-        compDiffEl.className = 'font-bold text-slate-600';
-        compResultEl.innerText = '비용 동일';
-        compResultEl.className = 'text-sm font-black text-slate-600';
-      }
-    }
-
-    function renderChart(labels, data, pointColors, pointRadii, brandColor) {
-      if (penaltyChartInstance) penaltyChartInstance.destroy();
-      const typeLabel = penaltyType === '5' ? '(위약금5)' : (penaltyType === '4' ? '(위약금4)' : '(위약금3)');
-      const cancelLabel = cancelMode === 'tv' ? 'TV단독 해지' : '전체 해지';
-      
-      penaltyChartInstance = new Chart(document.getElementById('penaltyChart').getContext('2d'), {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: `3년 약정 ${cancelLabel} ${typeLabel}`,
-            data: data, borderColor: penaltyType === '5' ? brandColor : '#4f46e5',
-            backgroundColor: penaltyType === '5' ? `${brandColor}15` : '#4f46e515',
-            borderWidth: 2.5, fill: true, tension: 0.2,
-            pointBackgroundColor: pointColors, pointBorderColor: pointColors, pointRadius: pointRadii
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.parsed.y.toLocaleString()} 원` } } },
-          scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 12, font: { size: 10 } } }, y: { ticks: { callback: v => (v / 10000) + '만', font: { size: 10 } } } }
-        }
-      });
-    }
-
-    document.getElementById('copyBtn').addEventListener('click', () => {
-      const { intObj, wifiObj, tvObj, stbObj, tv2Obj, stb2Obj, bundleObj } = getSelectedObjects();
-      
-      // 수기 입력 정보 가져오기
-      const storeName = document.getElementById('inputStoreName').value.trim() || '[매장명]';
-      const counselorName = document.getElementById('inputCounselorName').value.trim() || '[이름]';
-      const counselorPhone = document.getElementById('inputCounselorPhone').value.trim() || '[연락처]';
-      const customerName = document.getElementById('inputCustomerName').value.trim();
-      const customerBirth = document.getElementById('inputCustomerBirth').value.trim();
-      const customerPhone = document.getElementById('inputCustomerPhone').value.trim();
-      
-      let customerInfoStr = '';
-      if (customerName || customerPhone) {
-        customerInfoStr = `\n■ 고객 정보: ${customerName} ${customerBirth ? '('+customerBirth+')' : ''} ${customerPhone ? '/ '+customerPhone : ''}`;
-      }
-
-      const totalPenalty = document.getElementById('totalPenalty').innerText;
-      const finalMonthly = document.getElementById('totalMonthlyBill').innerText;
-      const baseMonthly = document.getElementById('baseMonthlyBill').innerText;
-      const bundleMonthly = document.getElementById('bundleMonthlyDiscount').innerText;
-      const planDisc1 = document.getElementById('planDiscount1').innerText;
-      const planDisc2 = document.getElementById('planDiscount2').innerText;
-      const bundleDisc1 = document.getElementById('bundleDiscount1').innerText;
-      const bundleDisc2 = document.getElementById('bundleDiscount2').innerText;
-      const equipDisc = document.getElementById('equipDiscount').innerText;
-      const gift = document.getElementById('giftValText').innerText;
-      const giftClaw = document.getElementById('giftClawbackVal').innerText;
-      
-      const carrierName = CARRIER_DATA[currentCarrier].name;
-      const targetName = targetCarrier === 'manual' ? '타사' : CARRIER_DATA[targetCarrier].name;
-      const titleCarrierText = `${carrierName} ➔ 신규[${targetName}]`;
-      
-      const afterMonthly = document.getElementById('afterMonthlyBill').innerText;
-      const proratedBill = document.getElementById('proratedMonthBill').innerText;
-
-      let durationText = '';
-      if (durationCalcType === 'date') {
-        durationText = `${document.getElementById('startDateInput').value} ~ ${document.getElementById('endDateInput').value} (${document.getElementById('exactDaysText').innerText})`;
-      } else {
-        const m = document.getElementById('months').value;
-        durationText = `${m}개월 차 (약 ${Math.round(m * 30.4167)}일)`;
-      }
-
-      const pModeText = penaltyType === '5' ? '최신 산모양(위약금5)' : (penaltyType === '4' ? '구형 산모양(위약금4)' : '구형 계단식(위약금3)');
-      
-      let compAnalysisText = '';
-      const tobeProduct = document.getElementById('compTargetProduct').value.trim();
-      if (tobeProduct) {
-        const targetMonthlyVal = parseInt(document.getElementById('compTargetMonthlyInput').value, 10) || 0;
-        const currentMonthlyVal = parseInt(finalMonthly.replace(/,/g, ''), 10) || finalMonthly;
-        
-        let tobeText = `${tobeProduct} (개통요금: 월 ${targetMonthlyVal.toLocaleString()}원)`;
-        if (document.getElementById('tobeChangeToggle').checked) {
-          const periodSel = document.getElementById('tobeMaintainPeriodSelect');
-          let periodText = periodSel.options[periodSel.selectedIndex].text;
-          if (periodSel.value === 'custom') {
-              periodText = (parseInt(document.getElementById('tobeMaintainPeriodInput').value, 10) || 0) + '개월';
-          }
-          
-          let changedProdStr = '';
-          if (targetCarrier === 'manual') {
-              changedProdStr = document.getElementById('tobeChangedProductManual').value.trim() || '요금제 하향/변경';
-          } else {
-              const tIntText = document.getElementById('tobeChangeIntSelect').options[document.getElementById('tobeChangeIntSelect').selectedIndex]?.text || '';
-              const tTvText = document.getElementById('tobeChangeTvSelect').options[document.getElementById('tobeChangeTvSelect').selectedIndex]?.text || '';
-              const tStbText = document.getElementById('tobeChangeStbSelect').options[document.getElementById('tobeChangeStbSelect').selectedIndex]?.text || '';
-              const tBundleText = document.getElementById('tobeChangeBundleSelect').options[document.getElementById('tobeChangeBundleSelect').selectedIndex]?.text || '';
-              const cInt = tIntText.replace(/\s*\(.*?\)\s*/g, '').trim();
-              const cTv = tTvText.replace(/\s*\(.*?\)\s*/g, '').trim();
-              const cStb = tStbText.replace(/\s*\(.*?\)\s*/g, '').trim();
-              const tTvPart = (cTv === '미적용' || cTv.includes('미적용')) ? '인터넷 단독' : `${cTv} + ${cStb}`;
-              changedProdStr = `[${CARRIER_DATA[targetCarrier].name}] ${cInt} + ${tTvPart} / ${tBundleText}`;
-          }
-
-          const changedFee = parseInt(document.getElementById('tobeChangedMonthlyInput').value, 10) || 0;
-          tobeText += `\n   ↳ [의무유지 후 변경]: ${periodText} 이후 -> ${changedProdStr} (월 ${changedFee.toLocaleString()}원 적용)`;
-        }
-
-        // 💡 [수정] 복사 텍스트에도 신규 예상 사은품 출력
-        const expectedNewGift = parseInt(document.getElementById('compNewGift').value) || 0;
-        if (expectedNewGift > 0) {
-            tobeText += `\n   ↳ [신규 혜택]: 타사 이동 예상 사은품 ${expectedNewGift.toLocaleString()}원 반영됨`;
-        }
-
-        compAnalysisText = `
---------------------------------------
-[📊 타사 이동 비교 분석 요약]
-- 현재 이용 상품: ${document.getElementById('compCurrentProduct').value} (월 ${Number(currentMonthlyVal).toLocaleString()}원)
-- 타사 이동 상품: ${tobeText}
-- 약정 만료까지 기존 유지비용: ${document.getElementById('compMaintain').innerText}
-- 지금 변경 시 비교비용: ${document.getElementById('compChange').innerText}
-- 예상 손익 결과: ${document.getElementById('compDiff').innerText} (${document.getElementById('compResult').innerText})`;
-      }
-      
-      let summaryText = '';
-
-      if (cancelMode === 'tv') {
-        let cancelItemText = `${tvObj.name} + ${stbObj.name}`;
-        // 💡 [수정] TV 단독 해지 복사 텍스트 시, 복수 단말 기종 명확히 출력
-        if (tvCount === 2) cancelItemText += `\n - [복수단말] 2번째 TV: ${tv2Obj.name} + ${stb2Obj.name}`;
-
-        summaryText = `[${storeName}] ${titleCarrierText} 3년 약정 TV 단독 해지 정산서
-담당: ${counselorName} (${counselorPhone})${customerInfoStr}
-■ 적용 산정식: ${pModeText}
-■ 현재 결합 유형: ${bundleObj.name} (3년 약정)
-■ 유지 상품: ${intObj.name} + ${wifiObj.name}
-■ 해지 상품: ${cancelItemText}
---------------------------------------
-■ 현재 3년 약정 실납부액: ${finalMonthly.toLocaleString()}원/월
-👉 TV 해지 후 인터넷 변경요금: ${afterMonthly}원/월 (VAT 포함)
---------------------------------------
-■ 정산 사용 기간: ${durationText}
-■ TV 단독 해지 예상 위약금(일할): ${totalPenalty}원
- [세부 위약금 내역]
-  - 인터넷 기본할인 반환금: ${planDisc1}
-  - TV 기본할인 반환금: ${planDisc2}
-  - 인터넷 결합할인 반환금: ${bundleDisc1}
-  - TV 결합할인 반환금: ${bundleDisc2}
-  - 셋톱박스 임대료 반환금: ${equipDisc}
-  - 사은품 환수금: ${giftClaw}
-■ 해지 당월 일할 통신요금: 약 ${proratedBill}원${compAnalysisText}
---------------------------------------
-[해지 시 필독 유의사항]
-1. 임대 장비 미반납금 (변상금): 셋톱박스, 리모컨, 전원 어댑터 미반납 시 15~25만 원 상당의 기기 원가가 일시 청구됩니다. (정상 반납 시 0원)
-2. 해지 당월 일할 요금: 해지 시점까지 사용한 이번 달 통신 요금이 별도 합산 청구됩니다.
-※ 통신사 실제 해지 정산 시 일할 계산 및 회선 상태에 따라 소폭 변동될 수 있습니다.`;
-      } else {
-        let tvListText = ` - IPTV: ${tvObj.name} (${tvObj.price.toLocaleString()}원)\n - 셋톱박스: ${stbObj.name} (${stbObj.price.toLocaleString()}원)`;
-        if (tvCount === 2) {
-          tvListText += `\n - 2번째 TV: ${tv2Obj.name} (${tv2Obj.price.toLocaleString()}원)\n - 2번째 셋톱: ${stb2Obj.name} (${stb2Obj.price.toLocaleString()}원)`;
-        }
-
-        summaryText = `[${storeName}] ${titleCarrierText} 3년 약정 인터넷·TV 해지 정산서
-담당: ${counselorName} (${counselorPhone})${customerInfoStr}
-■ 적용 산정식: ${pModeText}
-■ 결합 유형: ${bundleObj.name} (3년 약정)
-■ 가입 상품 내역 (3년 약정 기준)
- - 인터넷: ${intObj.name} (${intObj.price.toLocaleString()}원)
- - WiFi 공유기: ${wifiObj.name} (${wifiObj.price.toLocaleString()}원)
-${tvListText}
---------------------------------------
-■ 3년 약정 정상총액: ${baseMonthly}
-■ 3년 약정 결합할인: ${bundleMonthly}
-■ 최종 실납부액: ${finalMonthly.toLocaleString()}원/월 (VAT 포함/전산일치)
-■ 가입 수령 사은품: ${gift}
---------------------------------------
-■ 정산 사용 기간: ${durationText}
-■ 3년 약정 총 예상 위약금(일할): ${totalPenalty}원
- [세부 위약금 내역]
-  - 인터넷 기본할인 반환금: ${planDisc1}
-  - TV 기본할인 반환금: ${planDisc2}
-  - 인터넷 결합할인 반환금: ${bundleDisc1}
-  - TV 결합할인 반환금: ${bundleDisc2}
-  - 장비 임대료 반환금: ${equipDisc}
-  - 사은품 환수금: ${giftClaw}
-■ 해지 당월 일할 통신요금: 약 ${proratedBill}원${compAnalysisText}
---------------------------------------
-[해지 시 필독 유의사항]
-1. 임대 장비 미반납금 (변상금): 모뎀, 셋톱박스, 공유기, 리모컨을 반납하지 않으면 15~25만 원 상당의 기기 원가가 일시불 청구됩니다. (정상 반납 시 0원)
-2. 해지 당월 일할 요금: 해지 시점까지 사용한 이번 달 통신 요금이 별도 합산 청구됩니다.
-※ 통신사 실제 해지 정산 시 일할 계산 및 회선 상태에 따라 소폭 변동될 수 있습니다.`;
-      }
-
-      navigator.clipboard.writeText(summaryText).then(() => {
-        alert('정밀 일할 견적서가 클립보드에 복사되었습니다! 담당자 정보 입력 후 발송해 주세요.');
-      }).catch(() => {
-        prompt('아래 내용을 복사하세요:', summaryText);
-      });
     });
+  } else {
+    const ds = chart.data.datasets[0];
+    Object.assign(ds, { data, borderColor: accent, backgroundColor: accent + '1f', pointRadius: radii, pointBackgroundColor: colors, pointBorderColor: colors });
+    chart.update();
+  }
+}
 
-    // 💡 [수정] 모바일 인쇄(기본 PDF 저장) 기능 연결
-    document.getElementById('pdfBtn').addEventListener('click', function() {
-      // 1. PDF 템플릿에 데이터 채워넣기
-      const { intObj, wifiObj, tvObj, stbObj, bundleObj } = getSelectedObjects();
-      
-      // 수기 입력 정보 PDF 적용
-      const storeName = document.getElementById('inputStoreName').value.trim() || '[매장명]';
-      const counselorName = document.getElementById('inputCounselorName').value.trim() || '[이름]';
-      const counselorPhone = document.getElementById('inputCounselorPhone').value.trim() || '[연락처]';
-      const customerName = document.getElementById('inputCustomerName').value.trim();
-      const customerBirth = document.getElementById('inputCustomerBirth').value.trim();
-      const customerPhone = document.getElementById('inputCustomerPhone').value.trim();
+function update() { lastR = compute(); render(lastR); }
 
-      document.getElementById('pdfStoreNameTitle').innerText = `${storeName} 가입 및 해지 정산서`;
-      document.getElementById('pdfFooterInfo').innerText = `담당: ${counselorName} (${counselorPhone}) / ${storeName}`;
-      
-      if (customerName || customerPhone) {
-        document.getElementById('pdfCustomerInfo').innerText = `고객: ${customerName} ${customerBirth ? '('+customerBirth+')' : ''} ${customerPhone ? '/ '+customerPhone : ''}`;
-      } else {
-        document.getElementById('pdfCustomerInfo').innerText = '';
-      }
-      
-      const targetName = targetCarrier === 'manual' ? '타사' : CARRIER_DATA[targetCarrier].name;
-      document.getElementById('pdfCarrierName').innerText = `${CARRIER_DATA[currentCarrier].name} ➔ 신규[${targetName}]`;
-      
-      const today = new Date();
-      document.getElementById('pdfDate').innerText = `${today.getFullYear()}년 ${today.getMonth()+1}월 ${today.getDate()}일`;
+/* ---------- 타사 비교 ---------- */
+function fillTargetSelects(k) {
+  const c = CARRIER_DATA[k];
+  let intHtml = '';
+  c.tabs.forEach(t => { const l = c.internet[t.id] || []; if (l.length) intHtml += `<optgroup label="${t.name}">` + l.map(i => `<option value="${i.id}">${i.name}</option>`).join('') + '</optgroup>'; });
+  const tvHtml = c.tv.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
+  const stbHtml = c.stb.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
+  const bHtml = bundleOptions(c, (c.bundles.find(b => b.default) || c.bundles[0]).id);
+  ['tInt', 'bInt'].forEach(id => $(id).innerHTML = intHtml);
+  ['tTv', 'bTv'].forEach(id => $(id).innerHTML = tvHtml);
+  ['tStb', 'bStb'].forEach(id => $(id).innerHTML = stbHtml);
+  ['tBundle', 'bBundle'].forEach(id => $(id).innerHTML = bHtml);
+  const dTv = (c.tv.find(x => x.default) || c.tv[0]).id; $('tTv').value = dTv;
+  const dStb = (c.stb.find(x => x.default) || c.stb[0]).id; $('tStb').value = dStb; $('bStb').value = dStb;
+  const firstDefault = c.internet[c.tabs[0].id].find(x => x.default); if (firstDefault) $('tInt').value = firstDefault.id;
+  const f100 = [...$('bInt').options].find(o => o.text.includes('100M')); if (f100) $('bInt').value = f100.value;
+  const fTv = [...$('bTv').options].find(o => /기본|베이직|실속/.test(o.text)); if (fTv) $('bTv').value = fTv.value;
+  syncTarget(); syncTobe();
+}
+function productLabel(ck, intSel, tvSel, stbSel, bSel) {
+  const t = s => clean(s.options[s.selectedIndex]?.text || '');
+  const tv = t(tvSel);
+  const tvPart = tv.includes('미적용') ? '인터넷 단독' : `${tv} + ${t(stbSel)}`;
+  return `[${CARRIER_DATA[ck].name}] ${t(intSel)} + ${tvPart} / ${bSel.options[bSel.selectedIndex]?.text || ''}`;
+}
+function syncTarget() {
+  if (S.target === 'manual') return;
+  $('tProduct').value = productLabel(S.target, $('tInt'), $('tTv'), $('tStb'), $('tBundle'));
+  $('tMonthly').value = monthlyFor(S.target, $('tInt').value, $('tTv').value, $('tStb').value, $('tBundle').value);
+}
+function syncTobe() {
+  if (S.target === 'manual') return;
+  $('tobeMonthly').value = monthlyFor(S.target, $('bInt').value, $('bTv').value, $('bStb').value, $('bBundle').value);
+}
+function setTarget(k) {
+  S.target = k; setSeg('targetSeg', k);
+  const man = k === 'manual';
+  $('targetSelects').classList.toggle('hidden', man);
+  $('tobeSelects').classList.toggle('hidden', man);
+  $('tobeManualWrap').classList.toggle('hidden', !man);
+  if (!man) fillTargetSelects(k);
+  update();
+}
+function targetText(R) {
+  const tp = $('tProduct').value.trim();
+  if (!tp) return null;
+  const lines = [`${tp} (월 ${won(R.tMonthly)}원)`];
+  if ($('tobeToggle').checked) {
+    const ps = $('tobePeriod');
+    const per = ps.value === 'custom' ? `${parseInt($('tobePeriodInput').value, 10) || 0}개월` : ps.options[ps.selectedIndex].text;
+    const prod = S.target === 'manual' ? ($('tobeProductManual').value.trim() || '요금제 하향') : productLabel(S.target, $('bInt'), $('bTv'), $('bStb'), $('bBundle'));
+    lines.push(`↳ ${per} 유지 후 ${prod} (월 ${won(parseInt($('tobeMonthly').value, 10) || 0)}원)`);
+  }
+  if (R.newGift > 0) lines.push(`↳ 이동 시 사은품 ${won(R.newGift)}원 반영`);
+  return lines;
+}
 
-      const pModeText = penaltyType === '5' ? '최신 산모양(위약금5)' : (penaltyType === '4' ? '구형 산모양(위약금4)' : '구형 계단식(위약금3)');
-      document.getElementById('pdfCalcType').innerText = pModeText;
-      
-      let durationText = '';
-      if (durationCalcType === 'date') {
-        durationText = `${document.getElementById('startDateInput').value} ~ ${document.getElementById('endDateInput').value} (${document.getElementById('exactDaysText').innerText})`;
-      } else {
-        const m = document.getElementById('months').value;
-        durationText = `${m}개월 차 (약 ${Math.round(m * 30.4167)}일)`;
-      }
-      document.getElementById('pdfUsedPeriod').innerText = durationText;
+/* ---------- 복사 · PDF ---------- */
+function periodText(R) {
+  return S.dur === 'date' ? `${$('startDate').value} ~ ${$('endDate').value} (${R.days}일)` : `${R.fMonths}개월 차 (약 ${R.days}일)`;
+}
+function buildText() {
+  const R = compute(); const { sel, p } = R; const tvOnly = S.cancel === 'tv';
+  const storeN = $('storeName').value.trim();
+  const cName = $('counselorName').value.trim(), cPhone = $('counselorPhone').value.trim();
+  const cu = [$('customerName').value.trim(), $('customerBirth').value.trim() && `(${$('customerBirth').value.trim()})`, $('customerPhone').value.trim()].filter(Boolean).join(' ');
+  const L = [];
+  L.push(`${storeN ? `[${storeN}] ` : ''}${CARRIER_DATA[S.carrier].name} 인터넷·TV ${tvOnly ? 'TV만 해지' : '해지'} 정산 안내`);
+  if (cu) L.push(`고객: ${cu}`);
+  L.push('──────────────');
+  L.push(`■ 예상 위약금: ${won(R.total)}원`);
+  L.push(`  · 인터넷 요금할인 반환금 ${won(p.p1)}원`);
+  L.push(`  · TV 요금할인 반환금 ${won(p.p2)}원`);
+  L.push(`  · 인터넷 결합할인 반환금 ${won(p.p3)}원`);
+  L.push(`  · TV 결합할인 반환금 ${won(p.p4)}원`);
+  L.push(`  · ${tvOnly ? '셋톱' : '장비'} 임대료 반환금 ${won(p.p5)}원`);
+  L.push(`  · 사은품 환수 ${won(p.g)}원`);
+  L.push(`■ 사용 기간: ${periodText(R)}`);
+  L.push(`■ 적용 산식: ${PTYPE_LABEL[S.ptype]}`);
+  L.push('──────────────');
+  L.push(`■ 현재 상품: ${clean(sel.intObj.name)} + ${clean(sel.wifiObj.name)}`);
+  if (sel.tvObj.price) L.push(`  ${clean(sel.tvObj.name)} + ${clean(sel.stbObj.name)}${S.tvCount === 2 ? ` / 2번째 TV ${clean(sel.tv2Obj.name)}` : ''}`);
+  L.push(`  결합: ${sel.bundleObj.name}`);
+  L.push(`■ 현재 월 납부액: ${won(R.monthly)}원`);
+  if (tvOnly) L.push(`■ TV 해지 후 인터넷 월요금: ${won(R.afterMonthly)}원`);
+  L.push(`■ 해지 당월 일할요금: 약 ${won(R.prorated)}원`);
+  const tt = targetText(R);
+  if (tt) {
+    L.push('──────────────');
+    L.push('[타사 이동 비교]');
+    L.push(`■ 이동 상품: ${tt[0]}`); tt.slice(1).forEach(x => L.push(`  ${x}`));
+    L.push(`■ 약정 유지 시 (남은 ${R.remainM}개월): ${won(R.keepCost)}원`);
+    L.push(`■ 지금 이동 시: ${won(R.changeCost)}원`);
+    L.push(`■ 결과: ${R.diff > 0 ? `이동 시 ${won(R.diff)}원 이득` : R.diff < 0 ? `유지 시 ${won(-R.diff)}원 이득` : '비용 동일'}`);
+  }
+  L.push('──────────────');
+  L.push('※ 임대 장비 미반납 시 기기 원가가 별도 청구됩니다.');
+  L.push('※ 실제 금액은 통신사 전산 기준으로 소폭 다를 수 있습니다.');
+  if (storeN || cName || cPhone) L.push(`담당: ${[storeN, cName, cPhone].filter(Boolean).join(' · ')}`);
+  return L.join('\n');
+}
+function copyText() {
+  const t = buildText();
+  const done = () => toast('복사했어요. 문자·카톡에 붙여넣으세요');
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(done).catch(() => fallbackCopy(t, done));
+  else fallbackCopy(t, done);
+}
+function fallbackCopy(t, done) {
+  const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) { prompt('아래 내용을 복사하세요', t); }
+  ta.remove();
+}
+function printPdf() {
+  const R = compute(); const { sel, p } = R; const tvOnly = S.cancel === 'tv';
+  const storeN = $('storeName').value.trim() || '해지 정산 견적';
+  const cName = $('counselorName').value.trim(), cPhone = $('counselorPhone').value.trim();
+  const cu = [$('customerName').value.trim(), $('customerBirth').value.trim() && `(${$('customerBirth').value.trim()})`, $('customerPhone').value.trim()].filter(Boolean).join(' ');
+  const td = 'padding:6px 8px;border-bottom:1px solid #e5e7eb';
+  const th = td + ';background:#f8fafc;font-weight:700;width:28%';
+  const right = td + ';text-align:right;font-weight:700';
+  $('pdfCarrier').textContent = `${CARRIER_DATA[S.carrier].name} ${tvOnly ? 'TV 해지' : '인터넷·TV 해지'}`;
+  $('pdfStore').textContent = storeN;
+  $('pdfCustomer').textContent = cu ? `고객: ${cu}` : '';
+  const now = new Date(); $('pdfDate').textContent = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일`;
+  $('pdfTotal').textContent = `${won(R.total)}원`;
+  $('pdfMonthly').textContent = `${won(R.monthly)}원`;
+  $('pdfPeriod').textContent = periodText(R);
+  $('pdfType').textContent = PTYPE_LABEL[S.ptype];
+  let prod = `<tr><td style="${th}">인터넷</td><td style="${td}">${sel.intObj.name}</td><td style="${right}">${won(sel.intObj.price)}원</td></tr>`;
+  prod += `<tr><td style="${th}">WiFi</td><td style="${td}">${sel.wifiObj.name}</td><td style="${right}">${won(sel.wifiObj.price)}원</td></tr>`;
+  prod += `<tr><td style="${th}">TV · 셋톱</td><td style="${td}">${sel.tvObj.name} + ${sel.stbObj.name}</td><td style="${right}">${won(sel.tvObj.price + sel.stbObj.price)}원</td></tr>`;
+  if (S.tvCount === 2) prod += `<tr><td style="${th}">2번째 TV</td><td style="${td}">${sel.tv2Obj.name} + ${sel.stb2Obj.name} (50%)</td><td style="${right}">${won(sel.tv2Obj.price + sel.stb2Obj.price)}원</td></tr>`;
+  prod += `<tr><td style="${th}">결합</td><td style="${td}">${sel.bundleObj.name}</td><td style="${right};color:#047857">-${won(R.totalDisc)}원</td></tr>`;
+  prod += `<tr><td style="${th}">월 실납부액</td><td style="${td}"></td><td style="${right};font-size:13px">${won(R.monthly)}원</td></tr>`;
+  if (tvOnly) prod += `<tr><td style="${th}">TV 해지 후</td><td style="${td}">인터넷 단독 월요금</td><td style="${right}">${won(R.afterMonthly)}원</td></tr>`;
+  $('pdfProducts').innerHTML = prod;
+  const pr = (l, v) => `<tr><td style="${td}">${l}</td><td style="${right}">${won(v)}원</td></tr>`;
+  $('pdfPenalty').innerHTML = pr('인터넷 요금할인 반환금', p.p1) + pr('TV 요금할인 반환금', p.p2) + pr('인터넷 결합할인 반환금', p.p3) +
+    pr('TV 결합할인 반환금', p.p4) + pr(tvOnly ? '셋톱 임대료 반환금' : '장비 임대료 반환금', p.p5) + pr('사은품 환수', p.g) +
+    pr('해지 당월 일할요금 (별도)', R.prorated) +
+    `<tr><td style="padding:8px;font-weight:900;font-size:13px">예상 위약금 합계</td><td style="padding:8px;text-align:right;font-weight:900;font-size:14px;color:#be123c">${won(R.total)}원</td></tr>`;
+  const tt = targetText(R);
+  $('pdfCompareWrap').style.display = tt ? '' : 'none';
+  if (tt) {
+    $('pdfCompare').innerHTML = `<b>현재:</b> ${$('curProduct').value} (월 ${won(R.monthly)}원)<br><b>이동:</b> ${tt[0]}<br>${tt.slice(1).join('<br>')}${tt.length > 1 ? '<br>' : ''}` +
+      `<b>약정 유지 시 (남은 ${R.remainM}개월):</b> ${won(R.keepCost)}원<br><b>지금 이동 시:</b> ${won(R.changeCost)}원<br>` +
+      `<div style="margin-top:6px;padding-top:6px;border-top:1px solid #bfdbfe;font-size:13px;font-weight:900">결과: ${R.diff > 0 ? `이동 시 ${won(R.diff)}원 이득` : R.diff < 0 ? `유지 시 ${won(-R.diff)}원 이득` : '비용 동일'}</div>`;
+  }
+  $('pdfFooter').textContent = [storeN, cName && `담당 ${cName}`, cPhone].filter(Boolean).join(' · ');
+  setTimeout(() => window.print(), 80);
+}
 
-      document.getElementById('pdfIntNamePrice').innerText = `${intObj.name} (${intObj.price.toLocaleString()}원)`;
-      document.getElementById('pdfWifiNamePrice').innerText = `${wifiObj.name} (${wifiObj.price.toLocaleString()}원)`;
-      
-      let tvStbText = `${tvObj.name} (${tvObj.price.toLocaleString()}원) + ${stbObj.name} (${stbObj.price.toLocaleString()}원)`;
-      if (tvCount === 2) {
-          const tv2Obj = getSelectedObjects().tv2Obj;
-          const stb2Obj = getSelectedObjects().stb2Obj;
-          tvStbText += `\n[복수] ${tv2Obj.name} (${tv2Obj.price.toLocaleString()}원) + ${stb2Obj.name} (${stb2Obj.price.toLocaleString()}원)`;
-      }
-      document.getElementById('pdfTvStbNamePrice').innerText = tvStbText;
-      
-      document.getElementById('pdfBundleName').innerText = bundleObj.name;
-      
-      document.getElementById('pdfBaseTotal').innerText = document.getElementById('baseMonthlyBill').innerText;
-      document.getElementById('pdfTotalDisc').innerText = document.getElementById('bundleMonthlyDiscount').innerText;
-      document.getElementById('pdfFinalTotal').innerText = document.getElementById('totalMonthlyBill').innerText + '원';
+/* ---------- 이벤트 ---------- */
+onSeg('carrierSeg', setCarrier);
+onSeg('durSeg', v => {
+  S.dur = v; setSeg('durSeg', v);
+  $('dateView').classList.toggle('hidden', v !== 'date');
+  $('monthView').classList.toggle('hidden', v !== 'month');
+  applyAutoPtype(); update();
+});
+onSeg('ptypeSeg', v => { S.ptype = v; update(); });
+onSeg('cancelSeg', v => {
+  S.cancel = v; setSeg('cancelSeg', v);
+  $('cancelDesc').textContent = v === 'tv' ? '인터넷 약정은 유지하고 TV·셋톱만 해지할 때의 위약금입니다.' : '인터넷과 TV를 모두 해지할 때의 위약금입니다.';
+  $('curProduct').dataset.edited = 'false'; update();
+});
+onSeg('tvCountSeg', v => { S.tvCount = Number(v); setSeg('tvCountSeg', v); $('tv2Box').classList.toggle('hidden', S.tvCount !== 2); syncTarget(); syncTobe(); update(); });
+onSeg('intTabs', v => { S.tab = v; renderTabs(); fillInternet(); update(); });
+onSeg('monthChips', v => { $('months').value = v; update(); });
+onSeg('giftChips', v => { $('gift').value = v; update(); });
+onSeg('targetSeg', setTarget);
 
-      document.getElementById('pdfP1').innerText = document.getElementById('planDiscount1').innerText;
-      document.getElementById('pdfP2').innerText = document.getElementById('planDiscount2').innerText;
-      document.getElementById('pdfP3').innerText = document.getElementById('bundleDiscount1').innerText;
-      document.getElementById('pdfP4').innerText = document.getElementById('bundleDiscount2').innerText;
-      document.getElementById('pdfP5').innerText = document.getElementById('equipDiscount').innerText;
-      document.getElementById('pdfPGift').innerText = document.getElementById('giftClawbackVal').innerText;
-      
-      document.getElementById('pdfTotalPenaltyTop').innerText = document.getElementById('totalPenalty').innerText + '원';
-      document.getElementById('pdfTotalPenaltyBot').innerText = document.getElementById('totalPenalty').innerText + '원';
+$('bundleSelect').addEventListener('change', e => { S.bundleId = e.target.value; fillBundles(); $('curProduct').dataset.edited = 'false'; update(); });
+['internetPlan', 'tvPlan'].forEach(id => $(id).addEventListener('change', () => { $('curProduct').dataset.edited = 'false'; update(); }));
+['wifiOption', 'stbOption', 'tvPlan2', 'stbOption2', 'endDate'].forEach(id => $(id).addEventListener('change', update));
+$('startDate').addEventListener('change', () => { applyAutoPtype(); update(); });
+['months', 'gift', 'manIntPlan', 'manTvPlan', 'manIntBund', 'manTvBund', 'manEquip', 'manMonthly', 'tMonthly', 'newGift', 'tobeMonthly', 'tobePeriodInput', 'tProduct', 'tobeProductManual'].forEach(id => $(id).addEventListener('input', update));
+$('manualToggle').addEventListener('change', e => { $('manualBox').classList.toggle('hidden', !e.target.checked); update(); });
+$('tobeToggle').addEventListener('change', e => { $('tobeBox').classList.toggle('hidden', !e.target.checked); update(); });
+$('tobePeriod').addEventListener('change', e => { $('tobePeriodWrap').classList.toggle('hidden', e.target.value !== 'custom'); update(); });
+['tInt', 'tTv', 'tStb', 'tBundle'].forEach(id => $(id).addEventListener('change', () => { syncTarget(); update(); }));
+['bInt', 'bTv', 'bStb', 'bBundle'].forEach(id => $(id).addEventListener('change', () => { syncTobe(); update(); }));
+$('curProduct').addEventListener('input', function () { this.dataset.edited = this.value.trim() ? 'true' : 'false'; if (!this.value.trim()) update(); });
 
-      // 타사 비교 데이터 바인딩
-      const tobeProduct = document.getElementById('compTargetProduct').value.trim();
-      const currentMonthlyVal = parseInt(document.getElementById('totalMonthlyBill').innerText.replace(/,/g, ''), 10);
-      
-      document.getElementById('pdfAnalysisCurrent').innerText = `[${CARRIER_DATA[currentCarrier].name}] ${intObj.name.replace(/\s*\(.*?\)\s*/g, '').trim()} + ${tvObj.name.replace(/\s*\(.*?\)\s*/g, '').trim()} / ${bundleObj.name} (월 ${currentMonthlyVal.toLocaleString()}원)`;
-      
-      let tobeText = '';
-      let changeInfoText = '';
-      if (tobeProduct) {
-        const targetMonthlyVal = parseInt(document.getElementById('compTargetMonthlyInput').value, 10) || 0;
-        tobeText = `${tobeProduct} (개통요금: 월 ${targetMonthlyVal.toLocaleString()}원)`;
-        
-        if (document.getElementById('tobeChangeToggle').checked) {
-          const periodSel = document.getElementById('tobeMaintainPeriodSelect');
-          let periodText = periodSel.options[periodSel.selectedIndex].text;
-          if (periodSel.value === 'custom') {
-              periodText = (parseInt(document.getElementById('tobeMaintainPeriodInput').value, 10) || 0) + '개월';
-          }
-          
-          let changedProdStr = '';
-          if (targetCarrier === 'manual') {
-              changedProdStr = document.getElementById('tobeChangedProductManual').value.trim() || '요금제 하향/변경';
-          } else {
-              const tIntText = document.getElementById('tobeChangeIntSelect').options[document.getElementById('tobeChangeIntSelect').selectedIndex]?.text || '';
-              const tTvText = document.getElementById('tobeChangeTvSelect').options[document.getElementById('tobeChangeTvSelect').selectedIndex]?.text || '';
-              const tStbText = document.getElementById('tobeChangeStbSelect').options[document.getElementById('tobeChangeStbSelect').selectedIndex]?.text || '';
-              const tBundleText = document.getElementById('tobeChangeBundleSelect').options[document.getElementById('tobeChangeBundleSelect').selectedIndex]?.text || '';
-              const cInt = tIntText.replace(/\s*\(.*?\)\s*/g, '').trim();
-              const cTv = tTvText.replace(/\s*\(.*?\)\s*/g, '').trim();
-              const cStb = tStbText.replace(/\s*\(.*?\)\s*/g, '').trim();
-              const tTvPart = (cTv === '미적용' || cTv.includes('미적용')) ? '인터넷 단독' : `${cTv} + ${cStb}`;
-              changedProdStr = `[${CARRIER_DATA[targetCarrier].name}] ${cInt} + ${tTvPart} / ${tBundleText}`;
-          }
+['storeName', 'counselorName', 'counselorPhone'].forEach(id => {
+  const v = store.get('tc_' + id); if (v) $(id).value = v;
+  $(id).addEventListener('input', e => { store.set('tc_' + id, e.target.value); update(); });
+});
+['customerName', 'customerBirth', 'customerPhone'].forEach(id => $(id).addEventListener('input', update));
+$('clearCustomer').addEventListener('click', () => { ['customerName', 'customerBirth', 'customerPhone'].forEach(id => $(id).value = ''); update(); toast('고객 정보를 지웠어요'); });
 
-          const changedFee = parseInt(document.getElementById('tobeChangedMonthlyInput').value, 10) || 0;
-          changeInfoText = `↳ [의무유지 후 변경]: ${periodText} 이후 -> ${changedProdStr} (월 ${changedFee.toLocaleString()}원 적용)`;
-        }
-      }
-      
-      const expectedNewGift = parseInt(document.getElementById('compNewGift').value) || 0;
-      if (expectedNewGift > 0) {
-        changeInfoText += (changeInfoText ? '\n' : '') + `↳ [신규 혜택]: 타사 이동 예상 사은품 ${expectedNewGift.toLocaleString()}원 반영됨`;
-      }
+$('copyBtn').addEventListener('click', copyText);
+$('dockCopy').addEventListener('click', copyText);
+$('pdfBtn').addEventListener('click', printPdf);
+$('dockGo').addEventListener('click', () => $('heroCard').scrollIntoView({ behavior: 'smooth', block: 'start' }));
 
-      document.getElementById('pdfAnalysisTarget').innerText = tobeText;
-      document.getElementById('pdfAnalysisChangeInfo').innerText = changeInfoText;
-      document.getElementById('pdfAnalysisMaintain').innerText = document.getElementById('compMaintain').innerText;
-      document.getElementById('pdfAnalysisChange').innerText = document.getElementById('compChange').innerText;
-      document.getElementById('pdfAnalysisDiffResult').innerHTML = `${document.getElementById('compDiff').innerText} <strong>(${document.getElementById('compResult').innerText})</strong>`;
-
-      // 2. 브라우저 기본 인쇄 화면(PDF 저장) 즉시 호출
-      setTimeout(() => {
-        window.print();
-      }, 100);
-    });
-
-    setCarrier('SK');
-    document.querySelector('.target-carrier-btn[data-target="SK"]').click();
-  </script>
+/* ---------- 시작 ---------- */
+(function init() {
+  const today = new Date();
+  const ago = new Date(today.getFullYear(), today.getMonth() - 13, today.getDate());
+  $('startDate').value = fmtDate(ago);
+  $('endDate').value = fmtDate(today);
+  setCarrier('SK');
+  setTarget('SK');
+})();
+</script>
 </body>
 </html>
