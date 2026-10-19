@@ -672,20 +672,25 @@ function calculatePenalty5(m, days, ck) {
   const acc = (m / DAY_M) * days;
   return days <= c.thresholdDays ? acc : acc * (Math.max(0, 1095 - days) / c.baseDenominatorDays);
 }
+// '16.04.01 ~ 개편 전 가입: 구간별 할인액 × 반환율의 합 (반환율 = 1 - 약관상 할인율)
+// [해당 개월까지, 반환율]
+const OLD_RATE_TABLE = {
+  // LGU+ 업무기준(SOP) 월별 할인반환율
+  LG: [[9, .85], [12, .80], [18, .30], [21, .25], [24, 0], [28, -.10], [32, -.25], [34, -.85], [36, -1.70]],
+  // KT 초고속인터넷 약관 주요내용 설명서: 할인율 0/30/65/75/100/110/125/170/280%
+  KT: [[6, 1], [12, .70], [16, .35], [20, .25], [24, 0], [28, -.10], [32, -.25], [34, -.70], [36, -1.80]],
+  // SK 초고속인터넷 약관 주요 설명서: 할인율 0/10/65/90/100/115/150/180/270%
+  SK: [[8, 1], [12, .90], [16, .35], [20, .10], [24, 0], [28, -.15], [32, -.50], [34, -.80], [36, -1.70]]
+};
 function calculatePenalty4(m, days, ck) {
   if (days <= 0 || m <= 0 || days >= 1095) return 0;
-  const dd = m / DAY_M;
-  if (ck === 'LG') {
-    let p = 0;
-    for (let d = 1; d <= days; d++) {
-      const mo = Math.ceil(d / DAY_M);
-      const r = mo <= 9 ? .85 : mo <= 12 ? .80 : mo <= 18 ? .30 : mo <= 21 ? .25 : mo <= 24 ? 0 : mo <= 28 ? -.10 : mo <= 32 ? -.25 : mo <= 34 ? -.85 : -1.70;
-      p += dd * r;
-    }
-    return Math.max(0, p);
+  const dd = m / DAY_M, tbl = OLD_RATE_TABLE[ck];
+  let p = 0;
+  for (let d = 1; d <= days; d++) {
+    const mo = Math.ceil(d / DAY_M);
+    p += dd * (tbl.find(([upTo]) => mo <= upTo) || tbl[tbl.length - 1])[1];
   }
-  const acc = dd * days;
-  return days <= 730 ? acc : acc * (Math.max(0, 1095 - days) / 365);
+  return Math.max(0, p);
 }
 function calculatePenalty3(m, days, ck) {
   if (days <= 0 || m <= 0 || days >= 1095) return 0;
@@ -702,9 +707,7 @@ function getPenalty(m, d, ck) {
 }
 function equipPenalty(m, d, ck) {
   if (d <= 0 || m <= 0 || d >= 1095) return 0;
-  if (S.ptype === '5' && ck === 'LG') return calculatePenalty5(m, d, ck); // LG '23.11.01~ 장비도 서비스와 동일 산식
-  if (S.ptype === '5') return (m / DAY_M) * d * ((1095 - d) / 1095);
-  return getPenalty(m, d, ck);
+  return getPenalty(m, d, ck); // 장비 임대료 할인반환금도 서비스와 동일 산식 (KT·LG 약관 확인)
 }
 
 /* ---------- 유틸 ---------- */
@@ -724,7 +727,7 @@ function autoPtype() {
   const st = parseDate($('startDate').value);
   if (!st) return null;
   const reform = { KT: '2023-09-08', SK: '2023-09-27', LG: '2023-11-01' }[S.carrier];
-  const old = S.carrier === 'LG' ? '2016-04-01' : '2018-01-01';
+  const old = '2016-04-01';
   if (st < parseDate(old)) return '3';
   if (st < parseDate(reform)) return '4';
   return '5';
@@ -740,8 +743,8 @@ function renderPtype() {
   const reformTxt = { KT: "'23.09.08", SK: "'23.09.27", LG: "'23.11.01" }[S.carrier];
   const desc = {
     '5': `${reformTxt} 이후 가입·재약정. 받은 할인 누적액 기준, ${CARRIER_DATA[S.carrier].thresholdDays}일 이후 잔여기간 비율로 감소`,
-    '4': isLG ? `'16.04.01 ~ '23.10.31 가입·재약정. 월별 할인반환율(85% → -170%) 적용` : `'18년 ~ ${reformTxt} 이전 가입·재약정. 24개월 최고점 후 감소`,
-    '3': isLG ? `'16.03.31 이전 가입·재약정. 이용월수 × 월 할인액 전액` : `'18년 이전 가입 후 재약정 없음. 1년차 100% · 2년차 50% 계단식`
+    '4': `'16.04.01 ~ ${reformTxt} 이전 가입·재약정. 구간별 할인액 × 반환율(${{ LG: '85%', KT: '100%', SK: '100%' }[S.carrier]} → ${{ LG: '-170%', KT: '-180%', SK: '-170%' }[S.carrier]})의 합`,
+    '3': isLG ? `'16.03.31 이전 가입·재약정. 이용월수 × 월 할인액 전액` : `'16.03.31 이전 가입·재약정. 근사 계산 (실제는 1·2년 약정 요금 차액 기준) — 전산 금액 직접 입력 권장`
   }[S.ptype];
   $('ptypeDesc').textContent = desc;
   const a = S.dur === 'date' ? autoPtype() : null;
