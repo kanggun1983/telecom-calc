@@ -275,6 +275,9 @@ details.fold[open]>summary::after{transform:rotate(-135deg)}
         <button class="chip" data-v="500000">50만</button><button class="chip" data-v="600000">60만</button>
       </div>
       <p class="hint">개통 후 365일 이내 해지 시 전액 환수로 계산합니다.</p>
+      <div style="margin-top:12px;font-weight:700;font-size:14px">본사 사은품 (통신사 지급, 비과세)</div>
+      <div class="unit" data-unit="원" style="margin-top:6px"><input type="number" id="hqGift" inputmode="numeric" step="10000" value="0"></div>
+      <p class="hint">365일 중 남은 일수 비율로 환수합니다. (사은품 × 남은일수 ÷ 365)</p>
     </section>
 
     <section class="card">
@@ -456,7 +459,7 @@ const CARRIER_DATA = {
         tabs: [{ id: 'wifi', name: 'WIFI 결합형' }, { id: 'basic', name: '기본 인터넷' }],
         internet: {
           wifi: [
-            { id: 'sk_w500m', name: '기가라이트인터넷 와이파이 (500M)', price: 34100, noContract: 48400, speed: 500, default: true },
+            { id: 'sk_w500m', name: '기가라이트인터넷 와이파이 (500M)', price: 34100, noContract: 59400, speed: 500, default: true },
             { id: 'sk_w100m', name: '광랜인터넷 와이파이 (100M)', price: 23100, noContract: 41800, speed: 100 },
             { id: 'sk_w1g', name: '기가인터넷 와이파이 (1G)', price: 39600, noContract: 57200, speed: 1000 },
             { id: 'sk_x2.5g', name: '기가프리미엄 X2.5', price: 44000, noContract: 66000, speed: 2500 },
@@ -470,7 +473,7 @@ const CARRIER_DATA = {
         },
         wifiHw: {
           wifi: [
-            { id: 'band_giga', name: 'band Giga WiFi (기본포함)', price: 0, noContract: 0, default: true },
+            { id: 'band_giga', name: 'band Giga WiFi (기본포함)', price: 0, noContract: 3300, default: true },
             { id: 'wifi7', name: 'Giga WiFi 7 (업그레이드)', price: 1100, noContract: 7700 },
             { id: 'sk_old_giga_free', name: '[구] 기가 와이파이 (기본포함)', price: 0, noContract: 0 },
             { id: 'none', name: '공유기 미적용', price: 0, noContract: 0 }
@@ -485,14 +488,14 @@ const CARRIER_DATA = {
           ]
         },
         tv: [
-          { id: 'std', name: 'Btv 스탠다드 (235ch)', price: 15400, discountPrice: 13200, noContract: 23100, discount: 2200, default: true },
+          { id: 'std', name: 'Btv 스탠다드 (235ch)', price: 15400, discountPrice: 13200, noContract: 22000, discount: 2200, default: true },
           { id: 'eco', name: 'Btv 이코노미 (183ch)', price: 12100, discountPrice: 9900, noContract: 19800, discount: 2200 },
           { id: 'all', name: 'Btv ALL (257ch)', price: 18700, discountPrice: 16500, noContract: 26400, discount: 2200 },
           { id: 'all_plus', name: 'B tv All + (257ch)', price: 24200, discountPrice: 22000, noContract: 31900, discount: 2200 },
           { id: 'none', name: 'Btv 미적용', price: 0, discountPrice: 0, noContract: 0, discount: 0 }
         ],
         stb: [
-          { id: 'smart3', name: '스마트3 셋톱', price: 4400, noContract: 8800, default: true },
+          { id: 'smart3', name: '스마트3 셋톱', price: 4400, noContract: 9900, default: true },
           { id: 'smart3_mini', name: 'Smart 3 mini', price: 4400, noContract: 8800 },
           { id: 'ai5', name: 'AI 5 셋톱', price: 7700, noContract: 12100 },
           { id: 'ai4_vision', name: 'AI 4 Vision', price: 8800, noContract: 13200 },
@@ -839,6 +842,7 @@ function compute() {
   const { intObj, wifiObj, tvObj, stbObj, tv2Obj, stb2Obj, bundleObj } = sel;
   const ck = S.carrier;
   const gift = Math.max(0, parseInt($('gift').value, 10) || 0);
+  const hqGift = Math.max(0, parseInt($('hqGift').value, 10) || 0);
 
   let days, fMonths, termDay = 15, dim = 30, start = null, end = null;
   if (S.dur === 'date') {
@@ -881,16 +885,17 @@ function compute() {
 
   const pen = d => ({
     p1: getPenalty(mIntPlan, d, ck), p2: getPenalty(mTvPlan, d, ck), p3: getPenalty(mIntBund, d, ck),
-    p4: getPenalty(mTvBund, d, ck), p5: equipPenalty(mEquip, d, ck), g: d <= 365 ? gift : 0
+    p4: getPenalty(mTvBund, d, ck), p5: equipPenalty(mEquip, d, ck), g: d <= 365 ? gift : 0,
+    hg: d < 365 ? Math.floor(hqGift * (365 - d) / 365) : 0
   });
   const P = pen(days);
-  const p = { p1: Math.round(P.p1), p2: Math.round(P.p2), p3: Math.round(P.p3), p4: Math.round(P.p4), p5: Math.round(P.p5), g: P.g };
-  const total = p.p1 + p.p2 + p.p3 + p.p4 + p.p5 + p.g;
+  const p = { p1: Math.round(P.p1), p2: Math.round(P.p2), p3: Math.round(P.p3), p4: Math.round(P.p4), p5: Math.round(P.p5), g: P.g, hg: P.hg };
+  const total = p.p1 + p.p2 + p.p3 + p.p4 + p.p5 + p.g + p.hg;
 
   const afterMonthly = tvOnly ? Math.max(0, intObj.price + wifiObj.price - mobile) : null;
 
   const series = [];
-  for (let i = 1; i <= 36; i++) { const x = pen(Math.round(i * DAY_M)); series.push(Math.round(x.p1 + x.p2 + x.p3 + x.p4 + x.p5 + x.g)); }
+  for (let i = 1; i <= 36; i++) { const x = pen(Math.round(i * DAY_M)); series.push(Math.round(x.p1 + x.p2 + x.p3 + x.p4 + x.p5 + x.g + x.hg)); }
 
   // 비교
   const usedM = Math.min(36, Math.round(days / DAY_M));
@@ -908,7 +913,7 @@ function compute() {
   const changeCost = newCost + total - newGift;
   const diff = keepCost - changeCost;
 
-  return { sel, days, fMonths, start, end, gift, base, tvDisc, wire, mobile, totalDisc, monthly, prorated, p, total, afterMonthly,
+  return { sel, days, fMonths, start, end, gift, hqGift, base, tvDisc, wire, mobile, totalDisc, monthly, prorated, p, total, afterMonthly,
     series, usedM, remainM, keepCost, changeCost, diff, newGift, tMonthly, manual };
 }
 
@@ -940,7 +945,7 @@ function render(R) {
   $('rMonthly').textContent = won(R.monthly);
   $('rProrated').textContent = won(R.prorated);
   if (tvOnly) { $('statGiftK').textContent = 'TV 해지 후 월요금'; $('rGiftStat').textContent = won(R.afterMonthly); }
-  else { $('statGiftK').textContent = '사은품 환수'; $('rGiftStat').textContent = won(p.g); }
+  else { $('statGiftK').textContent = '사은품 환수'; $('rGiftStat').textContent = won(p.g + p.hg); }
   setSeg('giftChips', String(R.gift));
 
   // 위약금 내역
@@ -953,6 +958,7 @@ function render(R) {
     bdRow('TV 결합할인 반환금', p.p4) +
     bdRow(tvOnly ? '셋톱 임대료 반환금' : '장비(공유기·셋톱) 반환금', p.p5) +
     bdRow('사은품 환수', p.g, R.gift ? `받은 사은품 ${won(R.gift)}원` : '') +
+    (R.hqGift ? bdRow('본사 사은품 할인반환금', p.hg, `본사 사은품 ${won(R.hqGift)}원`) : '') +
     `<tr class="total"><td>합계</td><td>${won(R.total)}원</td></tr>`;
 
   // 월 요금
@@ -1111,6 +1117,7 @@ function buildText() {
   L.push(`  · TV 결합할인 반환금 ${won(p.p4)}원`);
   L.push(`  · ${tvOnly ? '셋톱' : '장비'} 임대료 반환금 ${won(p.p5)}원`);
   L.push(`  · 사은품 환수 ${won(p.g)}원`);
+  if (R.hqGift) L.push(`  · 본사 사은품 할인반환금 ${won(p.hg)}원`);
   L.push(`■ 사용 기간: ${periodText(R)}`);
   L.push(`■ 적용 산식: ${PTYPE_LABEL[S.ptype]}`);
   L.push('──────────────');
@@ -1173,7 +1180,7 @@ function printPdf() {
   $('pdfProducts').innerHTML = prod;
   const pr = (l, v) => `<tr><td style="${td}">${l}</td><td style="${right}">${won(v)}원</td></tr>`;
   $('pdfPenalty').innerHTML = pr('인터넷 요금할인 반환금', p.p1) + pr('TV 요금할인 반환금', p.p2) + pr('인터넷 결합할인 반환금', p.p3) +
-    pr('TV 결합할인 반환금', p.p4) + pr(tvOnly ? '셋톱 임대료 반환금' : '장비 임대료 반환금', p.p5) + pr('사은품 환수', p.g) +
+    pr('TV 결합할인 반환금', p.p4) + pr(tvOnly ? '셋톱 임대료 반환금' : '장비 임대료 반환금', p.p5) + pr('사은품 환수', p.g) + (R.hqGift ? pr('본사 사은품 할인반환금', p.hg) : '') +
     pr('해지 당월 일할요금 (별도)', R.prorated) +
     `<tr><td style="padding:8px;font-weight:900;font-size:13px">예상 위약금 합계</td><td style="padding:8px;text-align:right;font-weight:900;font-size:14px;color:#be123c">${won(R.total)}원</td></tr>`;
   const tt = targetText(R);
@@ -1211,7 +1218,7 @@ $('bundleSelect').addEventListener('change', e => { S.bundleId = e.target.value;
 ['internetPlan', 'tvPlan'].forEach(id => $(id).addEventListener('change', () => { $('curProduct').dataset.edited = 'false'; update(); }));
 ['wifiOption', 'stbOption', 'tvPlan2', 'stbOption2', 'endDate'].forEach(id => $(id).addEventListener('change', update));
 $('startDate').addEventListener('change', () => { applyAutoPtype(); update(); });
-['months', 'gift', 'manIntPlan', 'manTvPlan', 'manIntBund', 'manTvBund', 'manEquip', 'manMonthly', 'tMonthly', 'newGift', 'tobeMonthly', 'tobePeriodInput', 'tProduct', 'tobeProductManual'].forEach(id => $(id).addEventListener('input', update));
+['months', 'gift', 'hqGift', 'manIntPlan', 'manTvPlan', 'manIntBund', 'manTvBund', 'manEquip', 'manMonthly', 'tMonthly', 'newGift', 'tobeMonthly', 'tobePeriodInput', 'tProduct', 'tobeProductManual'].forEach(id => $(id).addEventListener('input', update));
 $('manualToggle').addEventListener('change', e => { $('manualBox').classList.toggle('hidden', !e.target.checked); update(); });
 $('tobeToggle').addEventListener('change', e => { $('tobeBox').classList.toggle('hidden', !e.target.checked); update(); });
 $('tobePeriod').addEventListener('change', e => { $('tobePeriodWrap').classList.toggle('hidden', e.target.value !== 'custom'); update(); });
