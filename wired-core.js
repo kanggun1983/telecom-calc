@@ -322,14 +322,16 @@
     let mTvPlan = Math.max(0, tvObj.noContract - tvObj.price); if (two) mTvPlan += Math.max(0, tv2.noContract - tv2.price);
     let mIntBund = bundleObj.isPenaltyWaived ? 0 : wire; if (bundleObj.hasMobilePenalty) mIntBund += mobile;
     const mTvBund = bundleObj.isPenaltyWaived ? 0 : tvDisc;
-    let mEquip = Math.max(0, wifiObj.noContract - wifiObj.price) + Math.max(0, stbObj.noContract - stbObj.price); if (two) mEquip += Math.max(0, stb2.noContract - stb2.price);
+    const mWifi = Math.max(0, wifiObj.noContract - wifiObj.price); let mStb = Math.max(0, stbObj.noContract - stbObj.price); if (two) mStb += Math.max(0, stb2.noContract - stb2.price);
     const ptype = o.ptype || autoPtype(ck, o.start) || '5';
-    const P = (m) => Math.round(penalty(ptype, m, days, ck));
-    const p = { internet: P(mIntPlan), tv: P(mTvPlan), bundle: P(mIntBund) + P(mTvBund), equip: P(mEquip) };
+    // 📺 TV 약정 시작일이 따로면 (o.tvStart) TV 요금 · TV 결합 · 셋톱은 그 날짜로
+    const tvDays = o.tvStart && /^\d{4}-\d{2}-\d{2}$/.test(o.tvStart) ? Math.max(1, Math.min(1095, Math.round((pd(end) - pd(o.tvStart)) / 86400000))) : days;
+    const P = (m) => Math.round(penalty(ptype, m, days, ck)), PT = (m) => Math.round(penalty(ptype, m, tvDays, ck));
+    const p = { internet: P(mIntPlan), tv: PT(mTvPlan), bundle: P(mIntBund) + PT(mTvBund), equip: P(mWifi) + PT(mStb) };
     const total = p.internet + p.tv + p.bundle + p.equip;
     const endD = pd(o.start); endD.setFullYear(endD.getFullYear() + 3);
     const usedM = Math.min(36, Math.round(days / DAY_M));
-    return { carrier: ck, carrierName: c.name, ptype, days, diff, usedM, remainM: Math.max(0, 36 - usedM), contractEnd: ymd(endD), monthly, p, total, badDate: diff < 0 };
+    return { carrier: ck, carrierName: c.name, ptype, days, tvDays, diff, usedM, remainM: Math.max(0, 36 - usedM), contractEnd: ymd(endD), monthly, p, total, badDate: diff < 0 };
   }
-  g.WiredCalc = { ver: '2026-11-01', CARRIER_DATA, DAY_M, OLD_RATE_TABLE, penalty, autoPtype, bundleDiscounts, guess, estimate };
+  g.WiredCalc = { ver: '2026-11-03', CARRIER_DATA, DAY_M, OLD_RATE_TABLE, penalty, autoPtype, bundleDiscounts, guess, estimate };
 })(typeof window !== 'undefined' ? window : globalThis);

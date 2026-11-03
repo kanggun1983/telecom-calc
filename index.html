@@ -203,6 +203,12 @@ details.fold[open]>summary::after{transform:rotate(-135deg)}
           <p id="dateWarn" class="hidden" style="grid-column:1/-1;margin:2px 0 0;padding:8px 10px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;font-size:13px;font-weight:700">⚠ 해지일이 개통일보다 앞이에요. 날짜를 확인해 주세요 (지금 금액은 맞지 않아요)</p>
         </div>
         <div class="infobar"><span class="num" id="daysText">-</span><span class="tag gray num" id="expireText">-</span></div>
+        <label class="switch" style="margin-top:10px"><span>📺 TV 약정 시작일이 달라요<span class="hint" style="display:block;font-weight:500;margin:2px 0 0">TV를 나중에 달았거나 · 셋톱 교체 · TV 상품 변경 · 재약정하면 TV 쪽만 약정이 새로 시작돼요</span></span><input type="checkbox" id="tvDateToggle"><i></i></label>
+        <div id="tvDateBox" class="sub-box hidden">
+          <div class="field"><span class="lbl">TV 약정 시작일</span><input type="date" id="tvStartDate"></div>
+          <div class="infobar"><span class="num" id="tvDaysText">-</span><span class="tag gray num" id="tvExpireText">-</span></div>
+          <p class="hint" style="margin:6px 0 0">TV 요금할인 · TV 결합할인 · 셋톱 임대료 반환금은 이 날짜로, 인터넷 · 공유기는 위 날짜로 계산해요.</p>
+        </div>
       </div>
 
       <div id="monthView" class="hidden">
@@ -290,7 +296,8 @@ details.fold[open]>summary::after{transform:rotate(-135deg)}
           <div class="field"><span class="lbl">TV 요금할인</span><div class="unit" data-unit="원"><input type="number" id="manTvPlan" inputmode="numeric" placeholder="0"></div></div>
           <div class="field"><span class="lbl">인터넷 결합할인</span><div class="unit" data-unit="원"><input type="number" id="manIntBund" inputmode="numeric" placeholder="0"></div></div>
           <div class="field"><span class="lbl">TV 결합할인</span><div class="unit" data-unit="원"><input type="number" id="manTvBund" inputmode="numeric" placeholder="0"></div></div>
-          <div class="field"><span class="lbl">장비 임대료 할인</span><div class="unit" data-unit="원"><input type="number" id="manEquip" inputmode="numeric" placeholder="0"></div></div>
+          <div class="field"><span class="lbl">공유기 임대료 할인</span><div class="unit" data-unit="원"><input type="number" id="manEquip" inputmode="numeric" placeholder="0"></div></div>
+          <div class="field"><span class="lbl">셋톱 임대료 할인<span class="hint" style="display:block;font-weight:500">프로모션 할인 포함 (전산 금액)</span></span><div class="unit" data-unit="원"><input type="number" id="manStb" inputmode="numeric" placeholder="0"></div></div>
           <div class="field"><span class="lbl">실제 월 청구액</span><div class="unit" data-unit="원"><input type="number" id="manMonthly" inputmode="numeric" placeholder="자동"></div></div>
         </div>
       </div>
@@ -600,6 +607,12 @@ function compute() {
     fMonths = parseInt($('months').value, 10);
     days = Math.round(fMonths * DAY_M);
   }
+  // 📺 TV 약정 시작일이 따로면 TV 쪽 사용일 (날짜로 넣을 때만)
+  let tvDays = days, tvStart = null;
+  if (S.dur === 'date' && $('tvDateToggle').checked) {
+    tvStart = parseDate($('tvStartDate').value);
+    if (tvStart && end) tvDays = Math.max(1, Math.min(1095, Math.round((end - tvStart) / 86400000)));
+  }
 
   let base = intObj.price + wifiObj.price + tvObj.price + stbObj.price;
   if (S.tvCount === 2) base += tv2Obj.price + stb2Obj.price;
@@ -619,20 +632,22 @@ function compute() {
   let mIntBund = (bundleObj.isPenaltyWaived || tvOnly) ? 0 : wire;
   if (bundleObj.hasMobilePenalty) mIntBund += mobile;
   let mTvBund = bundleObj.isPenaltyWaived ? 0 : tvDisc;
-  let mEquip = tvOnly ? Math.max(0, stbObj.noContract - stbObj.price)
-    : Math.max(0, wifiObj.noContract - wifiObj.price) + Math.max(0, stbObj.noContract - stbObj.price);
-  if (S.tvCount === 2) mEquip += Math.max(0, stb2Obj.noContract - stb2Obj.price);
+  // 🧰 장비는 공유기(인터넷 날짜) · 셋톱(TV 날짜)으로 나눠서
+  let mWifi = tvOnly ? 0 : Math.max(0, wifiObj.noContract - wifiObj.price);
+  let mStb = Math.max(0, stbObj.noContract - stbObj.price);
+  if (S.tvCount === 2) mStb += Math.max(0, stb2Obj.noContract - stb2Obj.price);
   if (manual) {
     const v = id => parseInt($(id).value, 10) || 0;
     mIntPlan = tvOnly ? 0 : v('manIntPlan'); mTvPlan = v('manTvPlan');
-    mIntBund = tvOnly ? 0 : v('manIntBund'); mTvBund = v('manTvBund'); mEquip = v('manEquip');
+    mIntBund = tvOnly ? 0 : v('manIntBund'); mTvBund = v('manTvBund'); mWifi = tvOnly ? 0 : v('manEquip'); mStb = v('manStb');
   }
+  const tvOff = tvDays - days;   // TV가 인터넷보다 늦게 시작했으면 음수
 
-  const pen = d => ({
-    p1: getPenalty(mIntPlan, d, ck), p2: getPenalty(mTvPlan, d, ck), p3: getPenalty(mIntBund, d, ck),
-    p4: getPenalty(mTvBund, d, ck), p5: equipPenalty(mEquip, d, ck), g: d <= 365 ? gift : 0,
+  const pen = d => { const dt = Math.max(1, d + tvOff); return {
+    p1: getPenalty(mIntPlan, d, ck), p2: getPenalty(mTvPlan, dt, ck), p3: getPenalty(mIntBund, d, ck),
+    p4: getPenalty(mTvBund, dt, ck), p5: equipPenalty(mWifi, d, ck) + equipPenalty(mStb, dt, ck), g: d <= 365 ? gift : 0,
     hg: d < 365 ? Math.floor(hqGift * (365 - d) / 365) : 0
-  });
+  }; };
   const P = pen(days);
   const p = { p1: Math.round(P.p1), p2: Math.round(P.p2), p3: Math.round(P.p3), p4: Math.round(P.p4), p5: Math.round(P.p5), g: P.g, hg: P.hg };
   const total = p.p1 + p.p2 + p.p3 + p.p4 + p.p5 + p.g + p.hg;
@@ -658,7 +673,7 @@ function compute() {
   const changeCost = newCost + total - newGift;
   const diff = keepCost - changeCost;
 
-  return { sel, days, fMonths, start, end, gift, hqGift, base, tvDisc, wire, mobile, totalDisc, monthly, prorated, p, total, afterMonthly,
+  return { sel, days, tvDays, tvStart, fMonths, start, end, gift, hqGift, base, tvDisc, wire, mobile, totalDisc, monthly, prorated, p, total, afterMonthly,
     series, usedM, remainM, keepCost, changeCost, diff, newGift, tMonthly, manual };
 }
 
@@ -675,6 +690,8 @@ function render(R) {
     const m = Math.floor(R.days / DAY_M), d = Math.floor(R.days % DAY_M);
     $('daysText').innerHTML = `<b>${R.days}일</b> 사용 (${m}개월 ${d}일)`;
     if (R.start) { const e = new Date(R.start.getFullYear() + 3, R.start.getMonth(), R.start.getDate() - 1); $('expireText').textContent = `만료 ${fmtDate(e)}`; }
+    if (R.tvStart) { const tm = Math.floor(R.tvDays / DAY_M), td = Math.floor(R.tvDays % DAY_M), e2 = new Date(R.tvStart.getFullYear() + 3, R.tvStart.getMonth(), R.tvStart.getDate() - 1); $('tvDaysText').innerHTML = `TV <b>${R.tvDays}일</b> 사용 (${tm}개월 ${td}일)`; $('tvExpireText').textContent = `TV 만료 ${fmtDate(e2)}`; }
+    else { $('tvDaysText').textContent = '-'; $('tvExpireText').textContent = '-'; }
   } else {
     $('monthText').textContent = `${R.fMonths}개월 차 · 약 ${R.days}일`;
     setSeg('monthChips', String(R.fMonths));
@@ -698,10 +715,10 @@ function render(R) {
   $('giftStatus').textContent = inGift ? '사은품 환수 대상 (1년 이내)' : '사은품 환수 없음 (1년 경과)';
   $('bdBody').innerHTML =
     bdRow('인터넷 요금할인 반환금', p.p1, tvOnly ? '인터넷 유지' : '') +
-    bdRow('TV 요금할인 반환금', p.p2) +
+    bdRow('TV 요금할인 반환금', p.p2, R.tvStart ? `TV 약정 ${fmtDate(R.tvStart)}부터` : '') +
     bdRow('인터넷 결합할인 반환금', p.p3, sel.bundleObj.isPenaltyWaived ? '결합 위약금 면제 상품' : '') +
     bdRow('TV 결합할인 반환금', p.p4) +
-    bdRow(tvOnly ? '셋톱 임대료 반환금' : '장비(공유기·셋톱) 반환금', p.p5) +
+    bdRow(tvOnly ? '셋톱 임대료 반환금' : '장비(공유기·셋톱) 반환금', p.p5, R.tvStart && !tvOnly ? '셋톱은 TV 약정일로' : '') +
     bdRow('사은품 환수', p.g, R.gift ? `받은 사은품 ${won(R.gift)}원` : '') +
     (R.hqGift ? bdRow('본사 사은품 할인반환금', p.hg, `본사 사은품 ${won(R.hqGift)}원`) : '') +
     `<tr class="total"><td>합계</td><td>${won(R.total)}원</td></tr>`;
@@ -786,7 +803,8 @@ function drawChart(data, nowM) {
 function update() {
   lastR = compute(); render(lastR);
   const sd = $('startDate').value, ed = $('endDate').value;   // ⚠ 날짜 순서가 거꾸로면 알려줘요 (예전엔 '1일 사용'으로 계산돼 위약금이 거의 전액으로 나왔어요)
-  $('dateWarn').classList.toggle('hidden', !(S.dur === 'date' && sd && ed && ed < sd));
+  const td = $('tvDateToggle').checked ? $('tvStartDate').value : '';
+  $('dateWarn').classList.toggle('hidden', !(S.dur === 'date' && sd && ed && (ed < sd || (td && ed < td))));
 }
 
 /* ---------- 타사 비교 ---------- */
@@ -965,9 +983,10 @@ onSeg('targetSeg', setTarget);
 
 $('bundleSelect').addEventListener('change', e => { S.bundleId = e.target.value; fillBundles(); $('curProduct').dataset.edited = 'false'; update(); });
 ['internetPlan', 'tvPlan'].forEach(id => $(id).addEventListener('change', () => { $('curProduct').dataset.edited = 'false'; update(); }));
-['wifiOption', 'stbOption', 'tvPlan2', 'stbOption2', 'endDate'].forEach(id => $(id).addEventListener('change', update));
+['wifiOption', 'stbOption', 'tvPlan2', 'stbOption2', 'endDate', 'tvStartDate'].forEach(id => $(id).addEventListener('change', update));
+$('tvDateToggle').addEventListener('change', () => { const on = $('tvDateToggle').checked; $('tvDateBox').classList.toggle('hidden', !on); if (on && !$('tvStartDate').value) $('tvStartDate').value = $('startDate').value; update(); });
 $('startDate').addEventListener('change', () => { applyAutoPtype(); update(); });
-['months', 'gift', 'hqGift', 'manIntPlan', 'manTvPlan', 'manIntBund', 'manTvBund', 'manEquip', 'manMonthly', 'tMonthly', 'newGift', 'tobeMonthly', 'tobePeriodInput', 'tProduct', 'tobeProductManual'].forEach(id => $(id).addEventListener('input', update));
+['months', 'gift', 'hqGift', 'manIntPlan', 'manTvPlan', 'manIntBund', 'manTvBund', 'manEquip', 'manStb', 'manMonthly', 'tMonthly', 'newGift', 'tobeMonthly', 'tobePeriodInput', 'tProduct', 'tobeProductManual'].forEach(id => $(id).addEventListener('input', update));
 $('manualToggle').addEventListener('change', e => { $('manualBox').classList.toggle('hidden', !e.target.checked); update(); });
 $('tobeToggle').addEventListener('change', e => { $('tobeBox').classList.toggle('hidden', !e.target.checked); update(); });
 $('tobePeriod').addEventListener('change', e => { $('tobePeriodWrap').classList.toggle('hidden', e.target.value !== 'custom'); update(); });
@@ -1004,6 +1023,7 @@ function prefillFromUrl() {
   const ck = q.get('carrier'); if (!ck || !CARRIER_DATA[ck]) return;
   const c = CARRIER_DATA[ck], set = (id, v) => { const el = $(id); if (el && v && [...el.options].some(o => o.value === v)) el.value = v; };
   if (/^\d{4}-\d{2}-\d{2}$/.test(q.get('start') || '')) $('startDate').value = q.get('start');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(q.get('ts') || '')) { $('tvDateToggle').checked = true; $('tvDateBox').classList.remove('hidden'); $('tvStartDate').value = q.get('ts'); }   // 📺 TV 약정일 따로
   setCarrier(ck); setTarget(ck);
   if (q.get('tab') && c.internet[q.get('tab')]) { S.tab = q.get('tab'); renderTabs(); fillInternet(); }
   set('internetPlan', q.get('int')); set('wifiOption', q.get('wifi')); set('tvPlan', q.get('tv')); set('stbOption', q.get('stb')); set('tvPlan2', q.get('tv')); set('stbOption2', q.get('stb'));
