@@ -284,7 +284,8 @@ details.fold[open]>summary::after{transform:rotate(-135deg)}
       <p class="hint">개통 후 365일 이내 해지 시 전액 환수로 계산합니다.</p>
       <div style="margin-top:12px;font-weight:700;font-size:14px">본사 사은품 (통신사 지급, 비과세)</div>
       <div class="unit" data-unit="원" style="margin-top:6px"><input type="number" id="hqGift" inputmode="numeric" step="10000" value="0"></div>
-      <p class="hint">365일 중 남은 일수 비율로 환수합니다. (사은품 × 남은일수 ÷ 365)</p>
+      <div class="field" style="margin-top:8px"><span class="lbl">본사 사은품 받은 날 <span class="hint" style="font-weight:500">(비우면 가입일 · 상품권은 통신사 앱 → 사은품 조회 날짜)</span></span><input type="date" id="hqGiftDate"></div>
+      <p class="hint">받은 날부터 365일 중 남은 일수 비율로 환수합니다. (사은품 × 남은일수 ÷ 365) · 통신사가 직접 준 상품권만 넣고, 매장 사은품은 위 칸에</p>
     </section>
 
     <section class="card">
@@ -642,11 +643,14 @@ function compute() {
     mIntBund = tvOnly ? 0 : v('manIntBund'); mTvBund = v('manTvBund'); mWifi = tvOnly ? 0 : v('manEquip'); mStb = v('manStb');
   }
   const tvOff = tvDays - days;   // TV가 인터넷보다 늦게 시작했으면 음수
+  // 🎁 본사 사은품은 '받은 날'부터 1년 (SK 해지 안내: 사은품 수령 후 1년 미만 해지 시 반환) — 비우면 가입일
+  const hqGiftAt = S.dur === 'date' ? parseDate($('hqGiftDate').value) : null;
+  const giftOff = (hqGiftAt && end) ? Math.round((end - hqGiftAt) / 86400000) - days : 0;
 
   const pen = d => { const dt = Math.max(1, d + tvOff); return {
     p1: getPenalty(mIntPlan, d, ck), p2: getPenalty(mTvPlan, dt, ck), p3: getPenalty(mIntBund, d, ck),
     p4: getPenalty(mTvBund, dt, ck), p5: equipPenalty(mWifi, d, ck) + equipPenalty(mStb, dt, ck), g: d <= 365 ? gift : 0,
-    hg: d < 365 ? Math.floor(hqGift * (365 - d) / 365) : 0
+    hg: (d + giftOff) < 365 && (d + giftOff) >= 0 ? Math.floor(hqGift * (365 - (d + giftOff)) / 365) : 0
   }; };
   const P = pen(days);
   const p = { p1: Math.round(P.p1), p2: Math.round(P.p2), p3: Math.round(P.p3), p4: Math.round(P.p4), p5: Math.round(P.p5), g: P.g, hg: P.hg };
@@ -986,7 +990,7 @@ $('bundleSelect').addEventListener('change', e => { S.bundleId = e.target.value;
 ['wifiOption', 'stbOption', 'tvPlan2', 'stbOption2', 'endDate', 'tvStartDate'].forEach(id => $(id).addEventListener('change', update));
 $('tvDateToggle').addEventListener('change', () => { const on = $('tvDateToggle').checked; $('tvDateBox').classList.toggle('hidden', !on); if (on && !$('tvStartDate').value) $('tvStartDate').value = $('startDate').value; update(); });
 $('startDate').addEventListener('change', () => { applyAutoPtype(); update(); });
-['months', 'gift', 'hqGift', 'manIntPlan', 'manTvPlan', 'manIntBund', 'manTvBund', 'manEquip', 'manStb', 'manMonthly', 'tMonthly', 'newGift', 'tobeMonthly', 'tobePeriodInput', 'tProduct', 'tobeProductManual'].forEach(id => $(id).addEventListener('input', update));
+['months', 'gift', 'hqGift', 'hqGiftDate', 'manIntPlan', 'manTvPlan', 'manIntBund', 'manTvBund', 'manEquip', 'manStb', 'manMonthly', 'tMonthly', 'newGift', 'tobeMonthly', 'tobePeriodInput', 'tProduct', 'tobeProductManual'].forEach(id => $(id).addEventListener('input', update));
 $('manualToggle').addEventListener('change', e => { $('manualBox').classList.toggle('hidden', !e.target.checked); update(); });
 $('tobeToggle').addEventListener('change', e => { $('tobeBox').classList.toggle('hidden', !e.target.checked); update(); });
 $('tobePeriod').addEventListener('change', e => { $('tobePeriodWrap').classList.toggle('hidden', e.target.value !== 'custom'); update(); });
