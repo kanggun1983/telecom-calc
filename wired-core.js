@@ -9,6 +9,7 @@
         color: '#ea580c',
         thresholdDays: 240, 
         baseDenominatorDays: 855, 
+        vatExNet: true,   // 💸 SK 해지 문자 확인 (2026-11): 인터넷 · 와이파이(공유기) 반환금은 부가세 뺀 할인액으로 계산 · TV · 셋톱은 부가세 포함
         btnActive: 'border-orange-500 bg-orange-50 text-orange-600 shadow-sm',
         tvTitle: '📺 Btv & 셋톱박스 선택 (3년 약정)',
         bundleTitle: '📱 SK 결합할인 선택 (3년 약정)',
@@ -318,11 +319,12 @@
     let tvDisc = (tvObj.price > 0 && intObj.price > 0) ? (tvObj.discount || 0) : 0; if (two && tv2.price > 0) tvDisc += tv2.discount;
     const { wire, mobile } = bundleDiscounts(bundleObj, intObj);
     const monthly = Math.max(0, base - tvDisc - wire - mobile);
-    const mIntPlan = Math.max(0, intObj.noContract - intObj.price);
+    const vx = c.vatExNet ? 1 / 1.1 : 1;   // 💸 SK: 인터넷 · 와이파이는 부가세 빼고
+    const mIntPlan = Math.max(0, intObj.noContract - intObj.price) * vx;
     let mTvPlan = Math.max(0, tvObj.noContract - tvObj.price); if (two) mTvPlan += Math.max(0, tv2.noContract - tv2.price);
     let mIntBund = bundleObj.isPenaltyWaived ? 0 : wire; if (bundleObj.hasMobilePenalty) mIntBund += mobile;
     const mTvBund = bundleObj.isPenaltyWaived ? 0 : tvDisc;
-    const mWifi = Math.max(0, wifiObj.noContract - wifiObj.price); let mStb = Math.max(0, stbObj.noContract - stbObj.price); if (two) mStb += Math.max(0, stb2.noContract - stb2.price);
+    const mWifi = Math.max(0, wifiObj.noContract - wifiObj.price) * vx; let mStb = Math.max(0, stbObj.noContract - stbObj.price); if (two) mStb += Math.max(0, stb2.noContract - stb2.price);
     const ptype = o.ptype || autoPtype(ck, o.start) || '5';
     // 📺 TV 약정 시작일이 따로면 (o.tvStart) TV 요금 · TV 결합 · 셋톱은 그 날짜로
     const tvDays = o.tvStart && /^\d{4}-\d{2}-\d{2}$/.test(o.tvStart) ? Math.max(1, Math.min(1095, Math.round((pd(end) - pd(o.tvStart)) / 86400000))) : days;

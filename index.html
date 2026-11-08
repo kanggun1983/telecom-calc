@@ -198,7 +198,7 @@ details.fold[open]>summary::after{transform:rotate(-135deg)}
 
       <div id="dateView">
         <div class="grid2">
-          <div class="field"><span class="lbl">개통(재약정)일</span><input type="date" id="startDate"></div>
+          <div class="field"><span class="lbl">개통(재약정)일 <span class="hint" style="font-weight:500">SK는 오더(접수)일</span></span><input type="date" id="startDate"></div>
           <div class="field"><span class="lbl">해지(예정)일</span><input type="date" id="endDate"></div>
           <p id="dateWarn" class="hidden" style="grid-column:1/-1;margin:2px 0 0;padding:8px 10px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;font-size:13px;font-weight:700">⚠ 해지일이 개통일보다 앞이에요. 날짜를 확인해 주세요 (지금 금액은 맞지 않아요)</p>
         </div>
@@ -444,7 +444,7 @@ details.fold[open]>summary::after{transform:rotate(-135deg)}
   </div>
 </div>
 
-<script src="wired-core.js?v=2"></script>
+<script src="wired-core.js?v=3"></script>
 <script>
 const CARRIER_DATA = WiredCalc.CARRIER_DATA;   // 🧮 상품표 · 산식은 wired-core.js (강CRM과 같이 써요)
 
@@ -627,14 +627,15 @@ function compute() {
   const prorated = Math.round((monthly / dim) * termDay);
 
   const tvOnly = S.cancel === 'tv';
-  let mIntPlan = tvOnly ? 0 : Math.max(0, intObj.noContract - intObj.price);
+  const vx = (CARRIER_DATA[ck] || {}).vatExNet ? 1 / 1.1 : 1;   // 💸 SK: 인터넷 · 와이파이 반환금은 부가세 뺀 할인액으로 (SK 해지 문자로 확인 · TV · 셋톱은 부가세 포함)
+  let mIntPlan = tvOnly ? 0 : Math.max(0, intObj.noContract - intObj.price) * vx;
   let mTvPlan = Math.max(0, tvObj.noContract - tvObj.price);
   if (S.tvCount === 2) mTvPlan += Math.max(0, tv2Obj.noContract - tv2Obj.price);
   let mIntBund = (bundleObj.isPenaltyWaived || tvOnly) ? 0 : wire;
   if (bundleObj.hasMobilePenalty) mIntBund += mobile;
   let mTvBund = bundleObj.isPenaltyWaived ? 0 : tvDisc;
   // 🧰 장비는 공유기(인터넷 날짜) · 셋톱(TV 날짜)으로 나눠서
-  let mWifi = tvOnly ? 0 : Math.max(0, wifiObj.noContract - wifiObj.price);
+  let mWifi = tvOnly ? 0 : Math.max(0, wifiObj.noContract - wifiObj.price) * vx;
   let mStb = Math.max(0, stbObj.noContract - stbObj.price);
   if (S.tvCount === 2) mStb += Math.max(0, stb2Obj.noContract - stb2Obj.price);
   if (manual) {
