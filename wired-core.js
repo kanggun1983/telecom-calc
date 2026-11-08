@@ -41,8 +41,8 @@
         },
         wifiHw: {
           wifi: [
-            { id: 'band_giga', name: 'band Giga WiFi (기본포함)', price: 0, noContract: 3300, default: true },
-            { id: 'wifi7', name: 'Giga WiFi 7 (업그레이드)', price: 1100, noContract: 7700 },
+            { id: 'band_giga', name: 'Giga WiFi (기본포함)', price: 0, noContract: 3300, default: true },
+            { id: 'wifi7', name: 'Giga WiFi 7 (업그레이드)', price: 1100, noContract: 4400 },   // 📶 무약정 4,400 → 3년 약정 3,300 할인 = 1,100 (SK 가입 화면)
             { id: 'sk_old_giga_free', name: '[구] 기가 와이파이 (기본포함)', price: 0, noContract: 0 },
             { id: 'none', name: '공유기 미적용', price: 0, noContract: 0 }
           ],
@@ -113,13 +113,13 @@
         },
         wifiHw: {
           kt_giga_wi: [
-            { id: 'kt_ax', name: '기가 와이파이 홈 ax (기본포함)', price: 0, noContract: 0, default: true },
+            { id: 'kt_ax', name: '기가 와이파이 홈 ax (기본포함)', price: 0, noContract: 4400, default: true },
             { id: 'kt_wifi7d', name: 'KT WiFi 7D (업그레이드)', price: 1100, noContract: 6600 },
             { id: 'kt_old_giga_free', name: '[구] 기가 와이파이 홈 (기본포함)', price: 0, noContract: 0 },
             { id: 'none', name: '공유기 미적용', price: 0, noContract: 0 }
           ],
           kt_safe_pkg: [
-            { id: 'kt_ax', name: '기가 와이파이 홈 ax (기본포함)', price: 0, noContract: 0, default: true },
+            { id: 'kt_ax', name: '기가 와이파이 홈 ax (기본포함)', price: 0, noContract: 4400, default: true },
             { id: 'kt_wifi7d', name: 'KT WiFi 7D (업그레이드)', price: 1100, noContract: 6600 },
             { id: 'none', name: '공유기 미적용', price: 0, noContract: 0 }
           ],
@@ -202,9 +202,9 @@
         },
         wifiHw: {
           default: [
-            { id: 'lg_wifi6_1', name: '기가WiFi6 1대 (기본제공)', price: 0, noContract: 0, default: true },
-            { id: 'lg_wifi_giga', name: '기가WiFi (기본제공)', price: 0, noContract: 0 },
-            { id: 'lg_wifi7_1', name: '기가WiFi7 (기본제공)', price: 0, noContract: 0 },
+            { id: 'lg_wifi6_1', name: '기가WiFi6 1대 (기본제공)', price: 0, noContract: 3300, default: true },
+            { id: 'lg_wifi_giga', name: '기가WiFi (기본제공)', price: 0, noContract: 3300 },
+            { id: 'lg_wifi7_1', name: '기가WiFi7 (기본제공)', price: 0, noContract: 3300 },
             { id: 'lg_wifi6_2', name: '기가WiFi6 2대 (기본제공)', price: 0, noContract: 0 },
             { id: 'lg_wifi_spk', name: '기가WiFi + 스마트홈 스피커 (기본제공)', price: 0, noContract: 0 },
             { id: 'lg_wifi6_spk', name: '기가WiFi6 + 스마트홈 스피커 (기본제공)', price: 0, noContract: 0 },
