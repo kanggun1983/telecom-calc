@@ -333,5 +333,27 @@
     const usedM = Math.min(36, Math.round(days / DAY_M));
     return { carrier: ck, carrierName: c.name, ptype, days, tvDays, diff, usedM, remainM: Math.max(0, 36 - usedM), contractEnd: ymd(endD), monthly, p, total, badDate: diff < 0 };
   }
-  g.WiredCalc = { ver: '2026-11-03', CARRIER_DATA, DAY_M, OLD_RATE_TABLE, penalty, autoPtype, bundleDiscounts, guess, estimate };
+  /* ✏️ 매장에서 고친 상품 (강CRM 설정 → 유선 상품) — 기본표는 그대로 두고 고친 것 · 추가한 것만 덮어씀
+     cfg = { items: { SK: { 'internet.wifi': [{ id, name, price, noContract, speed, hide }], 'wifiHw.wifi': [...], tv: [{ ..., discount }], stb: [...] } } } */
+  const BASE = JSON.parse(JSON.stringify(CARRIER_DATA));
+  const LIST_KEYS = ['internet', 'wifiHw', 'tv', 'stb'];
+  function listOf(c, path) { const [a, t] = String(path || '').split('.'); if (!LIST_KEYS.includes(a)) return null; const L = t ? (c[a] && c[a][t]) : c[a]; return Array.isArray(L) ? L : null; }
+  function applyCustom(cfg) {
+    Object.keys(BASE).forEach(ck => { const c = CARRIER_DATA[ck], b = JSON.parse(JSON.stringify(BASE[ck])); LIST_KEYS.forEach(k => { c[k] = b[k]; }); });   // 늘 기본표에서 다시
+    const items = (cfg && cfg.items) || {}, num = (v) => Math.max(0, Math.round(Number(v) || 0));
+    Object.keys(items).forEach(ck => { const c = CARRIER_DATA[ck]; if (!c) return;
+      Object.keys(items[ck] || {}).forEach(path => { const L = listOf(c, path), kind = String(path).split('.')[0]; if (!L) return;
+        (items[ck][path] || []).forEach(x => { if (!x || !x.id) return; const i = L.findIndex(y => y.id === x.id);
+          if (x.hide) { if (i >= 0 && L[i].id !== 'none' && L.length > 2) { const wasDefault = L[i].default; L.splice(i, 1); if (wasDefault && L[0]) L[0].default = true; } return; }
+          const v = { name: String(x.name || (i >= 0 ? L[i].name : '') || '상품').slice(0, 60), price: num(x.price), noContract: num(x.noContract), custom: true };
+          if (kind === 'tv') { v.discount = num(x.discount); v.discountPrice = Math.max(0, v.price - v.discount); }
+          if (kind === 'internet') v.speed = Number(x.speed) > 0 ? Number(x.speed) : (i >= 0 ? L[i].speed : 500);
+          if (i >= 0) Object.assign(L[i], v);
+          else { const n = { id: String(x.id).slice(0, 40), ...v }, ni = L.findIndex(y => y.id === 'none'); if (ni >= 0) L.splice(ni, 0, n); else L.push(n); }
+        });
+      });
+    });
+    return CARRIER_DATA;
+  }
+  g.WiredCalc = { ver: '2026-11-08', CARRIER_DATA, BASE, DAY_M, OLD_RATE_TABLE, penalty, autoPtype, bundleDiscounts, guess, estimate, applyCustom, listOf };
 })(typeof window !== 'undefined' ? window : globalThis);
