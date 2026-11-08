@@ -443,7 +443,7 @@ details.fold[open]>summary::after{transform:rotate(-135deg)}
   </div>
 </div>
 
-<script src="wired-core.js?v=1"></script>
+<script src="wired-core.js?v=2"></script>
 <script>
 const CARRIER_DATA = WiredCalc.CARRIER_DATA;   // 🧮 상품표 · 산식은 wired-core.js (강CRM과 같이 써요)
 
@@ -1006,6 +1006,22 @@ $('dockCopy').addEventListener('click', copyText);
 $('pdfBtn').addEventListener('click', printPdf);
 $('dockGo').addEventListener('click', () => $('heroCard').scrollIntoView({ behavior: 'smooth', block: 'start' }));
 
+/* ---------- ✏️ 매장에서 고친 유선 상품 (강CRM 설정 → 유선 상품 · card_public/wired) ----------
+   이 폰에 저장해 둔 것부터 바로 쓰고, 서버에서 새것을 받으면 다시 그림 */
+const WIRED_CUSTOM_URL = 'https://firestore.googleapis.com/v1/projects/phoneplace-db/databases/(default)/documents/card_public/wired';
+let wiredCustomRaw = store.get('wiredCustom') || '';
+try { if (wiredCustomRaw) WiredCalc.applyCustom(JSON.parse(wiredCustomRaw)); } catch (e) { wiredCustomRaw = ''; }
+function loadWiredCustom() {
+  fetch(WIRED_CUSTOM_URL, { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => {
+    const raw = d && d.fields && d.fields.json && d.fields.json.stringValue || '';
+    if (raw === wiredCustomRaw) return;
+    let cfg = null; try { cfg = raw ? JSON.parse(raw) : null; } catch (e) { return; }
+    wiredCustomRaw = raw; store.set('wiredCustom', raw);
+    WiredCalc.applyCustom(cfg);
+    const keep = S.carrier; setCarrier(keep); prefillFromUrl();   // 새 상품표로 다시 그리기
+  }).catch(() => {});
+}
+
 /* ---------- 시작 ---------- */
 (function init() {
   const today = new Date();
@@ -1015,6 +1031,7 @@ $('dockGo').addEventListener('click', () => $('heroCard').scrollIntoView({ behav
   setCarrier('SK');
   setTarget('SK');
   prefillFromUrl();
+  loadWiredCustom();
 })();
 /* 🔗 강CRM 고객카드 [계산기에서 자세히] → 통신사 · 가입일 · 상품을 채워서 열기
    ?carrier=SK|KT|LG&start=YYYY-MM-DD&tab=&int=&wifi=&tv=&stb=&bundle=&tv2=1&name= */
