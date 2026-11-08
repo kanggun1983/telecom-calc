@@ -27,14 +27,14 @@
         internet: {
           wifi: [
             { id: 'sk_w500m', name: '기가라이트인터넷 와이파이 (500M)', price: 34100, noContract: 59400, speed: 500, default: true },
-            { id: 'sk_w100m', name: '광랜인터넷 와이파이 (100M)', price: 23100, noContract: 41800, speed: 100 },
-            { id: 'sk_w1g', name: '기가인터넷 와이파이 (1G)', price: 39600, noContract: 57200, speed: 1000 },
-            { id: 'sk_x2.5g', name: '기가프리미엄 X2.5', price: 44000, noContract: 66000, speed: 2500 },
+            { id: 'sk_w100m', name: '광랜인터넷 와이파이 (100M)', price: 23100, noContract: 46200, speed: 100 },
+            { id: 'sk_w1g', name: '기가인터넷 와이파이 (1G)', price: 39600, noContract: 64900, speed: 1000 },
+            { id: 'sk_x2.5g', name: '기가프리미엄 X2.5', price: 44000, noContract: 71500, speed: 2500 },
             { id: 'sk_x5g', name: '기가프리미엄 X5', price: 55000, noContract: 77000, speed: 5000 }
           ],
           basic: [
-            { id: 'sk_500m', name: '기가라이트 500M', price: 33000, noContract: 46200, speed: 500, default: true },
-            { id: 'sk_100m', name: '광랜인터넷 100M', price: 22000, noContract: 39600, speed: 100 },
+            { id: 'sk_500m', name: '기가라이트 500M', price: 33000, noContract: 49500, speed: 500, default: true },
+            { id: 'sk_100m', name: '광랜인터넷 100M', price: 22000, noContract: 36300, speed: 100 },
             { id: 'sk_1g', name: '기가인터넷 1G', price: 38500, noContract: 55000, speed: 1000 }
           ]
         },
@@ -56,8 +56,8 @@
         },
         tv: [
           { id: 'std', name: 'Btv 스탠다드 (235ch)', price: 15400, discountPrice: 13200, noContract: 22000, discount: 2200, default: true },
-          { id: 'eco', name: 'Btv 이코노미 (183ch)', price: 12100, discountPrice: 9900, noContract: 19800, discount: 2200 },
-          { id: 'all', name: 'Btv ALL (257ch)', price: 18700, discountPrice: 16500, noContract: 26400, discount: 2200 },
+          { id: 'eco', name: 'Btv 이코노미 (183ch)', price: 12100, discountPrice: 9900, noContract: 18700, discount: 2200 },
+          { id: 'all', name: 'Btv ALL (257ch)', price: 18700, discountPrice: 16500, noContract: 25300, discount: 2200 },
           { id: 'all_plus', name: 'B tv All + (257ch)', price: 24200, discountPrice: 22000, noContract: 31900, discount: 2200 },
           { id: 'none', name: 'Btv 미적용', price: 0, discountPrice: 0, noContract: 0, discount: 0 }
         ],
@@ -91,9 +91,9 @@
         tabs: [{ id: 'kt_giga_wi', name: '기가 Wi 결합' }, { id: 'kt_safe_pkg', name: '안심인터넷 패키지' }, { id: 'kt_basic', name: '기본 인터넷' }],
         internet: {
           kt_giga_wi: [
-            { id: 'kt_basic_wi', name: '인터넷 베이직 와이파이 (500M)', price: 34100, noContract: 48400, speed: 500, default: true },
-            { id: 'kt_slim_wi', name: '인터넷 슬림 와이파이 (100M)', price: 23100, noContract: 41800, speed: 100 },
-            { id: 'kt_ess_wi', name: '인터넷 에센스 와이파이 (1G)', price: 38500, noContract: 57200, speed: 1000 },
+            { id: 'kt_basic_wi', name: '인터넷 베이직 와이파이 (500M)', price: 34100, noContract: 55000, speed: 500, default: true },
+            { id: 'kt_slim_wi', name: '인터넷 슬림 와이파이 (100M)', price: 23100, noContract: 48400, speed: 100 },
+            { id: 'kt_ess_wi', name: '인터넷 에센스 와이파이 (1G)', price: 38500, noContract: 63800, speed: 1000 },
             { id: 'kt_prem_wi', name: '인터넷 프리미엄 와이파이 (2.5G)', price: 44000, noContract: 66000, speed: 2500 }
           ],
           kt_safe_pkg: [
@@ -104,7 +104,10 @@
           kt_basic: [
             { id: 'kt_b_basic', name: '인터넷 베이직 (500M)', price: 33000, noContract: 46200, speed: 500, default: true },
             { id: 'kt_b_slim', name: '인터넷 슬림 (100M)', price: 22000, noContract: 39600, speed: 100 },
-            { id: 'kt_b_ess', name: '인터넷 에센스 (1G)', price: 38500, noContract: 55000, speed: 1000 }
+            { id: 'kt_b_ess', name: '인터넷 에센스 (1G)', price: 38500, noContract: 55000, speed: 1000 },
+            { id: 'kt_b_slimplus', name: '인터넷 슬림플러스 (200M)', price: 30250, noContract: 41800, speed: 200 },
+            { id: 'kt_b_prem', name: '인터넷 프리미엄 (2.5G)', price: 44000, noContract: 60500, speed: 2500 },
+            { id: 'kt_b_premplus', name: '인터넷 프리미엄플러스 (5G)', price: 60500, noContract: 82500, speed: 5000 },
           ]
         },
         wifiHw: {
@@ -173,7 +176,10 @@
             { id: 'lg_b_500', name: '와이파이기본 기가 Slim안심 500M', price: 33000, noContract: 56100, speed: 500, default: true },
             { id: 'lg_b_100', name: '와이파이기본 광랜 안심 100M', price: 22000, noContract: 39600, speed: 100 },
             { id: 'lg_b_200', name: '와이파이기본 안심 200M', price: 25300, noContract: 46200, speed: 200 },
-            { id: 'lg_b_1g', name: '와이파이기본 기가 안심 1G', price: 38500, noContract: 64900, speed: 1000 }
+            { id: 'lg_b_1g', name: '와이파이기본 기가 안심 1G', price: 38500, noContract: 64900, speed: 1000 },
+            { id: 'lg_b_2_5g', name: '와이파이기본 2.5기가', price: 44000, noContract: 69300, speed: 2500 },
+            { id: 'lg_b_2_5g_s', name: '와이파이기본 2.5기가 안심', price: 45100, noContract: 72600, speed: 2500 },
+            { id: 'lg_b_5g', name: '와이파이기본 5기가', price: 58300, noContract: 80300, speed: 5000 },
           ],
           lg_prem_comp: [
             { id: 'lg_pc_500', name: '프리미엄 안심 보상 500M', price: 39600, noContract: 74800, speed: 500, default: true },
@@ -209,9 +215,10 @@
           ]
         },
         tv: [
-          { id: 'lg_prem', name: '프리미엄 TV (257ch)', price: 18700, discountPrice: 16500, noContract: 24200, discount: 2200, default: true },
-          { id: 'lg_adv', name: '고급형 TV (235ch)', price: 17600, discountPrice: 15400, noContract: 23100, discount: 2200 },
+          { id: 'lg_prem', name: '프리미엄 TV (257ch)', price: 18700, discountPrice: 16500, noContract: 22000, discount: 2200, default: true },
+          { id: 'lg_adv', name: '고급형 TV (235ch)', price: 17600, discountPrice: 15400, noContract: 20900, discount: 2200 },
           { id: 'lg_basic', name: '기본형 TV (222ch)', price: 16500, discountPrice: 14300, noContract: 20900, discount: 2200 },
+          { id: 'lg_tv_basic211', name: '베이직 TV (211ch)', price: 14300, discountPrice: 12100, noContract: 17600, discount: 2200 },
           { id: 'lg_eco', name: '실속형 TV (216ch)', price: 15400, discountPrice: 13200, noContract: 19800, discount: 2200 },
           { id: 'lg_old_std', name: '[구] 일반형 TV', price: 13090, discountPrice: 10890, noContract: 16390, discount: 2200 },
           { id: 'lg_old_basic', name: '[구] 보급형 TV', price: 10890, discountPrice: 8690, noContract: 14190, discount: 2200 },
@@ -355,5 +362,5 @@
     });
     return CARRIER_DATA;
   }
-  g.WiredCalc = { ver: '2026-11-08', CARRIER_DATA, BASE, DAY_M, OLD_RATE_TABLE, penalty, autoPtype, bundleDiscounts, guess, estimate, applyCustom, listOf };
+  g.WiredCalc = { ver: '2026-11-08b', CARRIER_DATA, BASE, DAY_M, OLD_RATE_TABLE, penalty, autoPtype, bundleDiscounts, guess, estimate, applyCustom, listOf };
 })(typeof window !== 'undefined' ? window : globalThis);
