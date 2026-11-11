@@ -203,6 +203,7 @@ details.fold[open]>summary::after{transform:rotate(-135deg)}
           <p id="dateWarn" class="hidden" style="grid-column:1/-1;margin:2px 0 0;padding:8px 10px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;font-size:13px;font-weight:700">⚠ 해지일이 개통일보다 앞이에요. 날짜를 확인해 주세요 (지금 금액은 맞지 않아요)</p>
         </div>
         <div class="infobar"><span class="num" id="daysText">-</span><span class="tag gray num" id="expireText">-</span></div>
+        <p id="renewInfo" class="hidden" style="margin:6px 0 0;padding:8px 10px;border-radius:10px;background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;font-size:13px;font-weight:700;line-height:1.5"></p>
         <label class="switch" style="margin-top:10px"><span>📺 TV 약정 시작일이 달라요<span class="hint" style="display:block;font-weight:500;margin:2px 0 0">TV를 나중에 달았거나 · 셋톱 교체 · TV 상품 변경 · 재약정하면 TV 쪽만 약정이 새로 시작돼요</span></span><input type="checkbox" id="tvDateToggle"><i></i></label>
         <div id="tvDateBox" class="sub-box hidden">
           <div class="field"><span class="lbl">TV 약정 시작일</span><input type="date" id="tvStartDate"></div>
@@ -695,6 +696,17 @@ function render(R) {
     const m = Math.floor(R.days / DAY_M), d = Math.floor(R.days % DAY_M);
     $('daysText').innerHTML = `<b>${R.days}일</b> 사용 (${m}개월 ${d}일)`;
     if (R.start) { const e = new Date(R.start.getFullYear() + 3, R.start.getMonth(), R.start.getDate() - 1); $('expireText').textContent = `만료 ${fmtDate(e)}`; }
+    { // 🔄 약정갱신: 만료 6개월 전부터 가능 · 미리 하면 남은 위약금은 유예되고 갱신일부터 다시 3년
+      const ri = $('renewInfo');
+      if (R.start) {
+        const e = new Date(R.start.getFullYear() + 3, R.start.getMonth(), R.start.getDate() - 1), rf = new Date(e.getFullYear(), e.getMonth() - 6, e.getDate());
+        const ref = R.end || new Date(), typ = S.crmType ? `${S.crmType} · ` : '';
+        ri.innerHTML = ref > e ? `✅ ${typ}약정 만료 ${fmtDate(e)} · 지금은 위약금 없이 바꿀 수 있어요`
+          : (ref >= rf ? `🔄 ${typ}<b>지금 약정갱신 가능</b> (${fmtDate(rf)}부터) · 미리 하면 남은 위약금은 유예되고 갱신일부터 다시 3년이에요`
+          : `🔄 ${typ}약정갱신은 <b>${fmtDate(rf)}부터</b> 가능 (만료 6개월 전) · 미리 하면 남은 위약금은 유예되고 갱신일부터 다시 3년`);
+        ri.classList.remove('hidden');
+      } else ri.classList.add('hidden');
+    }
     if (R.tvStart) { const tm = Math.floor(R.tvDays / DAY_M), td = Math.floor(R.tvDays % DAY_M), e2 = new Date(R.tvStart.getFullYear() + 3, R.tvStart.getMonth(), R.tvStart.getDate() - 1); $('tvDaysText').innerHTML = `TV <b>${R.tvDays}일</b> 사용 (${tm}개월 ${td}일)`; $('tvExpireText').textContent = `TV 만료 ${fmtDate(e2)}`; }
     else { $('tvDaysText').textContent = '-'; $('tvExpireText').textContent = '-'; }
   } else {
@@ -1039,7 +1051,7 @@ function loadWiredCustom() {
   loadWiredCustom();
 })();
 /* 🔗 강CRM 고객카드 [계산기에서 자세히] → 통신사 · 가입일 · 상품을 채워서 열기
-   ?carrier=SK|KT|LG&start=YYYY-MM-DD&tab=&int=&wifi=&tv=&stb=&bundle=&tv2=1&name= */
+   ?carrier=SK|KT|LG&start=YYYY-MM-DD&ts=&tab=&int=&wifi=&tv=&stb=&bundle=&tv2=1&name=&type=신규|재약정|약정갱신|원스탑 */
 function prefillFromUrl() {
   let q; try { q = new URLSearchParams(location.search); } catch (e) { return; }
   const ck = q.get('carrier'); if (!ck || !CARRIER_DATA[ck]) return;
@@ -1052,8 +1064,9 @@ function prefillFromUrl() {
   if (q.get('bundle') && c.bundles.some(b => b.id === q.get('bundle'))) { S.bundleId = q.get('bundle'); fillBundles(); }
   if (q.get('tv2') === '1') { S.tvCount = 2; setSeg('tvCountSeg', '2'); $('tv2Box').classList.remove('hidden'); }
   applyAutoPtype(); renderPtype(); syncTarget(); syncTobe(); update();
-  const nm = String(q.get('name') || '').slice(0, 20);
-  toast(`🔗 강CRM${nm ? ` · ${nm}님` : ''} 정보로 채웠어요 · 상품이 맞는지 확인해 주세요`);
+  const nm = String(q.get('name') || '').slice(0, 20), ty = ['신규', '재약정', '약정갱신', '원스탑'].includes(q.get('type')) ? q.get('type') : '';
+  if (ty) { S.crmType = ty; update(); }   // 🔄 강CRM 유선 유형 (신규 · 재약정 · 약정갱신 · 원스탑)
+  toast(`🔗 강CRM${nm ? ` · ${nm}님` : ''}${ty ? ` · ${ty}` : ''} 정보로 채웠어요 · 상품이 맞는지 확인해 주세요`);
 }
 if ('serviceWorker' in navigator) window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
 </script>
