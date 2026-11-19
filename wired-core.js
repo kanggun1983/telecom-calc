@@ -160,7 +160,7 @@
         bundleTitle: '📱 LG 결합할인 선택 (3년 약정)',
         bundles: [
           { id: 'lg_wire_only', group: 'current', name: '무선결합 미적용 (인터넷+TV 유선결합)', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 0, desc: '인터넷 -5,500원 + TV -2,200원 유선결합 할인 적용', default: true },
-          { id: 'lg_cham', group: 'current', name: '참 쉬운 가족결합 (유무선 결합)', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDiscSpeed: { 100: 5500, 200: 5500, 500: 9900, 1000: 13200, 2500: 13200 }, desc: '인터넷 총 1.1만~1.87만원 할인 (유선 -5,500 + 속도별 모바일 추가할인)' },
+          { id: 'lg_cham', group: 'current', name: '참 쉬운 가족결합 (유무선 결합)', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDiscSpeed: { 100: 0, 200: 0, 500: 9900, 1000: 13200, 2500: 13200 }, desc: '인터넷 -5,500 (100M · 200M은 이것만 · 2026-11 청구서 확인) · 500M 이상은 속도별 추가할인' },
           { id: 'lg_together', group: 'current', name: 'U+투게더 결합', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDiscSpeed: { 100: 11000, 200: 11000, 500: 11000, 1000: 11000, 2500: 11000 }, desc: '인터넷 11,000원 추가할인' },
           { id: 'lg_legacy_home', group: 'legacy', name: '[구] 한방에Home (한방에홈 1/2)', wireDisc: { 100: 8800, 200: 8800, 500: 11000, 1000: 11000, 2500: 11000 }, mobileDisc: 0, desc: '인터넷 정액 감면 (100M: -8,800원 / 500M·1G: -11,000원)' },
           { id: 'lg_legacy_love', group: 'legacy', name: '[구] 가족무한사랑 (유무선 결합)', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 5500, hasMobilePenalty: true, desc: '인터넷 -5,500원 + 모바일 총액구간별 할인' },
@@ -274,7 +274,7 @@
     if (bundle.isRate && bundle.rate) return { wire: 0, mobile: Math.round(intObj.price * bundle.rate) };
     const sp = intObj.speed || 500;
     const wire = bundle.wireDisc ? (bundle.wireDisc[sp] || bundle.wireDisc[500] || 0) : 0;
-    const mobile = bundle.mobileDiscSpeed ? (bundle.mobileDiscSpeed[sp] || bundle.mobileDiscSpeed[500] || 0) : (bundle.mobileDisc || 0);
+    const mobile = bundle.mobileDiscSpeed ? (sp in bundle.mobileDiscSpeed ? bundle.mobileDiscSpeed[sp] : (bundle.mobileDiscSpeed[500] || 0)) : (bundle.mobileDisc || 0);   // 0원도 그대로 (예전엔 0이면 500M 값으로 바뀜)
     return { wire, mobile };
   }
   const dflt = (list) => (list || []).find(x => x.default) || (list || [])[0];
@@ -364,5 +364,5 @@
     });
     return CARRIER_DATA;
   }
-  g.WiredCalc = { ver: '2026-11-19', CARRIER_DATA, BASE, DAY_M, OLD_RATE_TABLE, penalty, autoPtype, bundleDiscounts, guess, estimate, applyCustom, listOf };
+  g.WiredCalc = { ver: '2026-11-19b', CARRIER_DATA, BASE, DAY_M, OLD_RATE_TABLE, penalty, autoPtype, bundleDiscounts, guess, estimate, applyCustom, listOf };
 })(typeof window !== 'undefined' ? window : globalThis);
