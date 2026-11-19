@@ -175,7 +175,7 @@
         internet: {
           lg_basic: [
             { id: 'lg_b_500', name: '와이파이기본 기가 Slim안심 500M', price: 33000, noContract: 56100, speed: 500, default: true },
-            { id: 'lg_b_100', name: '와이파이기본 광랜 안심 100M', price: 22000, noContract: 39600, speed: 100 },
+            { id: 'lg_b_100', name: '와이파이기본 광랜 안심 100M', price: 22000, noContract: 42900, speed: 100 },   // 2026-11 청구서 확인: 기본료 42,900 · 약정할인 -20,900
             { id: 'lg_b_200', name: '와이파이기본 안심 200M', price: 25300, noContract: 46200, speed: 200 },
             { id: 'lg_b_1g', name: '와이파이기본 기가 안심 1G', price: 38500, noContract: 64900, speed: 1000 },
             { id: 'lg_b_2_5g', name: '와이파이기본 2.5기가', price: 44000, noContract: 69300, speed: 2500 },
@@ -364,5 +364,5 @@
     });
     return CARRIER_DATA;
   }
-  g.WiredCalc = { ver: '2026-11-08b', CARRIER_DATA, BASE, DAY_M, OLD_RATE_TABLE, penalty, autoPtype, bundleDiscounts, guess, estimate, applyCustom, listOf };
+  g.WiredCalc = { ver: '2026-11-19', CARRIER_DATA, BASE, DAY_M, OLD_RATE_TABLE, penalty, autoPtype, bundleDiscounts, guess, estimate, applyCustom, listOf };
 })(typeof window !== 'undefined' ? window : globalThis);
