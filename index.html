@@ -445,7 +445,7 @@ details.fold[open]>summary::after{transform:rotate(-135deg)}
   </div>
 </div>
 
-<script src="wired-core.js?v=4"></script>
+<script src="wired-core.js?v=5"></script>
 <script>
 const CARRIER_DATA = WiredCalc.CARRIER_DATA;   // 🧮 상품표 · 산식은 wired-core.js (강CRM과 같이 써요)
 
@@ -572,7 +572,7 @@ function bundleDiscounts(bundle, intObj) {
   if (bundle.isRate && bundle.rate) return { wire: 0, mobile: Math.round(intObj.price * bundle.rate) };
   const sp = intObj.speed || 500;
   const wire = bundle.wireDisc ? (bundle.wireDisc[sp] || bundle.wireDisc[500] || 0) : 0;
-  const mobile = bundle.mobileDiscSpeed ? (bundle.mobileDiscSpeed[sp] || bundle.mobileDiscSpeed[500] || 0) : (bundle.mobileDisc || 0);
+  const mobile = bundle.mobileDiscSpeed ? (sp in bundle.mobileDiscSpeed ? bundle.mobileDiscSpeed[sp] : (bundle.mobileDiscSpeed[500] || 0)) : (bundle.mobileDisc || 0);   // 0원도 그대로 (예전엔 0이면 500M 값으로 바뀜)
   return { wire, mobile };
 }
 
