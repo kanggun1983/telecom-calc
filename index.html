@@ -445,7 +445,7 @@ details.fold[open]>summary::after{transform:rotate(-135deg)}
   </div>
 </div>
 
-<script src="wired-core.js?v=5"></script>
+<script src="wired-core.js?v=6"></script>
 <script>
 const CARRIER_DATA = WiredCalc.CARRIER_DATA;   // 🧮 상품표 · 산식은 wired-core.js (강CRM과 같이 써요)
 
@@ -632,7 +632,7 @@ function compute() {
   let mIntPlan = tvOnly ? 0 : Math.max(0, intObj.noContract - intObj.price) * vx;
   let mTvPlan = Math.max(0, tvObj.noContract - tvObj.price);
   if (S.tvCount === 2) mTvPlan += Math.max(0, tv2Obj.noContract - tv2Obj.price);
-  let mIntBund = (bundleObj.isPenaltyWaived || tvOnly) ? 0 : wire;
+  let mIntBund = (bundleObj.isPenaltyWaived || bundleObj.noWirePenalty || tvOnly) ? 0 : wire;   // LG 인터넷 결합할인은 반환금 없음 (통신사 조회 확인)
   if (bundleObj.hasMobilePenalty) mIntBund += mobile;
   let mTvBund = bundleObj.isPenaltyWaived ? 0 : tvDisc;
   // 🧰 장비는 공유기(인터넷 날짜) · 셋톱(TV 날짜)으로 나눠서
@@ -733,7 +733,7 @@ function render(R) {
   $('bdBody').innerHTML =
     bdRow('인터넷 요금할인 반환금', p.p1, tvOnly ? '인터넷 유지' : '') +
     bdRow('TV 요금할인 반환금', p.p2, R.tvStart ? `TV 약정 ${fmtDate(R.tvStart)}부터` : '') +
-    bdRow('인터넷 결합할인 반환금', p.p3, sel.bundleObj.isPenaltyWaived ? '결합 위약금 면제 상품' : '') +
+    bdRow('인터넷 결합할인 반환금', p.p3, sel.bundleObj.isPenaltyWaived ? '결합 위약금 면제 상품' : (sel.bundleObj.noWirePenalty ? 'LG 인터넷 결합할인은 반환금 없음' : '')) +
     bdRow('TV 결합할인 반환금', p.p4) +
     bdRow(tvOnly ? '셋톱 임대료 반환금' : '장비(공유기·셋톱) 반환금', p.p5, R.tvStart && !tvOnly ? '셋톱은 TV 약정일로' : '') +
     bdRow('사은품 환수', p.g, R.gift ? `받은 사은품 ${won(R.gift)}원` : '') +
