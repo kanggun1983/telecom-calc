@@ -159,9 +159,9 @@
         tvTitle: '📺 U+tv & 셋톱박스 선택 (3년 약정)',
         bundleTitle: '📱 LG 결합할인 선택 (3년 약정)',
         bundles: [
-          { id: 'lg_wire_only', group: 'current', name: '무선결합 미적용 (인터넷+TV 유선결합)', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 0, desc: '인터넷 -5,500원 + TV -2,200원 유선결합 할인 적용', default: true },
-          { id: 'lg_cham', group: 'current', name: '참 쉬운 가족결합 (유무선 결합)', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDiscSpeed: { 100: 0, 200: 0, 500: 9900, 1000: 13200, 2500: 13200 }, desc: '인터넷 -5,500 (100M · 200M은 이것만 · 2026-11 청구서 확인) · 500M 이상은 속도별 추가할인' },
-          { id: 'lg_together', group: 'current', name: 'U+투게더 결합', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDiscSpeed: { 100: 11000, 200: 11000, 500: 11000, 1000: 11000, 2500: 11000 }, desc: '인터넷 11,000원 추가할인' },
+          { id: 'lg_wire_only', group: 'current', noWirePenalty: true, name: '무선결합 미적용 (인터넷+TV 유선결합)', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 0, desc: '인터넷 -5,500원 + TV -2,200원 유선결합 할인 적용', default: true },
+          { id: 'lg_cham', group: 'current', noWirePenalty: true, name: '참 쉬운 가족결합 (유무선 결합)', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDiscSpeed: { 100: 0, 200: 0, 500: 9900, 1000: 13200, 2500: 13200 }, desc: '인터넷 -5,500 (100M · 200M은 이것만 · 2026-11 청구서 확인) · 500M 이상은 속도별 추가할인' },
+          { id: 'lg_together', group: 'current', noWirePenalty: true, name: 'U+투게더 결합', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDiscSpeed: { 100: 11000, 200: 11000, 500: 11000, 1000: 11000, 2500: 11000 }, desc: '인터넷 11,000원 추가할인' },
           { id: 'lg_legacy_home', group: 'legacy', name: '[구] 한방에Home (한방에홈 1/2)', wireDisc: { 100: 8800, 200: 8800, 500: 11000, 1000: 11000, 2500: 11000 }, mobileDisc: 0, desc: '인터넷 정액 감면 (100M: -8,800원 / 500M·1G: -11,000원)' },
           { id: 'lg_legacy_love', group: 'legacy', name: '[구] 가족무한사랑 (유무선 결합)', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 5500, hasMobilePenalty: true, desc: '인터넷 -5,500원 + 모바일 총액구간별 할인' },
           { id: 'lg_legacy_yo', group: 'legacy', name: '[구] 한방에yo (한방에YO)', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 0, desc: '인터넷 기본할인 유지 (모바일 청구서에서 회선당 할인)' }
@@ -329,7 +329,7 @@
     const vx = c.vatExNet ? 1 / 1.1 : 1;   // 💸 SK: 인터넷 · 와이파이는 부가세 빼고
     const mIntPlan = Math.max(0, intObj.noContract - intObj.price) * vx;
     let mTvPlan = Math.max(0, tvObj.noContract - tvObj.price); if (two) mTvPlan += Math.max(0, tv2.noContract - tv2.price);
-    let mIntBund = bundleObj.isPenaltyWaived ? 0 : wire; if (bundleObj.hasMobilePenalty) mIntBund += mobile;
+    let mIntBund = (bundleObj.isPenaltyWaived || bundleObj.noWirePenalty) ? 0 : wire; if (bundleObj.hasMobilePenalty) mIntBund += mobile;   // 2026-11 LG 해지 조회 2건: 인터넷 결합할인(-5,500)은 반환금에 없음
     const mTvBund = bundleObj.isPenaltyWaived ? 0 : tvDisc;
     const mWifi = Math.max(0, wifiObj.noContract - wifiObj.price) * vx; let mStb = Math.max(0, stbObj.noContract - stbObj.price); if (two) mStb += Math.max(0, stb2.noContract - stb2.price);
     const ptype = o.ptype || autoPtype(ck, o.start) || '5';
@@ -364,5 +364,5 @@
     });
     return CARRIER_DATA;
   }
-  g.WiredCalc = { ver: '2026-11-19b', CARRIER_DATA, BASE, DAY_M, OLD_RATE_TABLE, penalty, autoPtype, bundleDiscounts, guess, estimate, applyCustom, listOf };
+  g.WiredCalc = { ver: '2026-11-23', CARRIER_DATA, BASE, DAY_M, OLD_RATE_TABLE, penalty, autoPtype, bundleDiscounts, guess, estimate, applyCustom, listOf };
 })(typeof window !== 'undefined' ? window : globalThis);
