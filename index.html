@@ -445,7 +445,7 @@ details.fold[open]>summary::after{transform:rotate(-135deg)}
   </div>
 </div>
 
-<script src="wired-core.js?v=6"></script>
+<script src="wired-core.js?v=7"></script>
 <script>
 const CARRIER_DATA = WiredCalc.CARRIER_DATA;   // 🧮 상품표 · 산식은 wired-core.js (강CRM과 같이 써요)
 
@@ -562,7 +562,7 @@ function getSel() {
   const stbObj = c.stb.find(x => x.id === $('stbOption').value) || c.stb[0];
   const t2 = c.tv.find(x => x.id === $('tvPlan2').value) || c.tv[0];
   const s2 = c.stb.find(x => x.id === $('stbOption2').value) || c.stb[0];
-  const tv2Obj = { ...t2, price: Math.round(t2.price * .5), noContract: Math.round(t2.noContract * .5), discount: Math.round(t2.discount * .5) };
+  const tv2Obj = { ...t2, price: Math.round(t2.price * .5), noContract: Math.round(t2.noContract * .5), discount: c.tv2NoDisc ? 0 : Math.round((t2.discount || 0) * .5) };   // LG: 2번째 TV는 결합할인 없음 (청구서 확인)
   const stb2Obj = { ...s2, price: Math.round(s2.price * .5), noContract: Math.round(s2.noContract * .5) };
   const bundleObj = c.bundles.find(b => b.id === S.bundleId) || c.bundles[0];
   return { intObj, wifiObj, tvObj, stbObj, tv2Obj, stb2Obj, bundleObj };
@@ -585,7 +585,7 @@ function monthlyFor(ck, intId, tvId, stbId, bundleId) {
   const b = c.bundles.find(x => x.id === bundleId) || c.bundles[0];
   let sub = (i.price || 0) + (tv.price || 0) + (stb.price || 0);
   let tvD = (tv.price > 0 && i.price > 0) ? (tv.discount || 0) : 0;
-  if (S.tvCount === 2) { sub += Math.round((tv.price || 0) * .5) + Math.round((stb.price || 0) * .5); tvD += Math.round((tv.discount || 0) * .5); }
+  if (S.tvCount === 2) { sub += Math.round((tv.price || 0) * .5) + Math.round((stb.price || 0) * .5); if (!c.tv2NoDisc) tvD += Math.round((tv.discount || 0) * .5); }
   const { wire, mobile } = bundleDiscounts(b, i);
   return Math.max(0, sub - tvD - wire - mobile);
 }
@@ -1051,7 +1051,7 @@ function loadWiredCustom() {
   loadWiredCustom();
 })();
 /* 🔗 강CRM 고객카드 [계산기에서 자세히] → 통신사 · 가입일 · 상품을 채워서 열기
-   ?carrier=SK|KT|LG&start=YYYY-MM-DD&ts=&tab=&int=&wifi=&tv=&stb=&bundle=&tv2=1&name=&type=신규|재약정|약정갱신|원스탑 */
+   ?carrier=SK|KT|LG&start=YYYY-MM-DD&ts=&tab=&int=&wifi=&tv=&stb=&bundle=&tv2=1&tv2id=&stb2=&name=&type=신규|재약정|약정갱신|원스탑 */
 function prefillFromUrl() {
   let q; try { q = new URLSearchParams(location.search); } catch (e) { return; }
   const ck = q.get('carrier'); if (!ck || !CARRIER_DATA[ck]) return;
@@ -1060,7 +1060,7 @@ function prefillFromUrl() {
   if (/^\d{4}-\d{2}-\d{2}$/.test(q.get('ts') || '')) { $('tvDateToggle').checked = true; $('tvDateBox').classList.remove('hidden'); $('tvStartDate').value = q.get('ts'); }   // 📺 TV 약정일 따로
   setCarrier(ck); setTarget(ck);
   if (q.get('tab') && c.internet[q.get('tab')]) { S.tab = q.get('tab'); renderTabs(); fillInternet(); }
-  set('internetPlan', q.get('int')); set('wifiOption', q.get('wifi')); set('tvPlan', q.get('tv')); set('stbOption', q.get('stb')); set('tvPlan2', q.get('tv')); set('stbOption2', q.get('stb'));
+  set('internetPlan', q.get('int')); set('wifiOption', q.get('wifi')); set('tvPlan', q.get('tv')); set('stbOption', q.get('stb')); set('tvPlan2', q.get('tv2id') || q.get('tv')); set('stbOption2', q.get('stb2') || q.get('stb'));   // 📺 추가 TV · 셋톱을 따로
   if (q.get('bundle') && c.bundles.some(b => b.id === q.get('bundle'))) { S.bundleId = q.get('bundle'); fillBundles(); }
   if (q.get('tv2') === '1') { S.tvCount = 2; setSeg('tvCountSeg', '2'); $('tv2Box').classList.remove('hidden'); }
   applyAutoPtype(); renderPtype(); syncTarget(); syncTobe(); update();
