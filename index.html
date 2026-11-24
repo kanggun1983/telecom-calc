@@ -736,7 +736,7 @@ function render(R) {
   $('bdBody').innerHTML =
     bdRow('인터넷 요금할인 반환금', p.p1, tvOnly ? '인터넷 유지' : '') +
     bdRow('TV 요금할인 반환금', p.p2, R.tvStart ? `TV 약정 ${fmtDate(R.tvStart)}부터` : '') +
-    bdRow('인터넷 결합할인 반환금', p.p3, sel.bundleObj.isPenaltyWaived ? '결합 위약금 면제 상품' : (sel.bundleObj.noWirePenalty ? 'LG 인터넷 결합할인은 반환금 없음' : '')) +
+    bdRow('인터넷 결합할인 반환금', p.p3, sel.bundleObj.isPenaltyWaived ? '결합 위약금 면제 상품' : (sel.bundleObj.noWirePenalty ? (S.carrier === 'LG' ? 'LG 인터넷 결합할인은 반환금 없음' : '결합할인은 반환금에 안 넣었어요 (통신사 조회로 확인)') : '')) +
     bdRow('TV 결합할인 반환금', p.p4) +
     bdRow(tvOnly ? '셋톱 임대료 반환금' : '장비(공유기·셋톱) 반환금', p.p5, R.tvStart && !tvOnly ? '셋톱은 TV 약정일로' : '') +
     bdRow('사은품 환수', p.g, R.gift ? `받은 사은품 ${won(R.gift)}원` : '') +
