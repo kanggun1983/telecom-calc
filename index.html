@@ -445,7 +445,7 @@ details.fold[open]>summary::after{transform:rotate(-135deg)}
   </div>
 </div>
 
-<script src="wired-core.js?v=10"></script>
+<script src="wired-core.js?v=11"></script>
 <script>
 const CARRIER_DATA = WiredCalc.CARRIER_DATA;   // 🧮 상품표 · 산식은 wired-core.js (강CRM과 같이 써요)
 
@@ -588,6 +588,7 @@ function monthlyFor(ck, intId, tvId, stbId, bundleId) {
   let tvD = (tv.price > 0 && i.price > 0) ? (tv.discount || 0) : 0;
   if (S.tvCount === 2) { sub += Math.round((tv.price || 0) * .5) + Math.round((stb.price || 0) * .5); if (!c.tv2NoDisc) tvD += Math.round((tv.discount || 0) * .5); }
   const { wire, mobile } = bundleDiscounts(b, i);
+  if (tv.price > 0 && i.price > 0) tvD += (b.tvBundleDisc || 0);
   return Math.max(0, sub - tvD - wire - mobile);
 }
 
@@ -622,7 +623,8 @@ function compute() {
   let tvDisc = (tvObj.price > 0 && intObj.price > 0) ? (tvObj.discount || 0) : 0;
   if (S.tvCount === 2 && tv2Obj.price > 0) tvDisc += (tv2Obj.discount || 0);
   const { wire, mobile } = bundleDiscounts(bundleObj, intObj);
-  const totalDisc = tvDisc + wire + mobile;
+  const tvB = (tvObj.price > 0 && intObj.price > 0) ? (bundleObj.tvBundleDisc || 0) : 0;   // 📺 결합에서 주는 TV 할인 (SK 요즘가족)
+  const totalDisc = tvDisc + tvB + wire + mobile;
   let monthly = Math.max(0, base - totalDisc);
   const manual = $('manualToggle').checked;
   if (manual && $('manMonthly').value !== '') monthly = Math.max(0, parseInt($('manMonthly').value, 10) || 0);
@@ -680,7 +682,7 @@ function compute() {
   const changeCost = newCost + total - newGift;
   const diff = keepCost - changeCost;
 
-  return { sel, days, tvDays, tvStart, fMonths, start, end, gift, hqGift, base, tvDisc, wire, mobile, totalDisc, monthly, prorated, p, total, afterMonthly,
+  return { sel, days, tvDays, tvStart, fMonths, start, end, gift, hqGift, base, tvDisc, tvB, wire, mobile, totalDisc, monthly, prorated, p, total, afterMonthly,
     series, usedM, remainM, keepCost, changeCost, diff, newGift, tMonthly, manual };
 }
 
@@ -751,6 +753,7 @@ function render(R) {
     if (b.tvObj.price) billRows += `<tr><td>${clean(b.tvObj.name)}<span class="sub">${clean(b.stbObj.name)}</span></td><td>${won(b.tvObj.price + b.stbObj.price)}원</td></tr>`;
     if (S.tvCount === 2 && b.tv2Obj.price) billRows += `<tr><td>2번째 TV (50%)<span class="sub">${clean(b.tv2Obj.name)} + ${clean(b.stb2Obj.name)}</span></td><td>${won(b.tv2Obj.price + b.stb2Obj.price)}원</td></tr>`;
     if (R.tvDisc) billRows += `<tr class="minus"><td>TV 결합할인</td><td>-${won(R.tvDisc)}원</td></tr>`;
+    if (R.tvB) billRows += `<tr class="minus"><td>결합 TV 할인</td><td>-${won(R.tvB)}원</td></tr>`;
     if (R.wire) billRows += `<tr class="minus"><td>인터넷 결합할인</td><td>-${won(R.wire)}원</td></tr>`;
     if (R.mobile) billRows += `<tr class="minus"><td>모바일 결합할인<span class="sub">${clean(b.bundleObj.name)}</span></td><td>-${won(R.mobile)}원</td></tr>`;
     billRows += `<tr class="total"><td>월 실납부액</td><td>${won(R.monthly)}원</td></tr>`;
