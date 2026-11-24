@@ -157,6 +157,7 @@
         baseDenominatorDays: 855,
         btnActive: 'border-rose-500 bg-rose-50 text-rose-600 shadow-sm',
         tvTitle: '📺 U+tv & 셋톱박스 선택 (3년 약정)',
+        tv2NoDisc: true,   // 📺 2026-11 청구서 확인: 2번째 TV는 TV 결합할인(-2,200)이 없음 (1대분만)
         bundleTitle: '📱 LG 결합할인 선택 (3년 약정)',
         bundles: [
           { id: 'lg_wire_only', group: 'current', noWirePenalty: true, name: '무선결합 미적용 (인터넷+TV 유선결합)', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 0, desc: '인터넷 -5,500원 + TV -2,200원 유선결합 할인 적용', default: true },
@@ -189,7 +190,7 @@
             { id: 'lg_pc_1g', name: '프리미엄 안심 보상 1G', price: 45100, noContract: 85800, speed: 1000 }
           ],
           lg_prem_safe: [
-            { id: 'lg_ps_500', name: '프리미엄 안심 500M', price: 37400, noContract: 70400, speed: 500, default: true },
+            { id: 'lg_ps_500', name: '프리미엄 안심 500M', price: 37400, noContract: 68200, speed: 500, default: true },   // 2026-11 청구서 확인: 기본료 68,200
             { id: 'lg_ps_100', name: '프리미엄 안심 100M', price: 25300, noContract: 47300, speed: 100 },
             { id: 'lg_ps_200', name: '프리미엄 안심 200M', price: 28600, noContract: 53900, speed: 200 },
             { id: 'lg_ps_1g', name: '프리미엄 안심 1기가', price: 42900, noContract: 81400, speed: 1000 }
@@ -228,6 +229,7 @@
         stb: [
           { id: 'lg_uhd4', name: '4K UHD4 셋톱', price: 4400, noContract: 9900, default: true },
           { id: 'lg_snd2', name: 'U+ TV 사운드바2', price: 8800, noContract: 14300 },
+          { id: 'lg_snd_blk2', name: '사운드바 블랙2', price: 8800, noContract: 29700 },   // 2026-11 청구서 셋톱 2대 무약정 39,600 − UHD3 9,900 (약정 8,800은 LG 발표)
           { id: 'lg_snd_blk', name: '사운드바 블랙', price: 6600, noContract: 12100 },
           { id: 'lg_uhd3', name: '[구] UHD3 셋톱', price: 4400, noContract: 9900 },
           { id: 'none', name: '셋톱 미적용', price: 0, noContract: 0 }
@@ -297,16 +299,23 @@
     const norm = (s) => String(s).replace(/\(.*?\)|\s|tv|TV|B\s*tv|지니|U\+|\[구\]/gi, '').toLowerCase();
     const tvs = c.tv.filter(x => x.id !== 'none');
     let tvObj = !tvt.trim() || /^(없음|-|해당없음|미적용)$/.test(tvt.trim()) ? (c.tv.find(x => x.id === 'none') || c.tv[0]) : null, tvHit = !!tvObj;
-    if (!tvObj) { const t = norm(tvt); tvObj = tvs.find(x => { const n = norm(x.name); return n && (t.includes(n) || n.includes(t)); }) || null; tvHit = !!tvObj; if (!tvObj) tvObj = dflt(c.tv); }
-    const stbObj = tvObj.id === 'none' ? (c.stb.find(x => x.id === 'none') || dflt(c.stb)) : dflt(c.stb);
-    const tvCount = /추가|2대|\+\s*1|두\s*대/.test(tvt) ? 2 : 1;
+    /* 글에 나온 순서대로 (먼저 나온 게 주 TV · 다음이 추가 TV) — 이름이 긴 것 먼저 (사운드바 블랙2 ⊃ 사운드바 블랙) */
+    const hitsIn = (t, list, nm) => { const out = []; let rest = t; list.map(x => ({ x, n: nm(x.name) })).filter(o => o.n).sort((a, b) => b.n.length - a.n.length).forEach(o => { let i = rest.indexOf(o.n); while (i >= 0) { out.push({ x: o.x, i }); rest = rest.slice(0, i) + '\u0000'.repeat(o.n.length) + rest.slice(i + o.n.length); i = rest.indexOf(o.n); } }); return out.sort((a, b) => a.i - b.i).map(o => o.x); };
+    let tv2Obj = null;
+    if (!tvObj) { const t = norm(tvt), th = hitsIn(t, tvs, norm); tvObj = th[0] || tvs.find(x => { const n = norm(x.name); return n && n.includes(t); }) || null; tvHit = !!tvObj; tv2Obj = th[1] || null; if (!tvObj) tvObj = dflt(c.tv); }
+    const snorm = (s) => norm(s).replace(/셋톱(박스)?|셋탑(박스)?|4k/gi, '');
+    const sh = tvObj.id === 'none' ? [] : hitsIn(snorm(tvt), c.stb.filter(x => x.id !== 'none'), snorm);
+    const stbObj = tvObj.id === 'none' ? (c.stb.find(x => x.id === 'none') || dflt(c.stb)) : (sh[0] || dflt(c.stb));
+    const tvCount = /추가|2대|\+\s*1|두\s*대/.test(tvt) || tv2Obj || sh[1] ? 2 : 1;
+    if (tvCount === 2 && !tv2Obj) tv2Obj = tvObj;
+    const stb2Obj = tvCount === 2 ? (sh[1] || stbObj) : null;
     const KEYS = [[/요즘\s*가족/, 'sk_family'], [/온가족\s*할인|T끼리/, 'sk_on_10'], [/온가족\s*플랜/, 'sk_legacy_plan'], [/온가족\s*프리/, 'sk_legacy_free'], [/한가족/, 'sk_legacy_single'], [/온가족\s*무료/, 'sk_legacy_allfree'],
       [/총액/, 'kt_total'], [/싱글/, 'kt_single'], [/패밀리/, 'kt_family_50'], [/LTE\s*뭉치/, 'kt_legacy_lte'], [/뭉치면/, 'kt_legacy_olleh'], [/우리가족/, 'kt_legacy_fam_wire'],
       [/참\s*쉬운/, 'lg_cham'], [/투게더/, 'lg_together'], [/한방에\s*yo/i, 'lg_legacy_yo'], [/한방에/, 'lg_legacy_home'], [/가족\s*무한/, 'lg_legacy_love']];
     const k = KEYS.find(([re, id]) => re.test(cb) && c.bundles.some(b => b.id === id));
     const bundleObj = k ? c.bundles.find(b => b.id === k[1]) : dflt(c.bundles);
-    return { carrier: ck, tab, intId: intObj.id, wifiId: (dflt(wlist) || {}).id, tvId: tvObj.id, stbId: stbObj.id, tvCount, bundleId: bundleObj.id,
-      names: { internet: intObj.name, tv: tvObj.id === 'none' ? '' : tvObj.name, bundle: bundleObj.name }, matched: { internet: !!ihit, tv: tvHit, bundle: !!k } };
+    return { carrier: ck, tab, intId: intObj.id, wifiId: (dflt(wlist) || {}).id, tvId: tvObj.id, stbId: stbObj.id, tvCount, tv2Id: tv2Obj ? tv2Obj.id : '', stb2Id: stb2Obj ? stb2Obj.id : '', bundleId: bundleObj.id,
+      names: { internet: intObj.name, tv: tvObj.id === 'none' ? '' : tvObj.name + (tvCount === 2 && tv2Obj ? ` + 추가 ${tv2Obj.name}` : ''), stb: tvObj.id === 'none' ? '' : stbObj.name + (stb2Obj ? ` + 추가 ${stb2Obj.name}` : ''), bundle: bundleObj.name }, matched: { internet: !!ihit, tv: tvHit, stb: sh.length > 0, bundle: !!k } };
   }
   /* 위약금 대략값 — 계산기 화면 compute()와 같은 식 (해지 전체 · 사은품 · 직접입력 없음) */
   function estimate(o) {
@@ -320,7 +329,8 @@
     const wifiObj = wl.find(x => x.id === o.wifiId) || dflt(wl);
     const tvObj = c.tv.find(x => x.id === o.tvId) || c.tv[0], stbObj = c.stb.find(x => x.id === o.stbId) || c.stb[0];
     const two = o.tvCount === 2;
-    const tv2 = { price: Math.round(tvObj.price * .5), noContract: Math.round(tvObj.noContract * .5), discount: Math.round((tvObj.discount || 0) * .5) }, stb2 = { price: Math.round(stbObj.price * .5), noContract: Math.round(stbObj.noContract * .5) };
+    const t2 = c.tv.find(x => x.id === o.tv2Id) || tvObj, s2 = c.stb.find(x => x.id === o.stb2Id) || stbObj;   // 📺 추가 TV · 셋톱을 따로 (없으면 주 TV와 같은 것)
+    const tv2 = { price: Math.round(t2.price * .5), noContract: Math.round(t2.noContract * .5), discount: c.tv2NoDisc ? 0 : Math.round((t2.discount || 0) * .5) }, stb2 = { price: Math.round(s2.price * .5), noContract: Math.round(s2.noContract * .5) };
     const bundleObj = c.bundles.find(b => b.id === o.bundleId) || dflt(c.bundles);
     let base = intObj.price + wifiObj.price + tvObj.price + stbObj.price; if (two) base += tv2.price + stb2.price;
     let tvDisc = (tvObj.price > 0 && intObj.price > 0) ? (tvObj.discount || 0) : 0; if (two && tv2.price > 0) tvDisc += tv2.discount;
