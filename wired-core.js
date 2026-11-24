@@ -15,7 +15,7 @@
         bundleTitle: '📱 SK 결합할인 선택 (3년 약정)',
         bundles: [
           { id: 'sk_wire_only', group: 'current', name: '무선결합 미적용 (요즘우리집결합)', wireDisc: { 100: 2200, 500: 5500, 1000: 5500, 2500: 5500, 5000: 5500 }, mobileDisc: 0, desc: '인터넷(최대 -5,500원) + TV(-2,200원) 유선 결합할인 적용', default: true },
-          { id: 'sk_family', group: 'current', name: '요즘 가족 결합 (유무선 결합)', wireDisc: { 100: 0, 500: 0, 1000: 0, 2500: 0, 5000: 0 }, mobileDiscSpeed: { 100: 4400, 500: 12100, 1000: 13200, 2500: 13200, 5000: 13200 }, desc: '인터넷 요금 할인 (100M: 4.4천원 / 500M: 1.21만원 / 1G: 1.32만원)' },
+          { id: 'sk_family', group: 'current', name: '요즘 가족 결합 (유무선 결합)', noWirePenalty: true, wireDisc: { 100: 3300, 500: 11000, 1000: 12100, 2500: 12100, 5000: 12100 }, tvBundleDisc: 1100, mobileDisc: 0, desc: '인터넷 할인 (100M 3,300 · 500M 11,000 · 1G 12,100) + TV 있으면 1,100 · 휴대폰 할인은 요금제별 따로' },   // 📺 2026-11 SK 청약 화면 확인 (500M): 인터넷 −11,000 · TV −1,100 · 모바일(라이트39) −3,500 — 100M · 1G 나눔은 예전 합계(4,400 · 13,200)에서 TV 1,100을 뺀 추정
           { id: 'sk_on_30', group: 'current', name: 'T끼리 온가족할인 (30년 이상 / 50%)', isRate: true, rate: 0.5, isPenaltyWaived: true, desc: '3년 약정 기준가의 50% 감면 (★결합할인 위약금 전액 면제)' },
           { id: 'sk_on_20', group: 'current', name: 'T끼리 온가족할인 (20~30년 / 30%)', isRate: true, rate: 0.3, isPenaltyWaived: true, desc: '3년 약정 기준가의 30% 감면 (★결합할인 위약금 전액 면제)' },
           { id: 'sk_on_10', group: 'current', name: 'T끼리 온가족할인 (10~20년 / 10%)', isRate: true, rate: 0.1, isPenaltyWaived: true, desc: '3년 약정 기준가의 10% 감면 (★결합할인 위약금 전액 면제)' },
@@ -337,7 +337,8 @@
     let base = intObj.price + wifiObj.price + tvObj.price + stbObj.price; if (two) base += tv2.price + stb2.price;
     let tvDisc = (tvObj.price > 0 && intObj.price > 0) ? (tvObj.discount || 0) : 0; if (two && tv2.price > 0) tvDisc += tv2.discount;
     const { wire, mobile } = bundleDiscounts(bundleObj, intObj);
-    const monthly = Math.max(0, base - tvDisc - wire - mobile);
+    const tvB = (tvObj.price > 0 && intObj.price > 0) ? (bundleObj.tvBundleDisc || 0) : 0;   // 📺 결합에서 주는 TV 할인 (SK 요즘가족 1,100 · 반환금엔 안 넣음)
+    const monthly = Math.max(0, base - tvDisc - tvB - wire - mobile);
     const vx = c.vatExNet ? 1 / 1.1 : 1;   // 💸 SK: 인터넷 · 와이파이는 부가세 빼고
     const mIntPlan = Math.max(0, intObj.noContract - intObj.price) * vx;
     let mTvPlan = Math.max(0, tvObj.noContract - tvObj.price); if (two) mTvPlan += Math.max(0, tv2.noContract - tv2.price);
