@@ -230,7 +230,7 @@
           { id: 'lg_uhd4', name: '4K UHD4 셋톱', price: 4400, noContract: 9900, default: true },
           { id: 'lg_snd2', name: 'U+ TV 사운드바2', price: 8800, noContract: 14300 },
           { id: 'lg_snd_blk2', name: '사운드바 블랙2', price: 8800, noContract: 29700 },   // 2026-11 청구서 셋톱 2대 무약정 39,600 − UHD3 9,900 (약정 8,800은 LG 발표)
-          { id: 'lg_snd_blk', name: '사운드바 블랙', price: 6600, noContract: 12100 },
+          { id: 'lg_snd_blk', name: '사운드바 블랙', price: 6600, noContract: 12100, alias: ['U+tv 사운드바'] },   // 매장 시스템 이름 'U+tv 사운드바 (6,600원)'
           { id: 'lg_uhd3', name: '[구] UHD3 셋톱', price: 4400, noContract: 9900 },
           { id: 'none', name: '셋톱 미적용', price: 0, noContract: 0 }
         ]
@@ -304,7 +304,7 @@
     let tv2Obj = null;   // 괄호 안도 봐요: "프리미엄 (추가 베이직)"
     if (!tvObj) { const t = norm(tvt), th = hitsIn(norm(tvt.replace(/[()]/g, ' ')), tvs, norm); tvObj = th[0] || tvs.find(x => { const n = norm(x.name); return n && n.includes(t); }) || null; tvHit = !!tvObj; tv2Obj = th[1] || null; if (!tvObj) tvObj = dflt(c.tv); }
     const snorm = (s) => norm(s).replace(/셋톱(박스)?|셋탑(박스)?|4k/gi, '');
-    const sh = tvObj.id === 'none' ? [] : hitsIn(snorm(tvt.replace(/[()]/g, ' ')), c.stb.filter(x => x.id !== 'none'), snorm);
+    const sh = tvObj.id === 'none' ? [] : hitsIn(snorm(tvt.replace(/[()]/g, ' ')), c.stb.filter(x => x.id !== 'none').flatMap(x => [x, ...(x.alias || []).map(a => ({ name: a, ref: x }))]), snorm).map(x => x.ref || x);   // alias: 다른 이름으로 적어도
     const stbObj = tvObj.id === 'none' ? (c.stb.find(x => x.id === 'none') || dflt(c.stb)) : (sh[0] || dflt(c.stb));
     const tvCount = /추가|2대|\+\s*1|두\s*대/.test(tvt) ? 2 : 1;   // 2대는 '추가 · 2대'라고 적었을 때만 ("실속형 → 프리미엄 변경"은 1대)
     if (tvCount === 1) tv2Obj = null; else if (!tv2Obj) tv2Obj = tvObj;
