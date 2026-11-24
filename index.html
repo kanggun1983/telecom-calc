@@ -445,7 +445,7 @@ details.fold[open]>summary::after{transform:rotate(-135deg)}
   </div>
 </div>
 
-<script src="wired-core.js?v=9"></script>
+<script src="wired-core.js?v=10"></script>
 <script>
 const CARRIER_DATA = WiredCalc.CARRIER_DATA;   // 🧮 상품표 · 산식은 wired-core.js (강CRM과 같이 써요)
 
@@ -564,6 +564,7 @@ function getSel() {
   const s2 = c.stb.find(x => x.id === $('stbOption2').value) || c.stb[0];
   const tv2Obj = { ...t2, price: Math.round(t2.price * .5), noContract: Math.round(t2.noContract * .5), discount: c.tv2NoDisc ? 0 : Math.round((t2.discount || 0) * .5) };   // LG: 2번째 TV는 결합할인 없음 (청구서 확인)
   const stb2Obj = { ...s2, price: Math.round(s2.price * .5), noContract: Math.round(s2.noContract * .5) };
+  if (c.tv2FullPlan) { tv2Obj.noContract = tv2Obj.price + Math.max(0, t2.noContract - t2.price); stb2Obj.noContract = stb2Obj.price + Math.max(0, s2.noContract - s2.price); }   // LG: 2번째 TV · 셋톱 반환금은 1대분 할인으로 (할인상세내역 확인)
   const bundleObj = c.bundles.find(b => b.id === S.bundleId) || c.bundles[0];
   return { intObj, wifiObj, tvObj, stbObj, tv2Obj, stb2Obj, bundleObj };
 }

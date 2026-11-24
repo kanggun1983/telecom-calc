@@ -157,7 +157,8 @@
         baseDenominatorDays: 855,
         btnActive: 'border-rose-500 bg-rose-50 text-rose-600 shadow-sm',
         tvTitle: '📺 U+tv & 셋톱박스 선택 (3년 약정)',
-        tv2NoDisc: true,   // 📺 2026-11 청구서 확인: 2번째 TV는 TV 결합할인(-2,200)이 없음 (1대분만)
+        tv2NoDisc: true,
+        tv2FullPlan: true,   // 📺 2026-11 할인상세내역 확인: 2번째 TV · 셋톱도 약정할인 · 셋톱 임대료 할인은 1대분 그대로 (50%는 '추가 할인'으로 따로) → 반환금은 1대분 할인으로   // 📺 2026-11 청구서 확인: 2번째 TV는 TV 결합할인(-2,200)이 없음 (1대분만)
         bundleTitle: '📱 LG 결합할인 선택 (3년 약정)',
         bundles: [
           { id: 'lg_wire_only', group: 'current', noWirePenalty: true, name: '무선결합 미적용 (인터넷+TV 유선결합)', wireDisc: { 100: 5500, 200: 5500, 500: 5500, 1000: 5500, 2500: 5500 }, mobileDisc: 0, desc: '인터넷 -5,500원 + TV -2,200원 유선결합 할인 적용', default: true },
@@ -186,19 +187,19 @@
           lg_prem_comp: [
             { id: 'lg_pc_500', name: '프리미엄 안심 보상 500M', price: 39600, noContract: 74800, speed: 500, default: true },
             { id: 'lg_pc_100', name: '프리미엄 안심 보상 100M', price: 27500, noContract: 51700, speed: 100 },
-            { id: 'lg_pc_200', name: '프리미엄 안심 보상 200M', price: 30800, noContract: 58300, speed: 200 },
-            { id: 'lg_pc_1g', name: '프리미엄 안심 보상 1G', price: 45100, noContract: 85800, speed: 1000 }
+            { id: 'lg_pc_200', name: '프리미엄 안심 보상 200M', price: 30800, noContract: 63800, speed: 200 },   // 무약정 2026-11 매장 시스템 기본료 (예전 58300)
+            { id: 'lg_pc_1g', name: '프리미엄 안심 보상 1G', price: 45100, noContract: 82500, speed: 1000 }   // 무약정 2026-11 매장 시스템 기본료 (예전 85800)
           ],
           lg_prem_safe: [
             { id: 'lg_ps_500', name: '프리미엄 안심 500M', price: 37400, noContract: 68200, speed: 500, default: true },   // 2026-11 청구서 확인: 기본료 68,200
-            { id: 'lg_ps_100', name: '프리미엄 안심 100M', price: 25300, noContract: 47300, speed: 100 },
-            { id: 'lg_ps_200', name: '프리미엄 안심 200M', price: 28600, noContract: 53900, speed: 200 },
-            { id: 'lg_ps_1g', name: '프리미엄 안심 1기가', price: 42900, noContract: 81400, speed: 1000 }
+            { id: 'lg_ps_100', name: '프리미엄 안심 100M', price: 25300, noContract: 56100, speed: 100 },   // 무약정 2026-11 매장 시스템 기본료 (예전 47300)
+            { id: 'lg_ps_200', name: '프리미엄 안심 200M', price: 28600, noContract: 59400, speed: 200 },   // 무약정 2026-11 매장 시스템 기본료 (예전 53900)
+            { id: 'lg_ps_1g', name: '프리미엄 안심 1기가', price: 42900, noContract: 78100, speed: 1000 }   // 무약정 2026-11 매장 시스템 기본료 (예전 81400)
           ],
           lg_smart_giga: [
-            { id: 'lg_sg_500', name: '스마트기가 최대 500M', price: 35200, noContract: 58300, speed: 500, default: true },
-            { id: 'lg_sg_1g', name: '스마트기가 최대 1G', price: 40700, noContract: 67100, speed: 1000 },
-            { id: 'lg_sg_2_5g', name: '스마트기가 최대 2.5G', price: 47300, noContract: 75900, speed: 2500 }
+            { id: 'lg_sg_500', name: '스마트기가 최대 500M', price: 35200, noContract: 63800, speed: 500, default: true },   // 무약정 2026-11 매장 시스템 기본료 (예전 58300)
+            { id: 'lg_sg_1g', name: '스마트기가 최대 1G', price: 40700, noContract: 73700, speed: 1000 },   // 무약정 2026-11 매장 시스템 기본료 (예전 67100)
+            { id: 'lg_sg_2_5g', name: '스마트기가 최대 2.5G', price: 47300, noContract: 81400, speed: 2500 }   // 무약정 2026-11 매장 시스템 기본료 (예전 75900)
           ]
         },
         wifiHw: {
@@ -219,9 +220,9 @@
         tv: [
           { id: 'lg_prem', name: '프리미엄 TV (257ch)', price: 18700, discountPrice: 16500, noContract: 22000, discount: 2200, default: true },
           { id: 'lg_adv', name: '고급형 TV (235ch)', price: 17600, discountPrice: 15400, noContract: 20900, discount: 2200 },
-          { id: 'lg_basic', name: '기본형 TV (222ch)', price: 16500, discountPrice: 14300, noContract: 20900, discount: 2200 },
+          { id: 'lg_basic', name: '기본형 TV (222ch)', price: 16500, discountPrice: 14300, noContract: 23100, discount: 2200 },   // 무약정 2026-11 매장 시스템 기본료 (예전 20900)
           { id: 'lg_tv_basic211', name: '베이직 TV (211ch)', price: 14300, discountPrice: 12100, noContract: 17600, discount: 2200 },
-          { id: 'lg_eco', name: '실속형 TV (216ch)', price: 15400, discountPrice: 13200, noContract: 19800, discount: 2200 },
+          { id: 'lg_eco', name: '실속형 TV (216ch)', price: 15400, discountPrice: 13200, noContract: 22000, discount: 2200 },   // 무약정 2026-11 매장 시스템 기본료 (예전 19800)
           { id: 'lg_old_std', name: '[구] 일반형 TV', price: 13090, discountPrice: 10890, noContract: 16390, discount: 2200 },
           { id: 'lg_old_basic', name: '[구] 보급형 TV', price: 10890, discountPrice: 8690, noContract: 14190, discount: 2200 },
           { id: 'none', name: 'U+tv 미적용', price: 0, discountPrice: 0, noContract: 0, discount: 0 }
@@ -331,6 +332,7 @@
     const two = o.tvCount === 2;
     const t2 = c.tv.find(x => x.id === o.tv2Id) || tvObj, s2 = c.stb.find(x => x.id === o.stb2Id) || stbObj;   // 📺 추가 TV · 셋톱을 따로 (없으면 주 TV와 같은 것)
     const tv2 = { price: Math.round(t2.price * .5), noContract: Math.round(t2.noContract * .5), discount: c.tv2NoDisc ? 0 : Math.round((t2.discount || 0) * .5) }, stb2 = { price: Math.round(s2.price * .5), noContract: Math.round(s2.noContract * .5) };
+    if (c.tv2FullPlan) { tv2.noContract = tv2.price + Math.max(0, t2.noContract - t2.price); stb2.noContract = stb2.price + Math.max(0, s2.noContract - s2.price); }
     const bundleObj = c.bundles.find(b => b.id === o.bundleId) || dflt(c.bundles);
     let base = intObj.price + wifiObj.price + tvObj.price + stbObj.price; if (two) base += tv2.price + stb2.price;
     let tvDisc = (tvObj.price > 0 && intObj.price > 0) ? (tvObj.discount || 0) : 0; if (two && tv2.price > 0) tvDisc += tv2.discount;
