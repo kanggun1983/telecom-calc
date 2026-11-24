@@ -301,13 +301,13 @@
     let tvObj = !tvt.trim() || /^(없음|-|해당없음|미적용)$/.test(tvt.trim()) ? (c.tv.find(x => x.id === 'none') || c.tv[0]) : null, tvHit = !!tvObj;
     /* 글에 나온 순서대로 (먼저 나온 게 주 TV · 다음이 추가 TV) — 이름이 긴 것 먼저 (사운드바 블랙2 ⊃ 사운드바 블랙) */
     const hitsIn = (t, list, nm) => { const out = []; let rest = t; list.map(x => ({ x, n: nm(x.name) })).filter(o => o.n).sort((a, b) => b.n.length - a.n.length).forEach(o => { let i = rest.indexOf(o.n); while (i >= 0) { out.push({ x: o.x, i }); rest = rest.slice(0, i) + '\u0000'.repeat(o.n.length) + rest.slice(i + o.n.length); i = rest.indexOf(o.n); } }); return out.sort((a, b) => a.i - b.i).map(o => o.x); };
-    let tv2Obj = null;
-    if (!tvObj) { const t = norm(tvt), th = hitsIn(t, tvs, norm); tvObj = th[0] || tvs.find(x => { const n = norm(x.name); return n && n.includes(t); }) || null; tvHit = !!tvObj; tv2Obj = th[1] || null; if (!tvObj) tvObj = dflt(c.tv); }
+    let tv2Obj = null;   // 괄호 안도 봐요: "프리미엄 (추가 베이직)"
+    if (!tvObj) { const t = norm(tvt), th = hitsIn(norm(tvt.replace(/[()]/g, ' ')), tvs, norm); tvObj = th[0] || tvs.find(x => { const n = norm(x.name); return n && n.includes(t); }) || null; tvHit = !!tvObj; tv2Obj = th[1] || null; if (!tvObj) tvObj = dflt(c.tv); }
     const snorm = (s) => norm(s).replace(/셋톱(박스)?|셋탑(박스)?|4k/gi, '');
-    const sh = tvObj.id === 'none' ? [] : hitsIn(snorm(tvt), c.stb.filter(x => x.id !== 'none'), snorm);
+    const sh = tvObj.id === 'none' ? [] : hitsIn(snorm(tvt.replace(/[()]/g, ' ')), c.stb.filter(x => x.id !== 'none'), snorm);
     const stbObj = tvObj.id === 'none' ? (c.stb.find(x => x.id === 'none') || dflt(c.stb)) : (sh[0] || dflt(c.stb));
-    const tvCount = /추가|2대|\+\s*1|두\s*대/.test(tvt) || tv2Obj || sh[1] ? 2 : 1;
-    if (tvCount === 2 && !tv2Obj) tv2Obj = tvObj;
+    const tvCount = /추가|2대|\+\s*1|두\s*대/.test(tvt) ? 2 : 1;   // 2대는 '추가 · 2대'라고 적었을 때만 ("실속형 → 프리미엄 변경"은 1대)
+    if (tvCount === 1) tv2Obj = null; else if (!tv2Obj) tv2Obj = tvObj;
     const stb2Obj = tvCount === 2 ? (sh[1] || stbObj) : null;
     const KEYS = [[/요즘\s*가족/, 'sk_family'], [/온가족\s*할인|T끼리/, 'sk_on_10'], [/온가족\s*플랜/, 'sk_legacy_plan'], [/온가족\s*프리/, 'sk_legacy_free'], [/한가족/, 'sk_legacy_single'], [/온가족\s*무료/, 'sk_legacy_allfree'],
       [/총액/, 'kt_total'], [/싱글/, 'kt_single'], [/패밀리/, 'kt_family_50'], [/LTE\s*뭉치/, 'kt_legacy_lte'], [/뭉치면/, 'kt_legacy_olleh'], [/우리가족/, 'kt_legacy_fam_wire'],
